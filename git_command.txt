@@ -1,0 +1,14 @@
+- 저장소 확인 
+git remote -v
+
+
+- 변경사항 확인
+git status
+
+- 파일 push 
+git add 파일명
+git commit -m "커밋메세지"
+git push origin 브랜치명 
+
+- 브랜치 이동
+git checkout 브래치명 
