@@ -12,3 +12,10 @@ git push origin 브랜치명
 
 - 브랜치 이동
 git checkout 브래치명 
+
+- merge
+git merge 브랜치명
+(메인에서 해야함)
+
+- fetch 
+git fetch
