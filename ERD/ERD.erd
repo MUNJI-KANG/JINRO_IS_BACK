@@ -4,9 +4,9 @@
   "settings": {
     "width": 2000,
     "height": 2000,
-    "scrollTop": -19,
-    "scrollLeft": -225,
-    "zoomLevel": 1,
+    "scrollTop": -264,
+    "scrollLeft": -223.9209,
+    "zoomLevel": 0.76,
     "show": 511,
     "database": 4,
     "databaseName": "",
@@ -312,7 +312,8 @@
           "wB9EN_ZVZWntC3bcIlVbw",
           "rV29XkPMtSUZlvbe9_IsR",
           "vQ1C0czmZD-HVAb_dsopm",
-          "H7fD_Em1mzTSxk8c_6Ep7"
+          "H7fD_Em1mzTSxk8c_6Ep7",
+          "6q0FhISvzVlIDqQSOwg76"
         ],
         "seqColumnIds": [
           "_1Er7ONU01wfeSbQnOtib",
@@ -325,18 +326,19 @@
           "S3qrUaNMQhr984zShTcXY",
           "nZpok1qsaF5IvtJkoAtMA",
           "vQ1C0czmZD-HVAb_dsopm",
-          "H7fD_Em1mzTSxk8c_6Ep7"
+          "H7fD_Em1mzTSxk8c_6Ep7",
+          "6q0FhISvzVlIDqQSOwg76"
         ],
         "ui": {
-          "x": 910.4494,
-          "y": 552.1932,
+          "x": 897.2916,
+          "y": 564.0352,
           "zIndex": 156,
           "widthName": 68,
           "widthComment": 77,
           "color": ""
         },
         "meta": {
-          "updateAt": 1771475771398,
+          "updateAt": 1771550466294,
           "createAt": 1771460806785
         }
       },
@@ -453,22 +455,24 @@
         "comment": "영상 URL",
         "columnIds": [
           "nr-2Xe7IRRWiEfZiEWRJA",
-          "m0gOIcSn3756woyW_5hJe"
+          "m0gOIcSn3756woyW_5hJe",
+          "m74CRanc6gjpejgy-XeHH"
         ],
         "seqColumnIds": [
           "nr-2Xe7IRRWiEfZiEWRJA",
-          "m0gOIcSn3756woyW_5hJe"
+          "m0gOIcSn3756woyW_5hJe",
+          "m74CRanc6gjpejgy-XeHH"
         ],
         "ui": {
-          "x": 1309.5535,
-          "y": 390.2528,
+          "x": 1521.3956,
+          "y": 781.0423,
           "zIndex": 284,
           "widthName": 62,
           "widthComment": 60,
           "color": ""
         },
         "meta": {
-          "updateAt": 1771484521268,
+          "updateAt": 1771550467889,
           "createAt": 1771483470020
         }
       }
@@ -2878,7 +2882,7 @@
         "id": "IQttEuFSUlSFNeFeaagQ-",
         "tableId": "fimuexpqOZxLIftQDzjzw",
         "name": "SCHEDULE_ID",
-        "comment": "",
+        "comment": "PK",
         "dataType": "INT",
         "default": "",
         "options": 15,
@@ -2890,7 +2894,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1771470095060,
+          "updateAt": 1771549306330,
           "createAt": 1771470054462
         }
       },
@@ -2898,7 +2902,7 @@
         "id": "h4S3X_BruQDbXqQbwr1UQ",
         "tableId": "fimuexpqOZxLIftQDzjzw",
         "name": "DATETIME",
-        "comment": "",
+        "comment": "상담날짜",
         "dataType": "DATE",
         "default": "",
         "options": 8,
@@ -2910,7 +2914,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1771470250541,
+          "updateAt": 1771549362453,
           "createAt": 1771470163737
         }
       },
@@ -2918,7 +2922,7 @@
         "id": "UqoFK-15koZyTYhgAzwWo",
         "tableId": "fimuexpqOZxLIftQDzjzw",
         "name": "RESERVATION_TIME",
-        "comment": "",
+        "comment": "예약시간",
         "dataType": "TIMESTAMP",
         "default": "",
         "options": 8,
@@ -2930,7 +2934,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1771470287700,
+          "updateAt": 1771549356363,
           "createAt": 1771470243404
         }
       },
@@ -2938,7 +2942,7 @@
         "id": "dtcL774LDd5Ky5dSH8qkW",
         "tableId": "fimuexpqOZxLIftQDzjzw",
         "name": "CONPLETE_YN",
-        "comment": "",
+        "comment": "상담상태 ",
         "dataType": "CHAR",
         "default": "N",
         "options": 8,
@@ -2950,7 +2954,7 @@
           "widthDefault": 60
         },
         "meta": {
-          "updateAt": 1771470674290,
+          "updateAt": 1771549373321,
           "createAt": 1771470383206
         }
       },
@@ -2992,6 +2996,46 @@
         "meta": {
           "updateAt": 1771483566913,
           "createAt": 1771483493330
+        }
+      },
+      "m74CRanc6gjpejgy-XeHH": {
+        "id": "m74CRanc6gjpejgy-XeHH",
+        "tableId": "uOTDvXWqiQpXkxXxEJP2U",
+        "name": "V_CA",
+        "comment": "영상 카테고리",
+        "dataType": "VARCHAR(50) ",
+        "default": "",
+        "options": 8,
+        "ui": {
+          "keys": 0,
+          "widthName": 60,
+          "widthComment": 77,
+          "widthDataType": 78,
+          "widthDefault": 60
+        },
+        "meta": {
+          "updateAt": 1771548227874,
+          "createAt": 1771548158298
+        }
+      },
+      "6q0FhISvzVlIDqQSOwg76": {
+        "id": "6q0FhISvzVlIDqQSOwg76",
+        "tableId": "5c6bomrWPg6k5bmJH8E65",
+        "name": "COMPLETE_YN",
+        "comment": "상담여부",
+        "dataType": "CHAR",
+        "default": "N",
+        "options": 8,
+        "ui": {
+          "keys": 0,
+          "widthName": 80,
+          "widthComment": 60,
+          "widthDataType": 60,
+          "widthDefault": 60
+        },
+        "meta": {
+          "updateAt": 1771549814251,
+          "createAt": 1771549767361
         }
       }
     },
@@ -3491,8 +3535,8 @@
           "columnIds": [
             "H7fD_Em1mzTSxk8c_6Ep7"
           ],
-          "x": 910.4494,
-          "y": 640.1932,
+          "x": 897.2916,
+          "y": 664.0352,
           "direction": 1
         },
         "meta": {
