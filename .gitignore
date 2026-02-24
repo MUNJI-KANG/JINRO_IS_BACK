@@ -2,3 +2,5 @@
 venv
 activate_kclass.bat
 ERD
+node_modules
+__pycache__
