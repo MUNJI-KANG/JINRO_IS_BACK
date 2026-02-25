@@ -1,0 +1,115 @@
+/* 기본 여백 제거 및 화면 꽉 차게 설정 */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: sans-serif;
+
+}
+
+/* 1. 전체 화면 레이아웃 (상/하 분할로 변경) */
+.layout-container {
+  display: flex;
+  flex-direction: column;
+  /* 너비 제한 및 가운데 정렬 */
+  max-width: 1500px;  /* 화면 최대 너비 (원하시는 대로 조절하세요) */
+  margin: 0 auto;     /* 좌우 여백을 똑같이 나눠가져 가운데로 옵니다 */
+  
+  height: 100vh;
+  background-color: #fff; /* 콘텐츠 영역은 흰색으로 유지 */
+  border-left: 1px solid #eaeaea;  /* 왼쪽 선 */
+  border-right: 1px solid #eaeaea; /* 오른쪽 선 */
+}
+
+/* 상단바 디자인 */
+.header {
+  height: 100px;
+  border-bottom: 1px solid #eaeaea;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 80px; 
+}
+
+.logo-box {
+  border: 1px solid #000;
+  padding: 5px 15px;
+  font-weight: bold;
+}
+
+.logout-btn {
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* 2. 하단 영역 묶음 (사이드바 + 메인 콘텐츠) */
+.content-wrapper {
+  display: flex;
+  flex: 1; /* 헤더를 제외한 나머지 화면 높이를 꽉 채움 */
+}
+
+/* 좌측 사이드바 디자인 */
+.sidebar {
+  width: 200px;
+  border-right: 1px solid #eaeaea;
+  padding-top: 20px; 
+  text-align: center;
+}
+
+.sidebar-menu {
+  list-style: none;
+}
+
+.sidebar-menu li {
+  padding: 15px 20px;
+  cursor: pointer;
+  color: #333;
+}
+
+.sidebar-menu li:hover {
+  background-color: #f5f5f5;
+}
+
+/* 메인 콘텐츠 영역 디자인 */
+.content-area {
+  padding: 30px;
+  flex: 1; /* 우측 빈 공간 전체 차지 */
+}
+
+.content-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+/* 회색 일정관리 박스 디자인 */
+.schedule-box {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 50px 0;
+  text-align: center;
+  color: #666;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 푸터 */
+.footer {
+  height: 80px; /* 푸터 높이 */
+  border-top: 1px solid #eaeaea;
+  display: flex;
+  justify-content: center; /* 가로 가운데 정렬 */
+  align-items: center;     /* 세로 가운데 정렬 */
+  background-color: #fff;
+  color: #888;            /* 글자 색상을 약간 연하게 */
+  font-size: 14px;
+}
+
+.footer-content {
+  text-align: center;      /* 두 줄의 텍스트를 가운데 정렬 */
+  line-height: 1.6;        /* 줄 간격 조절 */
+}
