@@ -131,3 +131,78 @@
   transform: translateY(-2px);
   transition: all 0.2s ease;
 }
+
+/* =========================
+   소분류 (영상 카드)
+========================= */
+
+.small-grid {
+  flex: 1; /* ⭐ 내부에서 공간 채우기 */
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  margin-top: 30px;
+}
+
+.video-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e5e5e5;
+  padding: 20px;
+  transition: 0.2s;
+  cursor: pointer;
+}
+
+.video-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+
+.card-info h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.card-info p {
+  font-size: 14px;
+  color: #666;
+}
+
+/* =========================
+   추가 버튼
+========================= */
+
+.add-btn-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto; /* ⭐ 맨 아래로 밀어버림 */
+}
+
+.add-btn {
+  padding: 10px 24px;
+  font-size: 14px;
+  border-radius: 10px;
+  border: none;
+  background: #f6a13d;
+  color: #fff;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.add-btn:hover {
+  background: #e28d2c;
+}
+
+/* 콘텐츠 박스 고정 영역 */
+.content-fixed-box {
+  background: #f4f6f9;
+  padding: 40px;
+  border-radius: 16px;
+
+  /* ⭐ 이게 핵심 */
+  min-height: 600px;
+
+  display: flex;
+  flex-direction: column;
+}

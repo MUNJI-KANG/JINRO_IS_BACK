@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Layout from "../../common/Layout";
 import "../../../css/counselor_css/Category.css";
 
@@ -118,9 +118,26 @@ const midCategoryMap = {
   24: ["농업", "축산", "임업", "어업"],
 };
 
+/** =========================
+ * 3) 소분류 데이터 (추가됨)
+ * ========================= */
+const smallCategoryMap = {
+  "2-기획사무": [
+    { id: 1, title: "영상 1", duration: "5:30" },
+    { id: 2, title: "영상 2", duration: "6:10" },
+    { id: 3, title: "영상 3", duration: "8:30" },
+    { id: 4, title: "영상 4", duration: "10:10" },
+    { id: 5, title: "영상 5", duration: "20:30" },
+    { id: 6, title: "영상 6", duration: "17:10" },
+  ],
+};
+
 export default function CCatList() {
-  // null이면 대분류 화면, 숫자면 중분류 화면
+  const navigate = useNavigate();
   const [selectedBigId, setSelectedBigId] = useState(null);
+
+  // ✅ 추가된 state
+  const [selectedMidName, setSelectedMidName] = useState(null);
 
   const selectedBig = useMemo(() => {
     if (selectedBigId == null) return null;
@@ -132,15 +149,19 @@ export default function CCatList() {
     return midCategoryMap[selectedBigId] || [];
   }, [selectedBigId]);
 
+  // ✅ 추가된 소분류 계산
+  const smallCategories = useMemo(() => {
+    if (!selectedBigId || !selectedMidName) return [];
+    return smallCategoryMap[`${selectedBigId}-${selectedMidName}`] || [];
+  }, [selectedBigId, selectedMidName]);
+
   return (
       <div className="counselor-category-page">
-        {/* ======================
-            1) 대분류 화면
-        ====================== */}
+
+        {/* 1) 대분류 */}
         {selectedBigId == null && (
           <>
             <h2 className="page-title">카테고리 선택</h2>
-
             <div className="category-grid">
               {bigCategories.map((cat) => {
                 const Icon = cat.icon;
@@ -149,7 +170,10 @@ export default function CCatList() {
                     key={cat.id}
                     type="button"
                     className="category-card category-card-btn"
-                    onClick={() => setSelectedBigId(cat.id)}
+                    onClick={() => {
+                      setSelectedBigId(cat.id);
+                      setSelectedMidName(null); // 초기화 추가
+                    }}
                   >
                     <Icon className="category-icon" />
                     <div className="category-text">
@@ -162,41 +186,83 @@ export default function CCatList() {
           </>
         )}
 
-        {/* ======================
-            2) 중분류 화면
-        ====================== */}
-        {selectedBigId != null && selectedBig && (
+        {/* 2) 중분류 */}
+        {selectedBigId != null && selectedMidName == null && (
           <>
             <div className="page-header-row">
               <button
                 type="button"
                 className="back-btn"
-                onClick={() => setSelectedBigId(null)}
+                onClick={() => {
+                  setSelectedBigId(null);
+                  setSelectedMidName(null);
+                }}
               >
                 <ArrowLeft size={18} />
                 대분류로
               </button>
 
-              <h2 className="page-title" style={{ marginBottom: 0 }}>
+              <h2 className="page-title">
                 {String(selectedBig.id).padStart(2, "0")}. {selectedBig.name}
               </h2>
             </div>
 
             <div className="mid-grid">
               {midCategories.map((midName, idx) => (
-                <Link
+                <button
                   key={`${selectedBigId}-${midName}-${idx}`}
-                  to={`/counselor/category/${selectedBigId}/mid/${encodeURIComponent(
-                    midName
-                  )}`}
                   className="mid-card"
+                  onClick={() => setSelectedMidName(midName)} // ✅ 추가
                 >
                   {midName}
-                </Link>
+                </button>
               ))}
             </div>
           </>
         )}
+
+        {/* 3) 소분류 (추가됨) */}
+        {selectedMidName != null && (
+          <>
+            <div className="page-header-row">
+              <button
+                type="button"
+                className="back-btn"
+                onClick={() => setSelectedMidName(null)}
+              >
+                <ArrowLeft size={18} />
+                중분류로
+              </button>
+
+              <h2 className="page-title"> {String(selectedBig.id).padStart(2, "0")}. {selectedBig.name} &gt; {selectedMidName} </h2>
+            </div>
+
+            {/* ⭐ 카드 영역만 감싸기 */}
+            <div className="content-fixed-box">
+            <div className="small-grid">
+                {smallCategories.map((item) => (
+                <div key={item.id} className="video-card">
+                    <div className="card-info">
+                    <h4>{item.title}</h4>
+                    <p>재생시간: {item.duration}</p>
+                    </div>
+                </div>
+                ))}
+            </div>
+            </div>
+
+            {/* ⭐ 버튼은 박스 밖 */}
+            <div className="add-btn-wrapper outside">
+            <button
+                className="add-btn"
+                onClick={() => navigate("/counselor/category/write")}
+            >
+                추가
+            </button>
+            </div>
+          </>
+        )}
+
       </div>
   );
 }

@@ -12,8 +12,8 @@ function Sidebar() {
           <Link to="/counselor/scheduler">일정관리</Link>
         </li>
 
-        <li>
-          카테고리
+        <li className={location.pathname === "/counselor/category/list" ? "active" : ""}>
+          <Link to="/counselor/category/list">카테고리</Link>
         </li>
 
         <li className={location.pathname === "/counselor/students" ? "active" : ""}>
