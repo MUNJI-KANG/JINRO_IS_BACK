@@ -2,10 +2,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 
 // common
-// import Header from "./pages/common/Header";
+import Header from "./pages/common/Header";
 // import Footer from "./pages/common/Footer";
 // import Home from "./pages/common/Home";
-// import Layout from "./pages/common/Layout";
+import Layout from "./pages/common/Layout";
+import Sidebar from "./pages/common/Sidebar";
 
 // // counselor
 // import CLogin from "./pages/counselor/CLogin";
@@ -40,7 +41,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* 공통 레이아웃 */}
-        {/* <Route path="/" element={<Layout />}> */}
+        <Route path="/" element={<Layout />} />
           {/* <Route index element={<Home />} /> */}
           {/* <Route path="/counselor/scheduler" element={<CScheduler />} /> */}
           {/* <Route path="/counselor/students" element={<CStudentList />} /> */}
@@ -73,5 +74,4 @@ function App() {
   );
 }
 
-export default App;
 export default App;
