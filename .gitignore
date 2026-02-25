@@ -4,3 +4,5 @@ activate_kclass.bat
 ERD
 node_modules
 __pycache__
+
+**/package-lock.json
