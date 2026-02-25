@@ -1,8 +1,8 @@
-import React from "react";
 import { Outlet } from "react-router-dom";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
+
 
 import "../../css/common_css/base.css";
 
@@ -16,7 +16,7 @@ function Layout() {
 
         <div className="main-container">
           <main className="content-area">
-            <Outlet /> 
+            <Outlet/>
           </main>
         </div>
       </div>

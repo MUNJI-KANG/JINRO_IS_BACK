@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-
 // common
 import Header from "./pages/common/Header";
 // import Footer from "./pages/common/Footer";
@@ -20,7 +19,7 @@ import CScheduler from "./pages/counselor/CScheduler";
 
 // import CCounseling from "./pages/counselor/c_report/CCounseling";
 // import CCounselingAI from "./pages/counselor/c_report/CCounselingAI";
-// import CFinal from "./pages/counselor/c_report/CFinal";
+import CFinal from "./pages/counselor/c_report/CFinal";
 // import CVideoAI from "./pages/counselor/c_report/CVideoAI";
 
 // // student
@@ -54,15 +53,15 @@ function App() {
           {/* <Route path="counselor/category/list" element={<CCatList />} /> */}
           {/* <Route path="counselor/category/write" element={<CCatWrite />} /> */}
 
+          {/* <Route path="counselor/report/counseling" element={<CCounseling />} /> */}
+          {/* <Route path="counselor/report/ai" element={<CCounselingAI />} /> */}
+          <Route path="counselor/report/final" element={<CFinal />} />
+          {/* <Route path="counselor/report/video" element={<CVideoAI />} /> */}
         </Route>
 
         {/* <Route index element={<Home />} /> */}
 
         {/* counselor */}
-        {/* <Route path="/counselor/report/counseling" element={<CCounseling />} /> */}
-        {/* <Route path="/counselor/report/ai" element={<CCounselingAI />} /> */}
-        {/* <Route path="/counselor/report/final" element={<CFinal />} /> */}
-        {/* <Route path="/counselor/report/video" element={<CVideoAI />} /> */}
 
         {/* student */}
         <Route path="/student/login" element={<SLogin />} />
