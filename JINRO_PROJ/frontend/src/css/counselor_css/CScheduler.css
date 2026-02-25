@@ -48,7 +48,7 @@
   color: #888;
 }
 
-/* FullCalendar wrapper 안정화 */
+/* FullCalendar 안정화 */
 .fc {
   width: 100%;
 }
@@ -66,33 +66,132 @@
   cursor: pointer;
 }
 
-/* 선택 날짜 */
-.fc .fc-daygrid-day.selected-day {
-  background-color: var(--secondary);
-}
-
-.fc .fc-daygrid-day.selected-day .fc-daygrid-day-number {
-  color: #fff;
-  font-weight: 600;
-}
-
 /* 기본 today 배경 제거 */
 .fc .fc-daygrid-day.fc-day-today {
   background: none;
 }
 
-/* 날짜 내부 정렬 */
-.day-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+/* ===== dialog 모달 ===== */
+
+.custom-dialog {
+  width: 700px;
+  max-width: 90%;
+  border: none;
+  border-radius: 14px;
+  padding: 30px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+
+  margin: auto;                 /* 🔥 가운데 정렬 핵심 */
 }
 
-.today-label {
-  margin-top: 2px;
-  font-size: 9px;
-  background: var(--primary);
-  color: #fff;
-  padding: 2px 6px;
+/* 배경 어둡게 */
+.custom-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.dialog-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.dialog-search {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dialog-card {
+  border: 1px solid #eaeaea;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+
+.selectable {
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.selectable:hover {
+  background: #eef6ff;
+}
+
+.time-student-box {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+  font-size: 18px;
+}
+
+.student-badge {
+  background: #a7c7e7;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.time-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.time-btn {
+  padding: 12px;
+  border: 1px solid #ccc;
   border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.time-btn.active {
+  border: 2px solid #000;
+  font-weight: bold;
+}
+
+.time-footer {
+  display: flex;
+  justify-content: space-between;
+}
+
+.back-btn {
+  background: #ddd;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.submit-btn {
+  background: var(--accent);
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.submit-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }
