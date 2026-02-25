@@ -1,0 +1,197 @@
+.scheduler-container {
+  display: flex;
+  gap: 30px;
+  height: 100%;
+  align-items: flex-start;
+}
+
+.calendar-section {
+  width: 40%;
+  min-width: 400px;
+}
+
+.list-section {
+  width: 60%;
+  background: #fff;
+  border: 1px solid #eaeaea;
+  border-radius: 10px;
+  padding: 20px;
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.add-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.add-btn:hover {
+  opacity: 0.9;
+}
+
+.empty-box {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #888;
+}
+
+/* FullCalendar 안정화 */
+.fc {
+  width: 100%;
+}
+
+.fc .fc-toolbar {
+  margin-bottom: 10px;
+}
+
+.fc .fc-daygrid-day {
+  transition: background-color 0.2s ease;
+}
+
+.fc .fc-daygrid-day:hover {
+  background-color: rgba(255, 180, 84, 0.2);
+  cursor: pointer;
+}
+
+/* 기본 today 배경 제거 */
+.fc .fc-daygrid-day.fc-day-today {
+  background: none;
+}
+
+/* ===== dialog 모달 ===== */
+
+.custom-dialog {
+  width: 700px;
+  max-width: 90%;
+  border: none;
+  border-radius: 14px;
+  padding: 30px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+
+  margin: auto;                 /* 🔥 가운데 정렬 핵심 */
+}
+
+/* 배경 어둡게 */
+.custom-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.dialog-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.dialog-search {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dialog-card {
+  border: 1px solid #eaeaea;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f9f9f9;
+}
+
+.selectable {
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.selectable:hover {
+  background: #eef6ff;
+}
+
+.time-student-box {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+  font-size: 18px;
+}
+
+.student-badge {
+  background: #a7c7e7;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.time-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.time-btn {
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.time-btn.active {
+  border: 2px solid #000;
+  font-weight: bold;
+}
+
+.time-footer {
+  display: flex;
+  justify-content: space-between;
+}
+
+.back-btn {
+  background: #ddd;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.submit-btn {
+  background: var(--accent);
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.submit-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}

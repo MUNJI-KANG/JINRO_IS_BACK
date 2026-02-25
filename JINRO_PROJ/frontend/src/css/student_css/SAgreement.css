@@ -1,0 +1,109 @@
+/* 전체 배경 */
+.agreement-page {
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 중앙 박스 */
+.agreement-container {
+  width: 600px;
+  background: #fff;
+  padding: 40px 36px;
+  border-radius: 16px;
+  border: 1px solid #eaeaea;
+}
+
+/* 이전으로 */
+.back-btn {
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.back-btn:hover {
+  color: var(--primary);
+}
+
+
+/* 제목 */
+.title {
+  text-align: center;
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+/* 부제목 */
+.subtitle {
+  text-align: center;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+/* 동의 카드 */
+.agree-card {
+  border: 1px solid #eaeaea;
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  background: #fafafa;
+}
+
+.agree-card h4 {
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.agree-card p {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+}
+
+/* 체크박스 */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+/* 안내 박스 */
+.warning-box {
+  background: #fff8e6;
+  border: 1px solid var(--accent);
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #92400e;
+  margin-top: 18px;
+}
+
+/* 시작 버튼 */
+.start-btn {
+  width: 100%;
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 16px;
+  border: none;
+}
+
+/* 비활성 */
+.start-btn.disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+}
+
+/* 활성 */
+.start-btn.active {
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+}

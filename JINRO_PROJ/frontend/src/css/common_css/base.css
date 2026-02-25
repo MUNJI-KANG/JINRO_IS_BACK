@@ -1,13 +1,24 @@
 /* 기본 여백 제거 및 화면 꽉 차게 설정 */
+
+:root{
+  --primary:#5B7DB1;
+  --secondary:#4FBF9F;
+  --accent:#FFB454;
+  --bg:#F8F6F2;
+  --text:#2F2F3A;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-body {
-  font-family: sans-serif;
-
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Noto Sans KR", sans-serif;
 }
 
 /* 1. 전체 화면 레이아웃 (상/하 분할로 변경) */
@@ -53,10 +64,12 @@ body {
 
 /* 좌측 사이드바 디자인 */
 .sidebar {
-  width: 200px;
+  width: 220px;
+  min-width: 220px;    
+  flex-shrink: 0;       
   border-right: 1px solid #eaeaea;
-  padding-top: 20px; 
-  text-align: center;
+  padding-top: 20px;
+  text-align: left;
 }
 
 .sidebar-menu {
@@ -67,6 +80,7 @@ body {
   padding: 15px 20px;
   cursor: pointer;
   color: #333;
+  white-space: nowrap
 }
 
 .sidebar-menu li:hover {
@@ -112,4 +126,22 @@ body {
 .footer-content {
   text-align: center;      /* 두 줄의 텍스트를 가운데 정렬 */
   line-height: 1.6;        /* 줄 간격 조절 */
+}
+
+.navbar{
+  background:var(--primary);
+  color:#fff;
+}
+
+.card-selected{
+  background:var(--secondary);
+  color:#fff;
+}
+
+.btn{
+  background:var(--accent);
+  color:#fff;
+  border:none;
+  padding:10px 18px;
+  border-radius:10px;
 }
