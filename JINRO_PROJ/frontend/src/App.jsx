@@ -9,7 +9,7 @@ import Layout from "./pages/common/Layout";
 import Sidebar from "./pages/common/Sidebar";
 
 // // counselor
-// import CLogin from "./pages/counselor/CLogin";
+import CLogin from "./pages/counselor/CLogin";
 // import CInfoEdit from "./pages/counselor/CInfoEdit";
 // import CScheduler from "./pages/counselor/CScheduler";
 // import CStudentList from "./pages/counselor/CStudentList";
@@ -41,8 +41,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* 공통 레이아웃 */}
-        <Route path="/" element={<Layout />} />
-          {/* <Route index element={<Home />} /> */}
+        {/* <Route path="/" element={<Layout />}> */}
           {/* <Route path="/counselor/scheduler" element={<CScheduler />} /> */}
           {/* <Route path="/counselor/students" element={<CStudentList />} /> */}
           {/* <Route path="/counselor/info" element={<CInfoEdit />} /> */}
@@ -50,8 +49,9 @@ function App() {
           {/* <Route path="/counselor/category/write" element={<CCatWrite />} /> */}
         {/* </Route> */}
 
+        {/* <Route index element={<Home />} /> */}
         {/* counselor */}
-        {/* <Route path="/counselor/login" element={<CLogin />} /> */}
+        <Route path="/counselor/login" element={<CLogin />} />
         {/* <Route path="/counselor/report/counseling" element={<CCounseling />} /> */}
         {/* <Route path="/counselor/report/ai" element={<CCounselingAI />} /> */}
         {/* <Route path="/counselor/report/final" element={<CFinal />} /> */}
