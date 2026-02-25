@@ -32,7 +32,7 @@ import SLogin from "./pages/student/SLogin";
 // import SVideo from "./pages/student/SVideo";
 
 import SBigCat from "./pages/student/s_category/SBigCat";
-// import SCheckout from "./pages/student/s_category/SCheckout";
+import SCheckout from "./pages/student/s_category/SCheckout";
 import SMedCat from "./pages/student/s_category/SMedCat";
 // import SSmallCat from "./pages/student/s_category/SSmallCat";
 
@@ -73,7 +73,7 @@ function App() {
         {/* <Route path="/student/loading" element={<SLoading />} /> */}
 
         <Route path="/student/category/big" element={<SBigCat />} />
-        {/* <Route path="/student/category/checkout" element={<SCheckout />} /> */}
+        <Route path="/student/category/checkout" element={<SCheckout />} />
         <Route path="/student/category/medium" element={<SMedCat />} />
         {/* <Route path="/student/category/small" element={<SSmallCat />} /> */}
 
