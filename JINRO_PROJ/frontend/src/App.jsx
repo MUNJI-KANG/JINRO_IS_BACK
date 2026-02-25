@@ -11,7 +11,7 @@ import Sidebar from "./pages/common/Sidebar";
 // // counselor
 import CLogin from "./pages/counselor/CLogin";
 // import CInfoEdit from "./pages/counselor/CInfoEdit";
-// import CScheduler from "./pages/counselor/CScheduler";
+import CScheduler from "./pages/counselor/CScheduler";
 // import CStudentList from "./pages/counselor/CStudentList";
 
 // import CCatDetail from "./pages/counselor/c_category/CCatDetail";
@@ -40,18 +40,25 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+
+        {/* counselor 로그인 (레이아웃 없이) */}
+        <Route path="/counselor/login" element={<CLogin />} />
+
         {/* 공통 레이아웃 */}
-        {/* <Route path="/" element={<Layout />}> */}
-          {/* <Route path="/counselor/scheduler" element={<CScheduler />} /> */}
-          {/* <Route path="/counselor/students" element={<CStudentList />} /> */}
-          {/* <Route path="/counselor/info" element={<CInfoEdit />} /> */}
-          {/* <Route path="/counselor/category/list" element={<CCatList />} /> */}
-          {/* <Route path="/counselor/category/write" element={<CCatWrite />} /> */}
-        {/* </Route> */}
+        <Route path="/" element={<Layout />}>
+          {/* <Route index element={<Home />} /> */}
+          
+          <Route path="counselor/scheduler" element={<CScheduler />} />
+          {/* <Route path="counselor/students" element={<CStudentList />} /> */}
+          {/* <Route path="counselor/info" element={<CInfoEdit />} /> */}
+          {/* <Route path="counselor/category/list" element={<CCatList />} /> */}
+          {/* <Route path="counselor/category/write" element={<CCatWrite />} /> */}
+
+        </Route>
 
         {/* <Route index element={<Home />} /> */}
+
         {/* counselor */}
-        <Route path="/counselor/login" element={<CLogin />} />
         {/* <Route path="/counselor/report/counseling" element={<CCounseling />} /> */}
         {/* <Route path="/counselor/report/ai" element={<CCounselingAI />} /> */}
         {/* <Route path="/counselor/report/final" element={<CFinal />} /> */}
@@ -69,6 +76,7 @@ function App() {
         {/* <Route path="/student/category/checkout" element={<SCheckout />} /> */}
         {/* <Route path="/student/category/medium" element={<SMedCat />} /> */}
         {/* <Route path="/student/category/small" element={<SSmallCat />} /> */}
+
       </Routes>
     </BrowserRouter>
 
