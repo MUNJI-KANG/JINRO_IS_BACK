@@ -2,8 +2,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 // common
 import Header from "./pages/common/Header";
-// import Footer from "./pages/common/Footer";
-// import Home from "./pages/common/Home";
+import Footer from "./pages/common/Footer";
+import Home from "./pages/common/Home";
 import Layout from "./pages/common/Layout";
 import Sidebar from "./pages/common/Sidebar";
 
@@ -14,7 +14,7 @@ import CScheduler from "./pages/counselor/CScheduler";
 import CStudentList from "./pages/counselor/CStudentList";
 
 // import CCatDetail from "./pages/counselor/c_category/CCatDetail";
-// import CCatList from "./pages/counselor/c_category/CCatList";
+import CCatList from "./pages/counselor/c_category/CCatList";
 import CCatWrite from "./pages/counselor/c_category/CCatWrite";
 
 // import CCounseling from "./pages/counselor/c_report/CCounseling";
@@ -50,7 +50,7 @@ function App() {
           <Route path="counselor/scheduler" element={<CScheduler />} />
           <Route path="counselor/students" element={<CStudentList />} />
           {/* <Route path="counselor/info" element={<CInfoEdit />} /> */}
-          {/* <Route path="counselor/category/list" element={<CCatList />} /> */}
+          <Route path="counselor/category/list" element={<CCatList />} />
           <Route path="counselor/category/write" element={<CCatWrite />} />
 
           {/* <Route path="counselor/report/counseling" element={<CCounseling />} /> */}

@@ -1,0 +1,133 @@
+.counselor-category-page {
+  padding: 40px;
+  width: 100%;
+  background: #f8fafc;
+}
+
+.page-title {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 30px;
+  color: #111827;
+}
+
+/* 4열 고정 */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 20px;
+}
+
+/* 카드 */
+.category-card {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 30px 10px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  text-decoration: none;
+  transition: all 0.2s ease;
+  min-height: 130px;
+}
+
+.category-card:hover {
+  background: #eef2ff;
+  border-color: #3b82f6;
+  transform: translateY(-3px);
+}
+
+/* 아이콘 */
+.category-icon {
+  width: 42px;
+  height: 42px;
+  color: #3b82f6;
+  margin-bottom: 10px;
+}
+
+/* 텍스트 */
+.category-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* ===== 중분류 전환 UI ===== */
+
+.page-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.back-btn:hover {
+  background: #f3f4f6;
+}
+
+/* Link 대신 button으로도 카드 동일 스타일 */
+.category-card-btn {
+  width: 100%;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.category-card-btn:hover {
+  border-color: #3b82f6;
+  background-color: #f0f7ff;
+  transform: translateY(-2px);
+}
+
+/* 중분류 카드 그리드 */
+.mid-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 사진처럼 4개 정도면 4 */
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.mid-card {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+
+  width: 200px;
+  min-height: 140px;          /* ✅ 카드 높이 증가 */
+  font-size: 18px;            /* ✅ 글자 키움 */
+  font-weight: 700;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text-decoration: none;
+  color: #111827;
+  font-weight: 600;
+}
+
+.mid-card:hover {
+  background: #eef2ff;
+  border-color: #3b82f6;
+  transform: translateY(-2px);
+  transition: all 0.2s ease;
+}

@@ -29,7 +29,7 @@ body{
   max-width: 1500px;  /* 화면 최대 너비 (원하시는 대로 조절하세요) */
   margin: 0 auto;     /* 좌우 여백을 똑같이 나눠가져 가운데로 옵니다 */
   
-  /* height: 100vh; */
+  min-height: 100vh;
   background-color: #fff; /* 콘텐츠 영역은 흰색으로 유지 */
   border-left: 1px solid #eaeaea;  /* 왼쪽 선 */
   border-right: 1px solid #eaeaea; /* 오른쪽 선 */
@@ -38,6 +38,7 @@ body{
 /* 상단바 디자인 */
 .header {
   height: 100px;
+  flex-shrink: 0; /* 헤더가 찌그러지지 않게 고정 */
   border-bottom: 1px solid #eaeaea;
   display: flex;
   justify-content: space-between;

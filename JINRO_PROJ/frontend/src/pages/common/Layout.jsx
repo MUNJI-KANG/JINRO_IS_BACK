@@ -6,7 +6,8 @@ import Footer from "./Footer";
 
 import "../../css/common_css/base.css";
 
-function Layout() {
+// props에서 children을 받아옵니다.
+function Layout({ children }) {
   return (
     <div className="layout-container">
       <Header />
@@ -16,7 +17,7 @@ function Layout() {
 
         <div className="main-container">
           <main className="content-area">
-            <Outlet/>
+            {children ? children : <Outlet />}
           </main>
         </div>
       </div>
