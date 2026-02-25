@@ -28,7 +28,7 @@ import SAgreement from "./pages/student/SAgreement";
 // import SLoading from "./pages/student/SLoading";
 import SLogin from "./pages/student/SLogin";
 // import SSurvey from "./pages/student/SSurvey";
-// import SVideo from "./pages/student/SVideo";
+import SVideo from "./pages/student/SVideo";
 
 import SBigCat from "./pages/student/s_category/SBigCat";
 import SCheckout from "./pages/student/s_category/SCheckout";
@@ -67,7 +67,7 @@ function App() {
         {/* student */}
         <Route path="/student/login" element={<SLogin />} />
         {/* <Route path="/student/survey" element={<SSurvey />} /> */}
-        {/* <Route path="/student/video" element={<SVideo />} /> */}
+        <Route path="/student/video" element={<SVideo />} />
         <Route path="/student/agreement" element={<SAgreement />} />
         {/* <Route path="/student/complete" element={<SComplete />} /> */}
         {/* <Route path="/student/loading" element={<SLoading />} /> */}

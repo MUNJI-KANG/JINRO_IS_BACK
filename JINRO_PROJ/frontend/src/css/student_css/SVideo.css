@@ -1,0 +1,87 @@
+.svideo-page {
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 60px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+
+
+/* 분석 상태 */
+.analysis-status {
+  width: 80%;
+  max-width: 1000px;
+  font-size: 14px;
+  color: #444;
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  background: red;
+  border-radius: 50%;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0.3; }
+  100% { opacity: 1; }
+}
+
+/* 영상 영역 */
+.video-wrapper {
+  width: 80%;
+  max-width: 1000px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 30px;
+  border: 1px solid #eaeaea;
+  position: relative;
+}
+
+.video-order-badge {
+  position: absolute;
+  top: -15px;
+  left: -15px;
+  width: 35px;
+  height: 35px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.video-title {
+  margin-top: 20px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* 하단 버튼 */
+.svideo-bottom {
+  margin-top: 50px;
+}
+
+.next-session {
+  padding: 12px 50px;
+  border-radius: 10px;
+  border: none;
+  background: #d1d5db;
+  font-size: 15px;
+}
+
+.next-session.active {
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+}
