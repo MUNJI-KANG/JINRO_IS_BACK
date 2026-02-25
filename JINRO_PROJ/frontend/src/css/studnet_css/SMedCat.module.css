@@ -95,6 +95,17 @@
   transform: translateY(-2px);
 }
 
+.selectedListContainer {
+    width: 900px;
+    background-color: white;
+}
+
+.listWrapper {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
 .selectedList {
   background: white;
   border: 1px solid #eee;

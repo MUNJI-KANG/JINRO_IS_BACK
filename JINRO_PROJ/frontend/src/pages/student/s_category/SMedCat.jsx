@@ -70,7 +70,7 @@ function SMedCat() {
                 <h3 className={styles.listTitle}>선택된 영상</h3>
                 <div className={styles.listWrapper}>
                     {selectedVideos.map((video) => (
-                        <VideoCard video={video} handleDelete={handleDelete}/>
+                        <VideoCard key={video.id} video={video} handleDelete={handleDelete}/>
                     ))}
                 </div>
             </div>
