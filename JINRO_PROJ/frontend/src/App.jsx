@@ -12,7 +12,7 @@ import Sidebar from "./pages/common/Sidebar";
 import CLogin from "./pages/counselor/CLogin";
 // import CInfoEdit from "./pages/counselor/CInfoEdit";
 import CScheduler from "./pages/counselor/CScheduler";
-// import CStudentList from "./pages/counselor/CStudentList";
+import CStudentList from "./pages/counselor/CStudentList";
 
 // import CCatDetail from "./pages/counselor/c_category/CCatDetail";
 // import CCatList from "./pages/counselor/c_category/CCatList";
@@ -47,9 +47,10 @@ function App() {
         {/* 공통 레이아웃 */}
         <Route path="/" element={<Layout />}>
           {/* <Route index element={<Home />} /> */}
-          
+          {/* 로그인 후 진입시 바로 scheduler 화면 보여줌 */}
+          <Route index element={<CScheduler />} />
           <Route path="counselor/scheduler" element={<CScheduler />} />
-          {/* <Route path="counselor/students" element={<CStudentList />} /> */}
+          <Route path="counselor/students" element={<CStudentList />} />
           {/* <Route path="counselor/info" element={<CInfoEdit />} /> */}
           {/* <Route path="counselor/category/list" element={<CCatList />} /> */}
           {/* <Route path="counselor/category/write" element={<CCatWrite />} /> */}
