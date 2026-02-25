@@ -1,0 +1,129 @@
+.analysis-page-container {
+    width: 1200px;
+    /* 📍 화면 폭에 맞게 시원하게 펼치되, 너무 과하게 퍼지지 않도록 최대치 고정 */
+    /* max-width: 1400px;  */
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    padding: 20px 40px;
+    box-sizing: border-box;
+}
+
+.analysis-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.video-wrap {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* 리포트 카드 박스 */
+.report-card {
+    background: #fff;
+    border: 3px solid #000; /* 기획안처럼 굵은 테두리 */
+    border-radius: 25px;
+    padding: 40px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* 📍 내부 그래프 그리드: 가로로 넓게 2열 배치 */
+.inner-graph-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 30px;
+    padding-bottom: 30px;
+    border-bottom: 2px solid #eee;
+}
+
+.chart-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+/* 분석 요약 박스 */
+.analysis-summary-box {
+    position: relative;
+    padding-top: 10px;
+}
+
+.analysis-text {
+    font-size: 20px;
+    line-height: 1.8;
+    color: #333;
+    margin: 0;
+}
+
+/* 📍 영상보기 버튼 소형화 */
+.video-btn-wrap {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
+.btn-video-small {
+    border: 2px solid #000;
+    background: #fff;
+    padding: 5px 20px; /* 크기 축소 */
+    border-radius: 10px;
+    font-size: 14px; /* 글자 크기 축소 */
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* 메모 영역 */
+.report-label {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.prompt-textarea {
+    width: 100%;
+    min-height: 150px;
+    border: none;
+    background-color: #F8F6F2;
+    border-radius: 15px;
+    padding: 25px;
+    font-size: 18px;
+    line-height: 1.6;
+    resize: vertical;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+/* 하단 버튼 */
+.report-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 20px;
+}
+
+.btn-sub, .btn-main {
+    border: 3px solid #000;
+    border-radius: 15px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.btn-sub {
+    background: #fff;
+    padding: 12px 40px;
+    font-size: 20px;
+}
+
+.btn-main {
+    background: #D1E7FF;
+    padding: 12px 60px;
+    font-size: 22px;
+}
