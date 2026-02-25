@@ -20,7 +20,7 @@ import CCatWrite from "./pages/counselor/c_category/CCatWrite";
 // import CCounseling from "./pages/counselor/c_report/CCounseling";
 // import CCounselingAI from "./pages/counselor/c_report/CCounselingAI";
 import CFinal from "./pages/counselor/c_report/CFinal";
-// import CVideoAI from "./pages/counselor/c_report/CVideoAI";
+import CVideoAI from "./pages/counselor/c_report/CVideoAI";
 
 // // student
 import SAgreement from "./pages/student/SAgreement";
@@ -56,7 +56,7 @@ function App() {
           {/* <Route path="counselor/report/counseling" element={<CCounseling />} /> */}
           {/* <Route path="counselor/report/ai" element={<CCounselingAI />} /> */}
           <Route path="counselor/report/final" element={<CFinal />} />
-          {/* <Route path="counselor/report/video" element={<CVideoAI />} /> */}
+          <Route path="counselor/report/video" element={<CVideoAI />} />
         </Route>
 
         {/* <Route index element={<Home />} /> */}
