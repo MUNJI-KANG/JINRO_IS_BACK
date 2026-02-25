@@ -28,8 +28,8 @@ import {
   Leaf
 } from "lucide-react";
 
-import MidCategory from "./SMedCat";
-import SmallCategory from "./SSmallCat";
+// import MidCategory from "./SMedCat";
+// import SmallCategory from "./SSmallCat";
 
 const categories = [
   { name: "사업관리", icon: Briefcase },
@@ -120,29 +120,6 @@ function SBigCat() {
           </div>
         )}
 
-        {/* ===============================
-           2️⃣ 중분류
-        =============================== */}
-        {selectedBig && !selectedMid && (
-          <MidCategory
-            selectedBig={selectedBig}
-            goBack={() => setSelectedBig(null)}
-            onSelectMid={(mid) => setSelectedMid(mid)}
-            goToBigCategory={goToBigCategory}
-          />
-        )}
-
-        {/* ===============================
-           3️⃣ 소분류
-        =============================== */}
-        {selectedBig && selectedMid && (
-          <SmallCategory
-            selectedMid={selectedMid}
-            goBack={() => setSelectedMid(null)}
-            onSelectVideo={selectVideo}
-            goToBigCategory={goToBigCategory}
-          />
-        )}
 
         {/* ===============================
            선택된 영상 목록
