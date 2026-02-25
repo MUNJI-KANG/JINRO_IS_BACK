@@ -1,0 +1,98 @@
+.scheduler-container {
+  display: flex;
+  gap: 30px;
+  height: 100%;
+  align-items: flex-start;
+}
+
+.calendar-section {
+  width: 40%;
+  min-width: 400px;
+}
+
+.list-section {
+  width: 60%;
+  background: #fff;
+  border: 1px solid #eaeaea;
+  border-radius: 10px;
+  padding: 20px;
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.add-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.add-btn:hover {
+  opacity: 0.9;
+}
+
+.empty-box {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #888;
+}
+
+/* FullCalendar wrapper 안정화 */
+.fc {
+  width: 100%;
+}
+
+.fc .fc-toolbar {
+  margin-bottom: 10px;
+}
+
+.fc .fc-daygrid-day {
+  transition: background-color 0.2s ease;
+}
+
+.fc .fc-daygrid-day:hover {
+  background-color: rgba(255, 180, 84, 0.2);
+  cursor: pointer;
+}
+
+/* 선택 날짜 */
+.fc .fc-daygrid-day.selected-day {
+  background-color: var(--secondary);
+}
+
+.fc .fc-daygrid-day.selected-day .fc-daygrid-day-number {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 기본 today 배경 제거 */
+.fc .fc-daygrid-day.fc-day-today {
+  background: none;
+}
+
+/* 날짜 내부 정렬 */
+.day-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.today-label {
+  margin-top: 2px;
+  font-size: 9px;
+  background: var(--primary);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 10px;
+}

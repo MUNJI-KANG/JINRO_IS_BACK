@@ -64,10 +64,12 @@ body{
 
 /* 좌측 사이드바 디자인 */
 .sidebar {
-  width: 200px;
+  width: 220px;
+  min-width: 220px;    
+  flex-shrink: 0;       
   border-right: 1px solid #eaeaea;
-  padding-top: 20px; 
-  text-align: center;
+  padding-top: 20px;
+  text-align: left;
 }
 
 .sidebar-menu {
@@ -78,6 +80,7 @@ body{
   padding: 15px 20px;
   cursor: pointer;
   color: #333;
+  white-space: nowrap
 }
 
 .sidebar-menu li:hover {
