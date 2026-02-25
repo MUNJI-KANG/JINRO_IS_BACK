@@ -11,7 +11,7 @@ import Sidebar from "./pages/common/Sidebar";
 // // counselor
 import CLogin from "./pages/counselor/CLogin";
 // import CInfoEdit from "./pages/counselor/CInfoEdit";
-// import CScheduler from "./pages/counselor/CScheduler";
+import CScheduler from "./pages/counselor/CScheduler";
 // import CStudentList from "./pages/counselor/CStudentList";
 
 // import CCatDetail from "./pages/counselor/c_category/CCatDetail";
@@ -41,7 +41,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* 공통 레이아웃 */}
-        {/* <Route path="/" element={<Layout />}> */}
+        <Route path="/" element={<Layout />} />
+          {/* <Route index element={<Home />} /> */}
           {/* <Route path="/counselor/scheduler" element={<CScheduler />} /> */}
           {/* <Route path="/counselor/students" element={<CStudentList />} /> */}
           {/* <Route path="/counselor/info" element={<CInfoEdit />} /> */}
