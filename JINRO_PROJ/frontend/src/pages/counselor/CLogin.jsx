@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import '../../css/counselor_css/cLogin.css';
 import '../../css/common_css/base.css';
+import '../../css/counselor_css/cLogin.css';
 
 const CLogin = () =>{
     const [id, setId] = useState('');
@@ -25,7 +25,7 @@ const CLogin = () =>{
     }
 
     return (
-        <div class='c-login-wrap'>
+        <div className='c-login-wrap'>
             <form className='c-login-form' onSubmit={loginHandle}>
                 <h2>상담사 로그인</h2>
                 <p>상담사 인증정보를 입력해주세요</p>
