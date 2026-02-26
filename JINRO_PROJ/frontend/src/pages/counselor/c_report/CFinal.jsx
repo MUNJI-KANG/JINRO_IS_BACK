@@ -19,6 +19,7 @@ import { Link } from 'react-router-dom';
 
 const CFinal = () => {
     const modalRef = useRef();
+    const [studentId, setStudentId] = useState('')
 
     const focusData = [
         { time: '00', value: 60 }, { time: '03', value: 75 }, { time: '06', value: 65 },
@@ -145,12 +146,16 @@ const CFinal = () => {
 
             {/* 하단 분석 버튼들 */}
             <div className="analysis-button-group">
-                <button className="btn-analysis">상담일지 작성</button>
-                <button className="btn-analysis">영상시청 분석</button>
-                <Link to="/counselor/report/video" className="btn-link">
+                <Link to='/counselor/report/counseling'>
+                    <button className="btn-analysis">상담일지 작성</button>
+                </Link>
+                <Link to="/counselor/report/video" state = {{id:studentId}} className="btn-link">
+                    <button className="btn-analysis">영상시청 분석</button>
+                </Link>
+                <Link to="/counselor/report/ai" state = {{id:studentId}} className="btn-link">
                     <button className="btn-analysis">상담영상 분석</button>
                 </Link>
-                <button className="btn-analysis">ai 분석 재요청</button>
+                {/* <button className="btn-analysis">ai 분석 재요청</button> */}
             </div>
 
             <dialog ref={modalRef} className="modal-dialog">

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
+import { Link } from 'react-router-dom';
+
 import styles from '../css/component_css/ReportAi.module.css';
 
 const ReportAi = ({ pageTitle, studentName }) => {
@@ -27,6 +29,7 @@ const ReportAi = ({ pageTitle, studentName }) => {
     const [selectedDate, setSelectedDate] = useState('2026-02-18 (최신)');
     const [prompt, setPrompt] = useState(allData[selectedDate].prompt);
     const currentData = allData[selectedDate];
+    const studentId = useState('');
 
     const handleDateChange = (e) => {
         const newDate = e.target.value;
@@ -95,9 +98,18 @@ const ReportAi = ({ pageTitle, studentName }) => {
                 </section>
             </div>
 
+
             <div className={styles['report-buttons']}>
-                <button className={styles['btn-sub']}>재분석 요청</button>
-                <button className={styles['btn-main']}>최종 리포트에 적용</button>
+                <div className={styles['left-btn-area']}>
+                    <Link to="/counselor/report/final" state={{ studentId: 101 }} className={styles['btn-link']}>
+                        <button className={styles['btn-action-sub']}>뒤로가기</button>
+                    </Link>
+                </div>
+
+                <div className={styles['right-btn-area']}>
+                    <button className={styles['btn-action-sub']}>재분석 요청</button>
+                    <button className={styles['btn-action-main']}>최종 리포트에 적용</button>
+                </div>
             </div>
         </div>
     );

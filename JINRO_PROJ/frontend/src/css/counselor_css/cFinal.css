@@ -169,7 +169,7 @@
     transform: translateY(-3px);
 }
 
-.btn-analysis:last-child {
+/* .btn-analysis:last-child {
     border-color: var(--accent);
     color: var(--accent);
 }
@@ -177,7 +177,7 @@
 .btn-analysis:last-child:hover {
     background: var(--accent);
     color: #fff;
-}
+} */
 
 
 .empty-msg {
