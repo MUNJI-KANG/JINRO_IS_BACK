@@ -1,4 +1,4 @@
-import style from '../../css/studnet_css/SLogin.module.css'
+import style from '../../css/student_css/SLogin.module.css'
 
 const SLogin = () => {
     return (

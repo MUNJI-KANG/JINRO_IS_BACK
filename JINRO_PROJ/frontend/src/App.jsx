@@ -24,7 +24,7 @@ import CVideoAI from "./pages/counselor/c_report/CVideoAI";
 
 // // student
 import SAgreement from "./pages/student/SAgreement";
-// import SComplete from "./pages/student/SComplete";
+import SComplete from "./pages/student/SComplete";
 import SLoading from "./pages/student/SLoading";
 import SLogin from "./pages/student/SLogin";
 import SSurvey from "./pages/student/SSurvey";

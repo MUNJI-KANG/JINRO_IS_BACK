@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import styles from '../../../css/studnet_css/SMedCat.module.css';
+import styles from '../../../css/student_css/SMedCat.module.css';
 import VideoCard from '../../../component/VideoCard';
 
 function SMedCat() {
