@@ -3,15 +3,18 @@ import Webcam from 'react-webcam';
 import { FaceMesh } from '@mediapipe/face_mesh';
 import { Camera } from '@mediapipe/camera_utils';
 
-const FaceMeshComponent = () => {
+const STest = () => {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
   
+  // 영상 녹화를 위한 Ref 추가
+  const mediaRecorderRef = useRef(null);
+  const recordedChunksRef = useRef([]);
+
   const [landmarkDataLog, setLandmarkDataLog] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
   const [cameraStatus, setCameraStatus] = useState("로딩 중...");
 
-  // 핵심 수정: MediaPipe 콜백 함수 안에서 최신 녹화 상태를 읽기 위한 useRef
   const isRecordingRef = useRef(isRecording);
   useEffect(() => {
     isRecordingRef.current = isRecording;
@@ -23,10 +26,10 @@ const FaceMeshComponent = () => {
     });
 
     faceMesh.setOptions({
-      maxNumFaces: 1,
-      refineLandmarks: true, // 홍채 포함 여부
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5,
+      maxNumFaces: 1, // 사람 얼굴 인식 개수
+      refineLandmarks: true, // 홍채 및 입술 정밀 추적
+      minDetectionConfidence: 0.5, // 사람인식 수준 (0 ~ 1) , 너무 높으면 조명하나로도 사람인식 못하고, 너무 낮으면 옷걸이도 인간으로 취급함
+      minTrackingConfidence: 0.5, // 얼마나 잘 따라다닐거냐, 너무 높으면 조금만 빨리 움지경도 데이터 수집이 멈추고, 너무 낮으면 쓸데없이 수집하여 죄표의 오차값이 커짐
     });
 
     faceMesh.onResults(onResults);
@@ -45,7 +48,6 @@ const FaceMeshComponent = () => {
       camera.start().then(() => setCameraStatus("카메라 켜짐"));
     }
 
-    // 컴포넌트 언마운트 시 메모리 누수 방지
     return () => {
       if (camera) camera.stop();
       faceMesh.close();
@@ -64,7 +66,6 @@ const FaceMeshComponent = () => {
 
     if (results.multiFaceLandmarks) {
       for (const landmarks of results.multiFaceLandmarks) {
-        // 화면에 랜드마크 점 그리기
         for (let i = 0; i < landmarks.length; i++) {
           const x = landmarks[i].x * canvasElement.width;
           const y = landmarks[i].y * canvasElement.height;
@@ -74,19 +75,65 @@ const FaceMeshComponent = () => {
           canvasCtx.fill();
         }
 
-        // 수정된 부분: useRef를 통해 최신 녹화 상태 확인 후 데이터 적재
         if (isRecordingRef.current) {
           const logEntry = {
             timestamp: Date.now(),
-            nose_tip: landmarks[1],     // 코끝
-            left_iris: landmarks[468],  // 왼쪽 눈동자
-            right_iris: landmarks[473], // 오른쪽 눈동자
+            nose_tip: landmarks[1],
+            left_iris: landmarks[468],
+            right_iris: landmarks[473],
           };
           setLandmarkDataLog((prev) => [...prev, logEntry]);
         }
       }
     }
     canvasCtx.restore();
+  };
+
+  // 영상 및 데이터 기록 시작/중지 통합 관리 함수
+  const toggleRecording = () => {
+    if (!isRecording) {
+      // 1. 녹화 시작
+      setIsRecording(true);
+      recordedChunksRef.current = []; // 이전 녹화 데이터 초기화
+
+      const stream = webcamRef.current.video.srcObject;
+      if (stream) {
+        // MediaRecorder 생성 및 설정
+        mediaRecorderRef.current = new MediaRecorder(stream, {
+          mimeType: 'video/webm; codecs=vp9'
+        });
+
+        // 영상 조각(chunk)이 생성될 때마다 배열에 저장
+        mediaRecorderRef.current.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) {
+            recordedChunksRef.current.push(e.data);
+          }
+        };
+
+        // 녹화가 중지되었을 때 파일로 다운로드하는 이벤트
+        mediaRecorderRef.current.onstop = () => {
+          const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'counseling_video.webm'; // webm 포맷으로 저장
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url); // 메모리 확보
+        };
+
+        mediaRecorderRef.current.start();
+      }
+    } else {
+      // 2. 녹화 중지
+      setIsRecording(false);
+      
+      // MediaRecorder 정지 (정지 시 onstop 이벤트가 발생하며 영상 다운로드됨)
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+    }
   };
 
   const downloadDataAsTxt = () => {
@@ -129,10 +176,10 @@ const FaceMeshComponent = () => {
 
       <div style={{ marginTop: '20px', gap: '10px', display: 'flex' }}>
         <button 
-          onClick={() => setIsRecording(!isRecording)}
+          onClick={toggleRecording} // onClick 이벤트를 토글 함수로 변경
           style={{ padding: '10px 20px', backgroundColor: isRecording ? 'red' : 'green', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
         >
-          {isRecording ? '데이터 기록 중지' : '데이터 기록 시작'}
+          {isRecording ? '데이터 & 영상 기록 중지' : '데이터 & 영상 기록 시작'}
         </button>
 
         <button 
@@ -147,4 +194,4 @@ const FaceMeshComponent = () => {
   );
 };
 
-export default FaceMeshComponent;
+export default STest;
