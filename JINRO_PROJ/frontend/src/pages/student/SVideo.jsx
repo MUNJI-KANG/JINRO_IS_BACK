@@ -1,18 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import "../../css/student_css/SVideo.css";
 
 function SVideo() {
   const navigate = useNavigate();
-  const location = useLocation();
   const videoRef = useRef(null);
 
-  /* ======================================================
-     🔥 실제 연동 시
-     const selectedVideos = location.state?.selectedVideos || [];
-  ====================================================== */
-
-  /* 현재는 임시 데이터 */
   const selectedVideos = [
     {
       id: 1,
@@ -32,26 +25,41 @@ function SVideo() {
   ];
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [finished, setFinished] = useState(false);
+  const [videoEnded, setVideoEnded] = useState(false);
 
   const currentVideo = selectedVideos[currentIndex];
+  const isLastVideo = currentIndex === selectedVideos.length - 1;
 
-  /* 영상 끝나면 다음 영상 */
-  const handleEnded = () => {
-    if (currentIndex < selectedVideos.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
-    } else {
-      setFinished(true);
-    }
-  };
-
-  /* 영상 바뀌면 자동 재생 */
+  /* 영상 바뀌면 초기화 */
   useEffect(() => {
+    setVideoEnded(false);
+
     if (videoRef.current) {
       videoRef.current.load();
       videoRef.current.play();
     }
   }, [currentIndex]);
+
+  /* 영상 끝났을 때 */
+  const handleEnded = () => {
+    setVideoEnded(true);
+  };
+
+  /* 다음 영상 버튼 */
+  const handleNextVideo = () => {
+    if (!isLastVideo) {
+      setCurrentIndex((prev) => prev + 1);
+    }
+  };
+
+  /* 설문 버튼 */
+  const handleSurvey = () => {
+    if (!videoEnded) return;
+
+    navigate("/student/survey", {
+      state: { videoIndex: currentIndex },
+    });
+  };
 
   return (
     <div className="svideo-page">
@@ -61,9 +69,6 @@ function SVideo() {
         실시간 녹화 중...
       </div>
 
-      {/* =======================
-         2️⃣ 영상 영역
-      ======================= */}
       <div className="video-wrapper">
         <div className="video-order-badge">
           {currentIndex + 1}
@@ -81,19 +86,29 @@ function SVideo() {
         <h3 className="video-title">{currentVideo.title}</h3>
       </div>
 
-      {/* =======================
-         3️⃣ 하단 버튼
-      ======================= */}
-      <div className="svideo-bottom">
-        <button
-          className={`next-session ${finished ? "active" : ""}`}
-          disabled={!finished}
-          onClick={() => navigate("/student/result")}
-        >
-          다음 세션으로
-        </button>
-      </div>
+      {/* 하단 버튼 영역 */}
+      <div className="svideo-bottom dual-buttons">
 
+        {/* 설문 버튼 */}
+        <button
+          className={`survey-btn ${videoEnded ? "active" : ""}`}
+          disabled={!videoEnded}
+          onClick={handleSurvey}
+        >
+          설문하러 가기
+        </button>
+
+        {/* 다음 영상 버튼 */}
+        {!isLastVideo && (
+          <button
+            className="next-btn active"
+            onClick={handleNextVideo}
+          >
+            다음 영상
+          </button>
+        )}
+
+      </div>
     </div>
   );
 }

@@ -25,7 +25,7 @@ import CVideoAI from "./pages/counselor/c_report/CVideoAI";
 // // student
 import SAgreement from "./pages/student/SAgreement";
 // import SComplete from "./pages/student/SComplete";
-// import SLoading from "./pages/student/SLoading";
+import SLoading from "./pages/student/SLoading";
 import SLogin from "./pages/student/SLogin";
 // import SSurvey from "./pages/student/SSurvey";
 import SVideo from "./pages/student/SVideo";
@@ -69,7 +69,7 @@ function App() {
         <Route path="/student/video" element={<SVideo />} />
         <Route path="/student/agreement" element={<SAgreement />} />
         {/* <Route path="/student/complete" element={<SComplete />} /> */}
-        {/* <Route path="/student/loading" element={<SLoading />} /> */}
+        <Route path="/student/loading" element={<SLoading />} />
 
         <Route path="/student/category/big" element={<SBigCat />} />
         <Route path="/student/category/checkout" element={<SCheckout />} />
