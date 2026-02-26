@@ -13,7 +13,7 @@ import CLogin from "./pages/counselor/CLogin";
 import CScheduler from "./pages/counselor/CScheduler";
 import CStudentList from "./pages/counselor/CStudentList";
 
-// import CCatDetail from "./pages/counselor/c_category/CCatDetail";
+import CCatDetail from "./pages/counselor/c_category/CCatDetail";
 import CCatList from "./pages/counselor/c_category/CCatList";
 import CCatWrite from "./pages/counselor/c_category/CCatWrite";
 
@@ -52,6 +52,7 @@ function App() {
           {/* <Route path="counselor/info" element={<CInfoEdit />} /> */}
           <Route path="counselor/category/list" element={<CCatList />} />
           <Route path="counselor/category/write" element={<CCatWrite />} />
+          <Route path="counselor/category/detail/:videoId" element={<CCatDetail />} />
 
           {/* <Route path="counselor/report/counseling" element={<CCounseling />} /> */}
           {/* <Route path="counselor/report/ai" element={<CCounselingAI />} /> */}
