@@ -1,20 +1,32 @@
-import React from 'react';
-import '../../css/common_css/home.css'; 
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import "../../css/common_css/home.css";
 
 const Home = () => {
+  const navigate = useNavigate();
+
+  const handleCounselorClick = () => {
+    navigate("/counselor/login");
+  };
+
+  // ✅ 이거 추가 안 해서 에러난 거야
+  const handleStudentClick = () => {
+    navigate("/student/login");
+  };
+
   return (
     <div className="home-container">
-      {/* 상단 로고 및 타이틀 영역 */}
       <div className="header-section">
         <div className="logo-placeholder">로고</div>
         <h1 className="main-title">너, 내 진로가 되라</h1>
       </div>
 
-      {/* 카드 레이아웃 영역 */}
       <div className="cards-wrapper">
-        
-        {/* 첫 번째 카드: 내담자용 */}
-        <div className="card client-card">
+        <div
+          className="card client-card"
+          onClick={handleStudentClick}
+          style={{ cursor: "pointer" }}
+        >
           <div className="icon-placeholder"></div>
           <h2 className="card-title">내담자용</h2>
           <p className="card-desc">
@@ -23,8 +35,11 @@ const Home = () => {
           </p>
         </div>
 
-        {/* 두 번째 카드: 상담사용 */}
-        <div className="card counselor-card">
+        <div
+          className="card counselor-card"
+          onClick={handleCounselorClick}
+          style={{ cursor: "pointer" }}
+        >
           <div className="icon-placeholder"></div>
           <h2 className="card-title">상담사용</h2>
           <p className="card-desc">
@@ -32,7 +47,6 @@ const Home = () => {
             상세 지표를 관리합니다
           </p>
         </div>
-
       </div>
     </div>
   );

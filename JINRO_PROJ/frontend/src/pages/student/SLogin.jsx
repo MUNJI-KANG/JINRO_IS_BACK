@@ -1,11 +1,25 @@
-import style from '../../css/student_css/SLogin.module.css'
+import { useNavigate } from "react-router-dom";
+import style from '../../css/student_css/SLogin.module.css';
+
 
 const SLogin = () => {
+    const navigate = useNavigate();
+
+    const handleBack = () => {
+        navigate("/");   // 👉 홈으로 이동
+        // 만약 히스토리 기반으로 뒤로 가고 싶으면 navigate(-1)
+    };
+
     return (
         <div className={style.container}>
             <div className={style.card}>
+                
                 {/* 1. 이전으로 버튼 */}
-                <button className={style.backButton}>
+                <button 
+                    className={style.backButton}
+                    onClick={handleBack}
+                    type="button"
+                >
                     <div className={style.backCircle}>←</div>
                     <span className={style.backText}>이전으로</span>
                 </button>
@@ -40,7 +54,7 @@ const SLogin = () => {
                 </div>
 
                 {/* 하단 버튼 */}
-                <button className={style.submitButton}>
+                <button className={style.submitButton} type="button">
                     <span className={style.submitText}>진단 시작하기</span>
                 </button>
             </div>

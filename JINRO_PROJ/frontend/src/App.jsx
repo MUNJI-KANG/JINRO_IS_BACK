@@ -43,9 +43,10 @@ function App() {
         {/* counselor 로그인 (레이아웃 없이) */}
         <Route path="/counselor/login" element={<CLogin />} />
 
+        <Route index element={<Home />} />
+        
         {/* 공통 레이아웃 */}
         <Route path="/" element={<Layout />}>
-          {/* <Route index element={<Home />} /> */}
           {/* 로그인 후 진입시 바로 scheduler 화면 보여줌 */}
           <Route path="counselor/scheduler" element={<CScheduler />} />
           <Route path="counselor/students" element={<CStudentList />} />
