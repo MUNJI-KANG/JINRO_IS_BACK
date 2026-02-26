@@ -241,7 +241,14 @@ export default function CCatList() {
             <div className="content-fixed-box">
             <div className="small-grid">
                 {smallCategories.map((item) => (
-                <div key={item.id} className="video-card">
+                <div
+                 key={item.id}
+                  className="video-card"
+                  onClick={() =>
+                    navigate(`/counselor/category/detail/${item.id}`)
+                  }
+                  style={{cursor:"pointer"}}
+                  >
                     <div className="card-info">
                     <h4>{item.title}</h4>
                     <p>재생시간: {item.duration}</p>
