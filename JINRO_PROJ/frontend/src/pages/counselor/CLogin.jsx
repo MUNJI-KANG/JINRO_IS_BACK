@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState  } from 'react';
+import { useNavigate } from "react-router-dom";
 import '../../css/common_css/base.css';
 import '../../css/counselor_css/cLogin.css';
 
 const CLogin = () =>{
+    const navigate = useNavigate();
     const [id, setId] = useState('');
     const [password, setPassword] = useState('');
     const [idError, setIdError] = useState('');
@@ -35,7 +37,11 @@ const CLogin = () =>{
                 <label htmlFor='cPassword'>패스워드</label>
                 <input type='password' id='cPassword' placeholder='비밀번호를 입력해주세요' value={password} onChange={(e) => setPassword(e.target.value)}/>
                 {pwError && <p className='c-pw-label'>{pwError}</p>}
-                <button type="submit">접속하기</button>
+                <button
+                 type="submit"onClick={() => 
+                 navigate("/counselor/scheduler")}
+                 >
+                    접속하기</button>
             </form>
         </div>
     );

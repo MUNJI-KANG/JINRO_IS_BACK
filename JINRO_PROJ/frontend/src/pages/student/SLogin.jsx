@@ -54,8 +54,9 @@ const SLogin = () => {
                 </div>
 
                 {/* 하단 버튼 */}
-                <button className={style.submitButton} type="button">
+                <button className={style.submitButton} type="button" onClick={() => navigate("/student/agreement")}>
                     <span className={style.submitText}>진단 시작하기</span>
+
                 </button>
             </div>
         </div>
