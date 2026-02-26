@@ -35,6 +35,8 @@ import SCheckout from "./pages/student/s_category/SCheckout";
 import SMedCat from "./pages/student/s_category/SMedCat";
 import SSmallCat from "./pages/student/s_category/SSmallCat";
 
+import STest from "./pages/student/STest"
+
 function App() {
   return (
     <BrowserRouter>
@@ -77,7 +79,8 @@ function App() {
         <Route path="/student/category/checkout" element={<SCheckout />} />
         <Route path="/student/category/medium" element={<SMedCat />} />
         <Route path="/student/category/small" element={<SSmallCat />} />
-
+        
+        <Route path="/student/test" element={<STest />} />
       </Routes>
     </BrowserRouter>
 
