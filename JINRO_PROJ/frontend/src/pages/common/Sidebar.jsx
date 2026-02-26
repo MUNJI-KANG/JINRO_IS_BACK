@@ -20,8 +20,8 @@ function Sidebar() {
           <Link to="/counselor/students">학생목록</Link>
         </li>
 
-        <li>
-          정보수정
+        <li className={location.pathname === "/counselor/info" ? "active" : ""}>
+          <Link to="/counselor/info">정보수정</Link>
         </li>
 
       </ul>

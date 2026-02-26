@@ -1,0 +1,1 @@
+CALL F:\KDT2508\.venv\Scripts\activate

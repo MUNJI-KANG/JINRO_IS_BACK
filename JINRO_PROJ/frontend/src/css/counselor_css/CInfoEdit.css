@@ -1,0 +1,57 @@
+/* src/css/counselor_css/CInfoEdit.css */
+
+.cinfoedit-container {
+  width: 100%;
+}
+
+.cinfoedit-container .content-title{
+    margin-bottom: 100px;
+}
+
+.cinfoedit-form {
+  margin: 40px auto 0;
+  max-width: 700px;      
+  width: 100%;           
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.form-row label {
+  width: 120px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.form-row input {
+  flex: 1;
+  height: 45px;
+  padding: 0 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.button-wrapper {
+  margin-top: 60px;
+  text-align: center;
+}
+
+.save-btn {
+  width: 150px;
+  height: 50px;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.save-btn:hover {
+  opacity: 0.85;
+}
