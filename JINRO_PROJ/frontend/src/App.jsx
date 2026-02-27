@@ -36,6 +36,7 @@ import SMedCat from "./pages/student/s_category/SMedCat";
 import SSmallCat from "./pages/student/s_category/SSmallCat";
 
 import STest from "./pages/student/STest"
+import STest2 from "./pages/student/STest_copy"
 
 function App() {
   return (
@@ -81,6 +82,7 @@ function App() {
         <Route path="/student/category/small" element={<SSmallCat />} />
         
         <Route path="/student/test" element={<STest />} />
+        <Route path="/student/test_copy" element={<STest2 />} />
       </Routes>
     </BrowserRouter>
 

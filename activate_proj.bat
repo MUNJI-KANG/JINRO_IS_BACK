@@ -1,1 +1,1 @@
-CALL F:\KDT2508\.venv\Scripts\activate
+CALL F:\JINRO_IS_BACK_PROJ\JINRO_PROJ\backend\.venv\Scripts\activate
