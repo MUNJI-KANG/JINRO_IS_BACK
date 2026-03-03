@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import styles from "../../../css/student_css/SSmallCat.module.css";
+import React, { useState, useEffect, useEffect } from "react";
+import { useNavigate, useLocation, useLocation } from "react-router-dom";
+import axios from 'axios';
+import styles from "../../../css/student_css/SSmallCat.module.css";;
 import VideoCard from "../../../component/VideoCard";
 import { useSelector, useDispatch } from 'react-redux';
 import { addVideo, deleteVideo } from '../../../redux/cVideos'
@@ -78,9 +79,11 @@ function SSmallCat() {
         navigate('/student/category/checkout');
     };
 
+    // 다른 카테고리의 영상을 더 고르러 가는 로직 (BigCat으로 이동)
     const handelNextVideoSelect = () => {
-        navigate('/student/category/big')
-    }
+        const updatedCart = getUpdatedCart();
+        navigate('/student/category/big', { state: { selectedVideos: updatedCart } });
+    };
 
     return (
         <div className={styles.container}>
@@ -90,7 +93,8 @@ function SSmallCat() {
             </p>
 
             <div className={styles.progressBadge}>
-                <span>🛒 선택한 영상: {selectedVideos.length} / 3</span>
+                {/* 현재 누적된 장바구니 개수 + 방금 새로 선택한 1개(중복 아닐 시) 반영 */}
+                <span>🛒 선택한 영상: {selectedVideo && !selectedVideos.find(v => v.id === selectedVideo.id) ? selectedVideos.length + 1 : selectedVideos.length} / 3</span>
             </div>
 
             <div className={styles.headerRow}>
@@ -129,26 +133,31 @@ function SSmallCat() {
             <div className={styles.selectedListContainer}>
                 <h3 className={styles.listTitle}>선택된 영상</h3>
                 <div className={styles.listWrapper}>
-                    {selectedVideos.map(video => (
-                        <VideoCard
-                            key={video.id}
-                            video={video}
-                            handleDelete={handleDelete}
-                        />
+                    {selectedVideos.map((video) => (
+                        <VideoCard key={video.id} video={video} handleDelete={handleDelete} />
                     ))}
+                    {selectedVideos.length === 0 && <p style={{ color: '#999', fontSize: '14px' }}>아직 확정된 영상이 없습니다.</p>}
                 </div>
             </div>
 
             {selectedVideos.length >= 2 ? (
                 <div>
-                    <button className={`${styles.nextButton} ${selectedVideo != null ? styles.activeNewxButton : ''}`} onClick={handleNext} disabled={selectedVideo == null}>
+                    <button 
+                        className={`${styles.nextButton} ${selectedVideo != null ? styles.activeNewxButton : ''}`} 
+                        onClick={handleNext} 
+                        disabled={selectedVideo == null}
+                    >
                         영상보기
                     </button>
                 </div>
             ) : (
                 <div>
-                    <button className={`${styles.nextButton} ${selectedVideo != null ? styles.activeNewxButton : ''}`} onClick={handelNextVideoSelect} disabled={selectedVideo == null}>
-                        다음영상고르기 ({selectedVideos.length}/3)
+                    <button 
+                        className={`${styles.nextButton} ${selectedVideo != null ? styles.activeNewxButton : ''}`} 
+                        onClick={handelNextVideoSelect} 
+                        disabled={selectedVideo == null}
+                    >
+                        다음영상고르기 ({selectedVideo && !selectedVideos.find(v => v.id === selectedVideo.id) ? selectedVideos.length + 1 : selectedVideos.length}/3)
                     </button>
                 </div>
             )}

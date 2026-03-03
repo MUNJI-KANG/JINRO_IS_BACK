@@ -70,8 +70,8 @@ function App() {
 
         {/* student */}
         <Route path="/student/login" element={<SLogin />} />
-        <Route path="/student/survey" element={<SSurvey />} />
-        <Route path="/student/video" element={<SVideo />} />
+        <Route path="/student/survey/:categoryId" element={<SSurvey />} />
+        <Route path="/student/video/:categoryId" element={<SVideo />} />
         <Route path="/student/agreement" element={<SAgreement />} />
         <Route path="/student/loading" element={<SLoading />} />
         <Route path="/student/complete" element={<SComplete />} />
