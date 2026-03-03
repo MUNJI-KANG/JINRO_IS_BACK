@@ -2,9 +2,8 @@
 # uvicorn main:app --reload 실행코드
 
 import uuid
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
 
 #분석 서비스 
 from app.services.emotion_analysis import analyze_emotion
@@ -12,10 +11,10 @@ from app.services.attention_analysis import analyze_attention
 
 
 # DB 설정 및 모델, 스키마 가져오기
-from app.db.database import SessionLocal, engine, Base
-from app.models.schema_models import Client
-from app.schemas.shemas import ClientCreate
+from app.db.database import engine, Base
 
+
+from app.api import client, counselor
 # FastAPI 실행 시 모델을 바탕으로 DB 테이블 자동 생성 (이미 있으면 무시됨)
 Base.metadata.create_all(bind=engine)
 
@@ -26,16 +25,6 @@ origins = [
     "http://localhost:5173",  # Vite 기본 포트
     "http://127.0.0.1:5173",
 ]
-
-# DB 세션 의존성 주입 함수
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
 
 
 @app.get("/")
@@ -77,42 +66,11 @@ app.include_router(counselor.router)
 #         0.4 * attention_score
 #     )
 
-    return {
-        "emotion_score": emotion_score,
-        "attention_score": attention_score,
-        "interest_score": round(interest_score, 2)
-    }
-
-
-@app.post("/api/student/login")
-def login_or_create_client(client_data: ClientCreate, db: Session = Depends(get_db)):
-    try:
-        # 2. 이미 존재하는 회원인지 전화번호로 확인 (DB 무결성 오류 방지)
-        existing_client = db.query(Client).filter(Client.phone_num == client_data.phone_num).first()
-        
-        if existing_client:
-            return {"message": "기존 회원 로그인 성공", "client_id": existing_client.client_id}
-
-        # c_id는 고유해야 하므로 uuid를 사용하여 임의 생성합니다.
-        new_client = Client(
-            c_id=str(uuid.uuid4()), 
-            name=client_data.name,
-            phone_num=client_data.phone_num,
-            email=client_data.email,
-            birthdate=client_data.birthdate,
-            agree='Y'  # 약관 동의를 거쳤다고 가정
-        )
-        
-        db.add(new_client)
-        db.commit()
-        db.refresh(new_client)
-        
-        return {"message": "신규 회원 가입 및 로그인 성공", "client_id": new_client.client_id}
-
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"데이터베이스 오류: {str(e)}")
-    
+    # return {
+    #     "emotion_score": emotion_score,
+    #     "attention_score": attention_score,
+    #     "interest_score": round(interest_score, 2)
+    # }
 
 
 # import shutil
