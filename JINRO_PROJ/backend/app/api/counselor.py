@@ -57,3 +57,24 @@ def create_or_update_category(request: counselor.CategoryCreateRequest, db: Sess
         db.rollback()
         raise HTTPException(status_code=500, detail=f"저장 중 오류 발생: {str(e)}")
 
+# 상담사 정보 수정 API 추가 
+@router.put("/{counselor_id}")
+def update_counselor(
+    counselor_id: int,
+    request: counselor.CounselorModifyInfo,
+    db: Session = Depends(get_db)
+):
+    counselor_obj = db.query(Counselor).filter(
+        Counselor.counselor_id == counselor_id
+    ).first()
+
+    if not counselor_obj:
+        return {"success": False, "message": "존재하지 않는 상담사입니다."}
+
+    counselor_obj.name = request.name
+    counselor_obj.phone_num = request.phone
+    counselor_obj.email = request.email
+
+    db.commit()
+
+    return {"success": True, "message": "회원정보가 수정되었습니다."}

@@ -1,192 +1,101 @@
 /* ============================= */
-/* 페이지 영역 */
+/* 페이지 영역 (CCatList와 동일 톤) */
 /* ============================= */
 
-.bigcat-page {
-  min-height: 100vh;
-  background: var(--bg);
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding-top: 80px;
-}
-
-.bigcat-container {
-  width: 95%;
-  max-width: 1400px;
-  background: #fff;
-  padding: 50px;
-  margin-bottom: 80px;
-  border-radius: 16px;
-  border: 1px solid #eaeaea;
+.student-category-page {
+  padding: 40px;
+  width: 100%;
+  background: #f8fafc;
 }
 
 /* ============================= */
 /* 제목 */
 /* ============================= */
 
-.bigcat-container h2 {
-  text-align: center;
-  font-size: 28px;
+.page-title {
+  font-size: 26px;
   font-weight: 700;
-  color: var(--text);
-}
-
-.bigcat-container p {
-  text-align: center;
-  color: #666;
-  margin: 8px 0 28px 0;
-}
-
-/* 선택 개수 박스 */
-.count-box {
-  text-align: center;
-  font-weight: 600;
   margin-bottom: 30px;
-  padding: 10px;
-  border-radius: 10px;
-  background: #f5f6fa;
-  border: 1px solid #eaeaea;
+  color: #111827;
 }
 
 /* ============================= */
 /* 카테고리 그리드 */
 /* ============================= */
 
-.grid {
+/* 기본 6열 */
+.category-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 20px;
 }
 
+/* ============================= */
 /* 카드 */
-.card {
-  background: #f5f6fa;
-  border: 1px solid #eaeaea;
-  padding: 18px 8px;
+/* ============================= */
+
+.category-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
-  text-align: center;
-  font-size: 20px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  padding: 30px 10px;
 
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 130px;
 }
 
-/* hover */
-.card:hover {
+/* Hover 효과 (상담사 화면과 동일) */
+.category-card:hover {
   background: #eef2ff;
+  border-color: #3b82f6;
+  transform: translateY(-3px);
 }
 
-/* 선택된 카드 */
-.card.selected {
-  background: var(--secondary);
-  color: #fff;
-  font-weight: 600;
-}
-
+/* ============================= */
 /* 아이콘 */
-.cat-icon {
+/* ============================= */
+
+.category-icon {
   width: 42px;
   height: 42px;
-  color: var(--primary);
-  margin-bottom: 8px;
-}
-
-.card.selected .cat-icon {
-  color: #fff;
+  color: #3b82f6;
+  margin-bottom: 10px;
 }
 
 /* ============================= */
-/* 선택된 영상 리스트 */
+/* 텍스트 */
 /* ============================= */
 
-.selected-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 30px;
-}
-
-.selected-item {
-  background: var(--secondary);
-  color: #fff;
-  padding: 8px 14px;
-  border-radius: 20px;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* 삭제 버튼 */
-.selected-item button {
-  background: transparent;
-  border: none;
-  color: #fff;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-/* ============================= */
-/* 버튼 영역 */
-/* ============================= */
-
-.button-row {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 30px;
-}
-
-/* 이전 버튼 */
-.prev {
-  background: #e5e7eb;
-  border: none;
-  padding: 12px 22px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: 0.2s ease;
-}
-
-.prev:hover {
-  background: #d1d5db;
-}
-
-/* 다음 버튼 기본 */
-.next {
-  background: #d1d5db;
-  border: none;
-  padding: 12px 22px;
-  border-radius: 10px;
-}
-
-/* 다음 버튼 활성 */
-.next.active {
-  background: var(--primary);
-  color: #fff;
-  cursor: pointer;
+.category-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  text-align: center;
+  line-height: 1.4;
 }
 
 /* ============================= */
 /* 반응형 */
 /* ============================= */
 
-@media (max-width: 1024px) {
-  .grid {
-    grid-template-columns: repeat(3, minmax(120px, 1fr));
+@media (max-width: 1200px) {
+  .category-grid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
 @media (max-width: 768px) {
-  .grid {
-    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  .category-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .bigcat-container {
+  .student-category-page {
     padding: 30px;
   }
 }
