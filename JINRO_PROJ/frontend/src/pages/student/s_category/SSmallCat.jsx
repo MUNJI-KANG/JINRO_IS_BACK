@@ -2,10 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import styles from "../../../css/student_css/SSmallCat.module.css";
 import VideoCard from "../../../component/VideoCard";
+import { useSelector, useDispatch } from 'react-redux';
+import { addVideo, deleteVideo } from '../../../redux/cVideos'
 
 function SSmallCat() {
     const navigate = useNavigate();
     const location = useLocation();
+    const dispatch = useDispatch();
+    const select = useSelector((state) => state.cVideos)
 
     const { midId, bigName, midName } = location.state || {};
 
@@ -34,26 +38,37 @@ function SSmallCat() {
 
     }, [midId]);
 
+    useEffect(() => { console.log(select) }, [select])
+
     const handleCardClick = (video) => {
         setSelectedVideo(video.c_id);
 
         // 🔥 선택 목록 추가 (최대 3개)
         if (selectedVideos.length < 3) {
-            setSelectedVideos(prev => {
-                if (prev.find(v => v.id === video.c_id)) return prev;
-                return [
-                    ...prev,
-                    {
-                        id: video.c_id,
-                        mainCategory: bigName,
-                        subCategory: video.title
-                    }
-                ];
-            });
+
+            if (selectedVideos.find(v => v.id === video.c_id)) {
+                dispatch(addVideo({
+                    id: video.c_id,
+                    mainCategory: bigName,
+                    subCategory: video.title
+                }));
+
+                setSelectedVideos(prev => {
+                    return [
+                        ...prev,
+                        {
+                            id: video.c_id,
+                            mainCategory: bigName,
+                            subCategory: video.title
+                        }
+                    ];
+                });
+            }
         }
     };
 
     const handleDelete = (id) => {
+        dispatch(deleteVideo(id));
         setSelectedVideos(selectedVideos.filter(video => video.id !== id));
     };
 
@@ -62,7 +77,7 @@ function SSmallCat() {
     };
 
     const handleNext = () => {
-        navigate('/student/category/checkout'); 
+        navigate('/student/category/checkout');
     };
 
     const handelNextVideoSelect = () => {
@@ -94,9 +109,8 @@ function SSmallCat() {
                 {videos.map(video => (
                     <div
                         key={video.c_id}
-                        className={`${styles.card} ${
-                            selectedVideo === video.c_id ? styles.activeCard : ""
-                        }`}
+                        className={`${styles.card} ${selectedVideo === video.c_id ? styles.activeCard : ""
+                            }`}
                         onClick={() => handleCardClick(video)}
                     >
                         <div className={styles.imageContainer}>
@@ -127,7 +141,7 @@ function SSmallCat() {
                 </div>
             </div>
 
-            {selectedVideos.length >= 2 ?(
+            {selectedVideos.length >= 2 ? (
                 <div>
                     <button className={`${styles.nextButton} ${selectedVideo != null ? styles.activeNewxButton : ''}`} onClick={handleNext} disabled={selectedVideo == null}>
                         영상보기

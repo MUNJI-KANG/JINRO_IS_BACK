@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom"; // ✅ useLocation만 추가
 import styles from "../../../css/student_css/SMedCat.module.css";
 import VideoCard from "../../../component/VideoCard";
+import { useSelector, useDispatch } from 'react-redux';
 
 // ✅ 상담사 중분류와 동일 + id만 부여 (임의 부여: bigId*100 + index+1)
 const midCategoryMap = {
@@ -139,7 +140,7 @@ function SMedCat() {
   const location = useLocation();
 
   // ✅ 주인님 기존 흐름 유지: bigId가 넘어온다고 가정(없으면 카드 안 나옴)
-  const { bigId, bigName } = location.state || {};
+  const { bigId, bigName } = location.state
   const safeBigId = Number(bigId);
 
   // 현재 선택된 중분류의 ID 또는 이름을 저장하는 상태 (주인님 코드 유지)

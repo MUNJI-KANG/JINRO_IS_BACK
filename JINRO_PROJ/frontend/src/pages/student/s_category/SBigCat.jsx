@@ -7,6 +7,7 @@ import {
   Shirt, Zap, Cpu, Wheat, TreeDeciduous, Plug, Leaf,
 } from "lucide-react";
 import { useSelector, useDispatch } from 'react-redux';
+import { addVideo, deleteVideo } from '../../../redux/cVideos'
 
 const categories = [
   { id: 1, name: "사업관리", icon: Briefcase },
@@ -50,7 +51,6 @@ function SBigCat() {
               key={cat.id}
               className="category-card"
               onClick={() => {
-                useDispatch()
                 navigate("/student/category/medium", {
                   state: {
                     bigId: cat.id,
