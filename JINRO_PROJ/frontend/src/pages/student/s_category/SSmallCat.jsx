@@ -15,7 +15,7 @@ function SSmallCat() {
 
     const [videos, setVideos] = useState([]);
     const [selectedVideo, setSelectedVideo] = useState(null);
-    const [selectedVideos, setSelectedVideos] = useState([]); // 🔥 더미 제거
+    const [selectedVideos, setSelectedVideos] = useState(select); // 🔥 더미 제거
 
     // 🔥 DB에서 데이터만 불러오기
     useEffect(() => {
@@ -41,31 +41,29 @@ function SSmallCat() {
     useEffect(() => { console.log(select) }, [select])
 
     const handleCardClick = (video) => {
-        setSelectedVideo(video.c_id);
+            // 1. 단순 UI 선택 상태 업데이트
+            setSelectedVideo(video.c_id);
 
-        // 🔥 선택 목록 추가 (최대 3개)
-        if (selectedVideos.length < 3) {
-
+            // 2. 이미 선택된 영상인지 확인
             if (selectedVideos.find(v => v.id === video.c_id)) {
-                dispatch(addVideo({
+                return; // 이미 있으면 중단
+            }
+
+            // 3. 최대 3개까지만 추가 가능하도록 로직 변경
+            if (selectedVideos.length < 3) {
+                const newVideo = {
                     id: video.c_id,
                     mainCategory: bigName,
                     subCategory: video.title
-                }));
+                };
 
-                setSelectedVideos(prev => {
-                    return [
-                        ...prev,
-                        {
-                            id: video.c_id,
-                            mainCategory: bigName,
-                            subCategory: video.title
-                        }
-                    ];
-                });
+                // ✅ [수정] dispatch를 setState 밖에서 실행합니다.
+                dispatch(addVideo(newVideo));
+                
+                // ✅ [수정] 상태 업데이트는 순수하게 데이터만 추가합니다.
+                setSelectedVideos(prev => [...prev, newVideo]);
             }
-        }
-    };
+        };
 
     const handleDelete = (id) => {
         dispatch(deleteVideo(id));
