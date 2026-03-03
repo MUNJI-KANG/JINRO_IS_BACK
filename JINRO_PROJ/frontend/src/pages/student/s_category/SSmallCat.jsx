@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from '../../../css/student_css/SSmallCat.module.css'
 import VideoCard from '../../../component/VideoCard';
 
 function SSmallCat() {
+    const navigate = useNavigate();
+    
     const [selectedVideo, setSelectedVideo] = useState(null);
 
     // 선택된 영상 리스트 (UI 유지용 더미 데이터)
@@ -18,6 +21,10 @@ function SSmallCat() {
     // 삭제 핸들러 (UI 동작 확인용)
     const handleDelete = (id) => {
         setSelectedVideos(selectedVideos.filter(video => video.id !== id));
+    };
+
+    const handleNext = () => {
+        navigate('/student/video'); 
     };
 
     return (
@@ -100,7 +107,8 @@ function SSmallCat() {
                 </div>
             </div>
 
-            <button className={styles.nextButton}>
+
+            <button className={styles.nextButton} onClick={handleNext}>
                 다음으로 ({selectedVideos.length}/3)
             </button>
         </div>

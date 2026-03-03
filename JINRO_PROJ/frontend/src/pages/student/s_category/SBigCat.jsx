@@ -28,9 +28,6 @@ import {
   Leaf
 } from "lucide-react";
 
-// import MidCategory from "./SMedCat";
-// import SmallCategory from "./SSmallCat";
-
 const categories = [
   { name: "사업관리", icon: Briefcase },
   { name: "경영·회계·사무", icon: Calculator },
@@ -89,6 +86,14 @@ function SBigCat() {
 
   const canProceed = selectedVideos.length === 3;
 
+
+  const handleCategoryClick = (catName) => {
+    setSelectedBig(catName); // 선택된 대분류 상태 저장 (필요 시)
+    // 중분류 화면으로 이동. 라우터 설정에 맞춰 경로를 수정하실 수 있습니다.
+    // 추가로 어떤 대분류를 선택했는지 다음 페이지로 넘기고 싶다면 state를 활용할 수 있습니다.
+    navigate("/student/category/medium", { state: { bigCategory: catName } }); 
+  };
+
   return (
     <div className="bigcat-page">
       <div className="bigcat-container">
@@ -110,7 +115,7 @@ function SBigCat() {
                 <div
                   key={cat.name}
                   className="card"
-                  onClick={() => setSelectedBig(cat.name)}
+                  onClick={() => handleCategoryClick(cat.name)} // 👉 핸들러 연결
                 >
                   <Icon className="cat-icon" />
                   {cat.name}
@@ -119,7 +124,6 @@ function SBigCat() {
             })}
           </div>
         )}
-
 
         {/* ===============================
            선택된 영상 목록

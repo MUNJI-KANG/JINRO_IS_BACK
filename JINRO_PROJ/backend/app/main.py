@@ -1,7 +1,7 @@
 # main.py
 # uvicorn main:app --reload 실행코드
 
-import uuid
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
