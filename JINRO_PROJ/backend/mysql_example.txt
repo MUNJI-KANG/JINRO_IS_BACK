@@ -1,0 +1,4 @@
+INSERT INTO COUNSELOR
+(login_id, pw, name, phone_num, email, active_yn)
+VALUES
+('jinro01', '1234', '진로테스트', '01012345678', 'jinro01@test.com', 'N');
