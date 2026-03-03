@@ -8,7 +8,7 @@ export default function CCatWrite() {
   const editData = location.state; // 🔥 detail에서 넘어온 데이터
 
   // 🔥 나중에 이전 페이지에서 넘겨줄 kindId (넘겨주지 않으면 기본값 3)
-  const currentKindId = editData?.kindId || 3;
+  const currentKindId = editData?.kindId;
 
   const [categoryName, setCategoryName] = useState("");
   const [url, setUrl] = useState("");

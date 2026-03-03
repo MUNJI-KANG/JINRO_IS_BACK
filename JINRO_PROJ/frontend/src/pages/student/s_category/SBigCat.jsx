@@ -6,8 +6,8 @@ import {
   Hotel, Utensils, Building, Cog, Layers, FlaskConical,
   Shirt, Zap, Cpu, Wheat, TreeDeciduous, Plug, Leaf,
 } from "lucide-react";
-import { useSelector, useDispatch } from 'react-redux';
-import { addVideo, deleteVideo } from '../../../redux/cVideos'
+import { useSelector } from 'react-redux';
+
 
 const categories = [
   { id: 1, name: "사업관리", icon: Briefcase },
@@ -38,6 +38,13 @@ const categories = [
 
 function SBigCat() {
   const navigate = useNavigate();
+  // ✅ Redux에서 선택된 영상들 가져오기
+  const selectedVideos = useSelector((state) => state.cVideos);
+
+  {/* ✅ 선택된 영상 개수 표시 */}
+      <div className="progress-badge" style={{textAlign: 'center', marginBottom: '20px'}}>
+        <span>🛒 선택한 영상: {selectedVideos.length} / 3</span>
+      </div>
 
   return (
     <div className="student-category-page">

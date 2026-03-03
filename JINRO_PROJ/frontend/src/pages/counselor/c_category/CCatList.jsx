@@ -95,6 +95,7 @@ export default function CCatList() {
   const navigate = useNavigate();
   const [selectedBigId, setSelectedBigId] = useState(null);
   const [selectedMidName, setSelectedMidName] = useState(null);
+  const [selectedMid, setSelectedMid] = useState(null);
   const [dbCategories, setDbCategories] = useState([]);
 
   useEffect(() => {
@@ -233,7 +234,7 @@ export default function CCatList() {
               className="add-btn"
               onClick={() =>
                 navigate("/counselor/category/write", {
-                  state: { kindId: selectedBigId },
+                  state: { kindId: selectedMid?.id},
                 })
               }
             >
