@@ -38,7 +38,7 @@ const SLogin = () => {
 
         try {
             // 백엔드(FastAPI)로 POST 요청 전송
-            const response = await fetch("http://localhost:8000/client/api/student/login", {
+            const response = await fetch("http://localhost:8000/client/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

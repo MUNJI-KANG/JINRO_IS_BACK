@@ -2,7 +2,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from app.db.database import SessionLocal, engine, Base
 from app.models.schema_models import Client
-from app.schemas.shemas import ClientCreate
+from app.schemas.client import ClientCreate
 from sqlalchemy.orm import Session
 
 # prefix="/client"로 설정하면 이 파일의 모든 API 주소 앞에 /client가 자동으로 붙습니다.
@@ -25,7 +25,7 @@ def get_client_detail(client_id: int):
     return {"message": f"{client_id}번 내담자 상세 정보 조회 API 입니다."}
 
 
-@router.post("/api/student/login")
+@router.post("/login")
 def login_or_create_client(client_data: ClientCreate, db: Session = Depends(get_db)):
     try:
         # 2. 이미 존재하는 회원인지 전화번호로 확인 (DB 무결성 오류 방지)

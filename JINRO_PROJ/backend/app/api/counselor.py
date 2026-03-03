@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
-from app.models.schema_models import Counselor # 모델 임포트 (경로 확인해주세요)
+from app.models.schema_models import Counselor 
 
+from app.schemas import counselor
 router = APIRouter(prefix="/counselor", tags=["Counselor (상담사)"])
 
-# DB 세션을 가져오는 의존성 주입 함수
 def get_db():
     db = SessionLocal()
     try:
@@ -15,15 +15,12 @@ def get_db():
         db.close()
 
 
-class CounselorLoginRequest(BaseModel):
-    login_id: str
-    pw: str
-
 @router.post("/login")
-def login(request: CounselorLoginRequest, db: Session = Depends(get_db)):
+def login(request: counselor.CounselorLoginRequest, db: Session = Depends(get_db)):
     counselor = db.query(Counselor).filter(
         Counselor.login_id == request.login_id,
-        Counselor.pw == request.pw
+        Counselor.pw == request.pw,
+        Counselor.active_yn == 'Y'
     ).first()
 
     if counselor:
