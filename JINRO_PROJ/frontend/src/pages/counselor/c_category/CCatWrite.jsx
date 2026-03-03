@@ -16,7 +16,7 @@ export default function CCatWrite() {
   const [questions, setQuestions] = useState([
     {
       questionText: "",
-      options: ["", "", "", "", ""],
+      options: ["매우 잘 맞는다", "잘 맞는 편이다", "보통이다", "잘 맞지 않는다", "전혀 맞지 않는다"],
     },
   ]);
 
@@ -32,7 +32,7 @@ export default function CCatWrite() {
         setQuestions([
           {
             questionText: editData.question || "",
-            options: ["매우만족", "만족", "보통", "불만족", "매우불만족"],
+            options: ["매우 잘 맞는다", "잘 맞는 편이다", "보통이다", "잘 맞지 않는다", "전혀 맞지 않는다"],
           },
         ]);
       }
@@ -59,7 +59,7 @@ export default function CCatWrite() {
       ...questions,
       {
         questionText: "",
-        options: ["", "", "", "", ""],
+        options: ["매우 잘 맞는다", "잘 맞는 편이다", "보통이다", "잘 맞지 않는다", "전혀 맞지 않는다"],
       },
     ]);
   };
