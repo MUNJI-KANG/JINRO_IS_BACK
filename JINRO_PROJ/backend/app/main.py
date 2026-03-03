@@ -35,7 +35,7 @@ def read_root():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # 🔥 모든 Origin 허용 (개발용)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -18,14 +18,27 @@ def get_db():
 @router.post("/login")
 def login(request: counselor.CounselorLoginRequest, db: Session = Depends(get_db)):
     counselor = db.query(Counselor).filter(
-        Counselor.login_id == request.login_id,
-        Counselor.pw == request.pw,
-        Counselor.active_yn == 'Y'
+        Counselor.login_id == request.login_id
     ).first()
+
+    if not counselor:
+        return {"success": False, "message": "존재하지 않는 아이디입니다."}
+
+    if counselor.pw != request.pw:
+        return {"success": False, "message": "비밀번호가 일치하지 않습니다."}
+
+    if counselor.active_yn != 'Y':
+        return {"success": False, "message": "비활성화된 계정입니다."}
+
 
     if counselor:
         # 로그인 성공
-        return {"success": True, "message": f"{counselor.name}님 환영합니다!", "name": counselor.name}
+        return {
+            "success": True,
+            "message": f"{counselor.name}님 환영합니다!",
+            "name": counselor.name,
+            "counselor_id": counselor.counselor_id
+        }
     else:
         # 로그인 실패
         return {"success": False, "message": "아이디 또는 비밀번호가 일치하지 않습니다."}
@@ -94,3 +107,21 @@ def update_counselor(
     db.commit()
 
     return {"success": True, "message": "회원정보가 수정되었습니다."}
+
+
+# 정보 저장(?)
+@router.get("/{counselor_id}")
+def get_counselor(counselor_id: int, db: Session = Depends(get_db)):
+    counselor_obj = db.query(Counselor).filter(
+        Counselor.counselor_id == counselor_id
+    ).first()
+
+    if not counselor_obj:
+        return {"success": False, "message": "존재하지 않는 상담사입니다."}
+
+    return {
+        "success": True,
+        "name": counselor_obj.name,
+        "phone": counselor_obj.phone_num,
+        "email": counselor_obj.email
+    }

@@ -29,7 +29,7 @@ const CLogin = () =>{
 
         try {
             // 2. FastAPI 서버로 로그인 요청 (POST)
-            const response = await fetch("http://127.0.0.1:8000/counselor/login", {
+            const response = await fetch("http://localhost:8000/counselor/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -45,9 +45,13 @@ const CLogin = () =>{
             const data = await response.json();
 
             if (data.success) {
-                alert(data.message); 
-                navigate("/counselor/scheduler"); 
-            } else {
+                alert(data.message);
+
+                // 🔥 반드시 추가
+                localStorage.setItem("counselor_id", data.counselor_id);
+
+                navigate("/counselor/scheduler");
+            }else {
                 alert(data.message); 
                 setId('');
                 setPassword(''); 

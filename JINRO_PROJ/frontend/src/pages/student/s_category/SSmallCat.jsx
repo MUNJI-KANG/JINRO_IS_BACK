@@ -62,10 +62,12 @@ function SSmallCat() {
     };
 
     const handleNext = () => {
-        navigate("/student/video", {
-            state: { selectedVideos }
-        });
+        navigate('/student/category/checkout'); 
     };
+
+    const handelNextVideoSelect = () => {
+        navigate('/student/category/big')
+    }
 
     return (
         <div className={styles.container}>
@@ -125,13 +127,19 @@ function SSmallCat() {
                 </div>
             </div>
 
-            <button
-                className={styles.nextButton}
-                disabled={selectedVideos.length === 0}
-                onClick={handleNext}
-            >
-                다음으로 ({selectedVideos.length}/3)
-            </button>
+            {selectedVideos.length >= 2 ?(
+                <div>
+                    <button className={`${styles.nextButton} ${selectedVideo != null ? styles.activeNewxButton : ''}`} onClick={handleNext} disabled={selectedVideo == null}>
+                        영상보기
+                    </button>
+                </div>
+            ) : (
+                <div>
+                    <button className={`${styles.nextButton} ${selectedVideo != null ? styles.activeNewxButton : ''}`} onClick={handelNextVideoSelect} disabled={selectedVideo == null}>
+                        다음영상고르기 ({selectedVideos.length}/3)
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

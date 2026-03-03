@@ -6,6 +6,7 @@ import {
   Hotel, Utensils, Building, Cog, Layers, FlaskConical,
   Shirt, Zap, Cpu, Wheat, TreeDeciduous, Plug, Leaf,
 } from "lucide-react";
+import { useSelector, useDispatch } from 'react-redux';
 
 const categories = [
   { id: 1, name: "사업관리", icon: Briefcase },
@@ -48,13 +49,15 @@ function SBigCat() {
             <button
               key={cat.id}
               className="category-card"
-              onClick={() =>
+              onClick={() => {
+                useDispatch()
                 navigate("/student/category/medium", {
                   state: {
                     bigId: cat.id,
                     bigName: cat.name,
                   },
                 })
+              }
               }
             >
               <Icon className="category-icon" />
