@@ -1,32 +1,10 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../../css/student_css/SBigCat.css";
-
 import {
-  Briefcase,
-  Calculator,
-  Banknote,
-  GraduationCap,
-  Gavel,
-  HeartPulse,
-  HandHeart,
-  Palette,
-  Truck,
-  Tag,
-  ShieldCheck,
-  Hotel,
-  Utensils,
-  Building,
-  Cog,
-  Layers,
-  FlaskConical,
-  Shirt,
-  Zap,
-  Cpu,
-  Wheat,
-  TreeDeciduous,
-  Plug,
-  Leaf,
+  Briefcase, Calculator, Banknote, GraduationCap, Gavel,
+  HeartPulse, HandHeart, Palette, Truck, Tag, ShieldCheck,
+  Hotel, Utensils, Building, Cog, Layers, FlaskConical,
+  Shirt, Zap, Cpu, Wheat, TreeDeciduous, Plug, Leaf,
 } from "lucide-react";
 
 const categories = [
@@ -34,14 +12,14 @@ const categories = [
   { id: 2, name: "경영·회계·사무", icon: Calculator },
   { id: 3, name: "금융·보험", icon: Banknote },
   { id: 4, name: "교육·자연·사회과학", icon: GraduationCap },
-  { id: 5, name: "법률·경찰·소방", icon: Gavel },
+  { id: 5, name: "법률·경찰·소방·교도·국방", icon: Gavel },
   { id: 6, name: "보건·의료", icon: HeartPulse },
   { id: 7, name: "사회복지·종교", icon: HandHeart },
-  { id: 8, name: "문화·예술·디자인", icon: Palette },
+  { id: 8, name: "문화·예술·디자인·방송", icon: Palette },
   { id: 9, name: "운전·운송", icon: Truck },
   { id: 10, name: "영업판매", icon: Tag },
   { id: 11, name: "경비·청소", icon: ShieldCheck },
-  { id: 12, name: "이용·숙박·여행", icon: Hotel },
+  { id: 12, name: "이용·숙박·여행·오락·스포츠", icon: Hotel },
   { id: 13, name: "음식서비스", icon: Utensils },
   { id: 14, name: "건설", icon: Building },
   { id: 15, name: "기계", icon: Cog },
@@ -51,8 +29,8 @@ const categories = [
   { id: 19, name: "전기·전자", icon: Zap },
   { id: 20, name: "정보통신", icon: Cpu },
   { id: 21, name: "식품가공", icon: Wheat },
-  { id: 22, name: "인쇄·목재·가구", icon: TreeDeciduous },
-  { id: 23, name: "환경·에너지", icon: Plug },
+  { id: 22, name: "인쇄·목재·가구·공예", icon: TreeDeciduous },
+  { id: 23, name: "환경·에너지·안전", icon: Plug },
   { id: 24, name: "농림어업", icon: Leaf },
 ];
 
@@ -69,11 +47,13 @@ function SBigCat() {
           return (
             <button
               key={cat.id}
-              type="button"
               className="category-card"
               onClick={() =>
                 navigate("/student/category/medium", {
-                  state: { bigCategory: cat.name },
+                  state: {
+                    bigId: cat.id,
+                    bigName: cat.name,
+                  },
                 })
               }
             >

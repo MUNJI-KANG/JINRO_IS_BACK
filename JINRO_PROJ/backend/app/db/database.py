@@ -10,7 +10,7 @@ DB_USERNAME = "jinro"          # MySQL 사용자 이름 (예: root)
 DB_PASSWORD = "jinro1234"   # MySQL 비밀번호
 DB_HOST = "127.0.0.1"         # 호스트 주소 (로컬이면 127.0.0.1 또는 localhost)
 DB_PORT = "3306"              # MySQL 기본 포트
-DB_NAME = "JINRO"          # 미리 생성해둔 데이터베이스 이름
+DB_NAME = "jinro"          # 미리 생성해둔 데이터베이스 이름
 
 SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 

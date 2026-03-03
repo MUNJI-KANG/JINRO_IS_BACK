@@ -1,114 +1,135 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import styles from '../../../css/student_css/SSmallCat.module.css'
-import VideoCard from '../../../component/VideoCard';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import styles from "../../../css/student_css/SSmallCat.module.css";
+import VideoCard from "../../../component/VideoCard";
 
 function SSmallCat() {
     const navigate = useNavigate();
-    
+    const location = useLocation();
+
+    const { midId, bigName, midName } = location.state || {};
+
+    const [videos, setVideos] = useState([]);
     const [selectedVideo, setSelectedVideo] = useState(null);
+    const [selectedVideos, setSelectedVideos] = useState([]); // 🔥 더미 제거
 
-    // 선택된 영상 리스트 (UI 유지용 더미 데이터)
-    const [selectedVideos, setSelectedVideos] = useState([
-        { id: 1, mainCategory: '위치·지도', subCategory: '중분류 2' }
-    ]);
+    // 🔥 DB에서 데이터만 불러오기
+    useEffect(() => {
+        if (!midId) return;
 
-    const handleCardClick = (id) => {
-        setSelectedVideo(id);
-        // 여기에 나중에 직접 데이터를 추가하는 로직을 넣으시면 됩니다.
+        fetch(`http://127.0.0.1:8000/counselor/category/${midId}`)
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error("서버 응답 오류");
+                }
+                return res.json();
+            })
+            .then(data => {
+                setVideos(Array.isArray(data) ? data : []);
+            })
+            .catch(err => {
+                console.error("영상 불러오기 실패:", err);
+                setVideos([]);
+            });
+
+    }, [midId]);
+
+    const handleCardClick = (video) => {
+        setSelectedVideo(video.c_id);
+
+        // 🔥 선택 목록 추가 (최대 3개)
+        if (selectedVideos.length < 3) {
+            setSelectedVideos(prev => {
+                if (prev.find(v => v.id === video.c_id)) return prev;
+                return [
+                    ...prev,
+                    {
+                        id: video.c_id,
+                        mainCategory: bigName,
+                        subCategory: video.title
+                    }
+                ];
+            });
+        }
     };
 
-    // 삭제 핸들러 (UI 동작 확인용)
     const handleDelete = (id) => {
         setSelectedVideos(selectedVideos.filter(video => video.id !== id));
     };
 
+    const handleBack = () => {
+        navigate(-1);
+    };
+
     const handleNext = () => {
-        navigate('/student/video'); 
+        navigate("/student/video", {
+            state: { selectedVideos }
+        });
     };
 
     return (
         <div className={styles.container}>
             <h1 className={styles.title}>분야 선택</h1>
-            <p className={styles.subtitle}>서로 다른 카테고리에서 3개의 영상을 선택하세요</p>
+            <p className={styles.subtitle}>
+                서로 다른 카테고리에서 3개의 영상을 선택하세요
+            </p>
 
             <div className={styles.progressBadge}>
                 <span>🛒 선택한 영상: {selectedVideos.length} / 3</span>
             </div>
 
-            {/* <div className={styles.alertBox}>
-                    <span>ℹ️</span>
-                    <div>
-                        이 카테고리에서 이미 영상을 선택했습니다.<br />
-                        새로운 영상을 선택하면 기존 선택이 변경됩니다.
-                    </div>
-                </div> */}
-
             <div className={styles.headerRow}>
-                <button className={styles.backButton}>← 뒤로</button>
-                <h2 className={styles.categoryTitle}>위치·지도</h2>
+                <button className={styles.backButton} onClick={handleBack}>
+                    ← 뒤로
+                </button>
+                <h2 className={styles.categoryTitle}>
+                    {bigName} &gt; {midName}
+                </h2>
             </div>
 
+            {/* 🔥 DB 데이터만 렌더링 */}
             <div className={styles.cardGrid}>
-                {/* 선택 여부에 따라 active 클래스를 조건부로 부여합니다 */}
-                {/* <div
-                    className={`${styles.card} ${selectedSub === 1 ? styles.activeCard : ''}`}
-                    onClick={() => handleCardClick(1)}
-                >
-                    중분류 1
-                </div> */}
-                <div 
-                    className={`${styles.card} ${selectedVideo === 1 ? styles.activeCard : ''}`}
-                    onClick={() => handleCardClick(1)}
-                >
-                    {/* 상단 썸네일 영역 */}
-                    <div className={styles.imageContainer}>
-                        {false ? (
-                            <img src={'thumbnail'} alt={'영상1'} className={styles.videoThumbnail} />
-                        ) : (
-                            /* 넷플릭스 로고와 같은 임시 아이콘 (이미지가 없을 경우) */
-                            <div style={{ color: '#E50914', fontSize: '48px', fontWeight: 'bold' }}>N</div>
-                        )}
-                    </div>
-                    {/* 하단 정보 영역 */}
-                    <div className={styles.content}>
-                        <strong className={styles.title}>{"영상 제목"}</strong>
-                        <p className={styles.duration}>재생시간: {"0:00"}</p>
-                    </div>
-                </div>
-                <div 
-                    className={`${styles.card} ${selectedVideo === 2 ? styles.activeCard : ''}`}
-                    onClick={() => handleCardClick(2)}
-                >
-                    {/* 상단 썸네일 영역 */}
-                    <div className={styles.imageContainer}>
-                        {false ? (
-                            <img src={'thumbnail'} alt={'영상1'} className={styles.videoThumbnail} />
-                        ) : (
-                            /* 넷플릭스 로고와 같은 임시 아이콘 (이미지가 없을 경우) */
-                            <div style={{ color: '#E50914', fontSize: '48px', fontWeight: 'bold' }}>N</div>
-                        )}
-                    </div>
+                {videos.map(video => (
+                    <div
+                        key={video.c_id}
+                        className={`${styles.card} ${
+                            selectedVideo === video.c_id ? styles.activeCard : ""
+                        }`}
+                        onClick={() => handleCardClick(video)}
+                    >
+                        <div className={styles.imageContainer}>
+                            <div style={{ color: "#E50914", fontSize: "48px", fontWeight: "bold" }}>
+                                N
+                            </div>
+                        </div>
 
-                    {/* 하단 정보 영역 */}
-                    <div className={styles.content}>
-                        <strong className={styles.title}>{"영상 제목"}</strong>
-                        <p className={styles.duration}>재생시간: {"0:00"}</p>
+                        <div className={styles.content}>
+                            <strong className={styles.title}>{video.title}</strong>
+                            <p className={styles.duration}>영상보기</p>
+                        </div>
                     </div>
-                </div>
+                ))}
             </div>
 
+            {/* 🔥 선택된 영상 리스트 (DB 기반) */}
             <div className={styles.selectedListContainer}>
                 <h3 className={styles.listTitle}>선택된 영상</h3>
                 <div className={styles.listWrapper}>
-                    {selectedVideos.map((video) => (
-                        <VideoCard key={video.id} video={video} handleDelete={handleDelete} />
+                    {selectedVideos.map(video => (
+                        <VideoCard
+                            key={video.id}
+                            video={video}
+                            handleDelete={handleDelete}
+                        />
                     ))}
                 </div>
             </div>
 
-
-            <button className={styles.nextButton} onClick={handleNext}>
+            <button
+                className={styles.nextButton}
+                disabled={selectedVideos.length === 0}
+                onClick={handleNext}
+            >
                 다음으로 ({selectedVideos.length}/3)
             </button>
         </div>

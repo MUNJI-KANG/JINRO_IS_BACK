@@ -56,6 +56,22 @@ def create_or_update_category(request: counselor.CategoryCreateRequest, db: Sess
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"저장 중 오류 발생: {str(e)}")
+    
+# 소분류 조회 
+@router.get("/category/{kind}")
+def get_category_by_kind(kind: int, db: Session = Depends(get_db)):
+    categories = db.query(Category).filter(Category.kind == kind).all()
+
+    return [
+        {
+            "c_id": c.c_id,
+            "title": c.title,
+            "url": c.url,
+            "survey": c.survey,
+            "kind": c.kind
+        }
+        for c in categories
+    ]
 
 # 상담사 정보 수정 API 추가 
 @router.put("/{counselor_id}")
