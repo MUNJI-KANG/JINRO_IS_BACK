@@ -11,7 +11,7 @@ __pycache__/
 # ========================
 activate_proj.bat
 ERD/
-
+jupyter_kclass.bat
 # ========================
 # Logs
 # ========================
