@@ -14,7 +14,7 @@ function SAgreement() {
       <div className="agreement-container">
 
         <div className="back-btn" 
-        onClick={() => navigate("/student/login")}>← 이전으로</div>
+        onClick={() => navigate("/")}>← 이전으로</div>
 
         <div className="icon-box"></div>
 
@@ -69,7 +69,7 @@ function SAgreement() {
         <button
           className={`start-btn ${allAgreed ? "active" : "disabled"}`}
           disabled={!allAgreed}
-          onClick={() => navigate("/student/category/big")}
+          onClick={() => navigate("/student/login")}
         >
           {allAgreed ? "시작하기" : "모든 항목에 동의해 주세요"}
         </button>

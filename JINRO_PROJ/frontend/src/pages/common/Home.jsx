@@ -11,7 +11,7 @@ const Home = () => {
 
   // ✅ 이거 추가 안 해서 에러난 거야
   const handleStudentClick = () => {
-    navigate("/student/login");
+    navigate("/student/agreement");
   };
 
   return (
