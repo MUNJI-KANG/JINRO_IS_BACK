@@ -25,3 +25,4 @@ protobuf==4.25.3
 tf_keras==2.16.0
 
 SQLAlchemy
+pymysql
