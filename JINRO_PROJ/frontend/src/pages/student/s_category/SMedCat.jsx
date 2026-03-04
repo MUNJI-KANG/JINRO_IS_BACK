@@ -146,10 +146,8 @@ function SMedCat() {
   // 현재 선택된 중분류의 ID 또는 이름을 저장하는 상태 (주인님 코드 유지)
   const [selectedSub, setSelectedSub] = useState(null);
 
-  // 선택된 영상 리스트 (UI 유지용 더미 데이터) (주인님 코드 유지)
-  const [selectedVideos, setSelectedVideos] = useState([
-    { id: 1, mainCategory: "위치·지도", subCategory: "중분류 2" },
-  ]);
+  // 선택된 영상 리스트
+  const [selectedVideos, setSelectedVideos] = useState([]);
 
   const midCategories = useMemo(() => {
     if (!safeBigId) return [];
@@ -172,8 +170,6 @@ function SMedCat() {
   };
 
   const handleNext = () => {
-    // ✅ 주인님 코드 유지: 그냥 /small로 이동
-    // 필요하면 나중에 midId를 넘기도록 "주인님이 원하실 때만" 바꿉니다.
     navigate("/student/category/small", {
       state: { bigId: safeBigId, bigName, midId: selectedSub },
     });

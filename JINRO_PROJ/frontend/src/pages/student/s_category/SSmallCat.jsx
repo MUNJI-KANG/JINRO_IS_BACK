@@ -15,11 +15,14 @@ function SSmallCat() {
 
     const [videos, setVideos] = useState([]);
     const [selectedVideo, setSelectedVideo] = useState(null);
-    const [selectedVideos, setSelectedVideos] = useState(select); // 🔥 더미 제거
+    const selectedVideos = useSelector((state) => state.cVideos); // 🔥 더미 제거
 
     // 🔥 DB에서 데이터만 불러오기
     useEffect(() => {
-        if (!midId) return;
+        if (!midId) {
+            console.error("midId 없음", location.state);
+            return;
+        }
 
         fetch(`http://127.0.0.1:8000/counselor/category/kind/${midId}`)
             .then(res => {
@@ -29,7 +32,11 @@ function SSmallCat() {
                 return res.json();
             })
             .then(data => {
-                setVideos(data.data);
+                if (data.success) {
+                    setVideos(data.data || []);
+                } else {
+                    setVideos([]);
+                }
             })
             .catch(err => {
                 console.error("영상 불러오기 실패:", err);
@@ -62,7 +69,6 @@ function SSmallCat() {
 
     const handleDelete = (id) => {
         dispatch(deleteVideo(id));
-        setSelectedVideos(selectedVideos.filter(video => video.id !== id));
     };
 
     const handleBack = () => {
@@ -138,7 +144,7 @@ function SSmallCat() {
 
             {select.length >= 2 ? (
                 <div>
-                    <button className={`${styles.nextButton} ${selectedVideo != null ? styles.activeNewxButton : ''}`} onClick={handleNext} disabled={selectedVideo == null}>
+                    <button className={`${styles.nextButton} ${selectedVideo != null ? styles.activeNewxButton : ''}`} onClick={handleNext} disabled={selectedVideos.length === 0}>
                         영상보기
                     </button>
                 </div>
