@@ -6,8 +6,8 @@ import {
   Hotel, Utensils, Building, Cog, Layers, FlaskConical,
   Shirt, Zap, Cpu, Wheat, TreeDeciduous, Plug, Leaf,
 } from "lucide-react";
-import { useSelector } from 'react-redux';
-
+import { useSelector, useDispatch } from 'react-redux';
+import { addVideo, deleteVideo } from '../../../redux/cVideos'
 
 const categories = [
   { id: 1, name: "사업관리", icon: Briefcase },
