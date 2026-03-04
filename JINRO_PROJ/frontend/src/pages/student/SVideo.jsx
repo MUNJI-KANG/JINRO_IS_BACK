@@ -10,8 +10,8 @@ function SVideo() {
   const { categoryId } = useParams();
   const location = useLocation();
 
-  const selectedVideos = location.state?.selectedVideos || [];
-  const currentIndex = location.state?.currentIndex || 0;
+  const selectedVideos = useSelector((state) => state.cVideos);
+  const currentIndex = location.state?.currentIndex ?? 0;
 
   const webcamRef = useRef(null);
   const recorderRef = useRef(null);
@@ -23,9 +23,11 @@ function SVideo() {
   const [started, setStarted] = useState(false);
 
   const extractVideoId = (url) => {
+
     if (!url) return null;
 
     try {
+
       const parsed = new URL(url);
 
       if (parsed.hostname.includes("youtu.be")) {
@@ -39,11 +41,13 @@ function SVideo() {
       return null;
 
     } catch {
+
       return null;
+
     }
+
   };
 
-  // 웹캠 초기화
   useEffect(() => {
 
     const initWebcam = async () => {
@@ -62,7 +66,6 @@ function SVideo() {
 
   }, []);
 
-  // 영상 데이터 가져오기
   const fetchVideo = async () => {
 
     const res = await axios.get(
@@ -87,9 +90,11 @@ function SVideo() {
     recordedChunks.current = [];
 
     mediaRecorder.ondataavailable = (event) => {
+
       if (event.data.size > 0) {
         recordedChunks.current.push(event.data);
       }
+
     };
 
     mediaRecorder.start();
@@ -105,13 +110,6 @@ function SVideo() {
         const blob = new Blob(recordedChunks.current, {
           type: "video/webm"
         });
-
-        const url = URL.createObjectURL(blob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `record_${Date.now()}.webm`;
-        a.click();
 
         resolve(blob);
 
@@ -138,53 +136,50 @@ function SVideo() {
     await stopRecording();
 
     navigate(`/student/survey/${categoryId}`, {
-      state: { selectedVideos, currentIndex }
+      state: {
+        currentIndex: currentIndex
+      }
     });
 
   };
 
   const videoId = extractVideoId(currentVideo?.url);
 
-  const embedUrl = videoId
-    ? `https://www.youtube.com/embed/${videoId}`
-    : null;
-    useEffect(() => {
+  useEffect(() => {
 
-      if (!started || !videoId) return;
+    if (!started || !videoId) return;
 
-      if (!window.YT) {
+    if (!window.YT) {
 
-        const tag = document.createElement("script");
-        tag.src = "https://www.youtube.com/iframe_api";
-        document.body.appendChild(tag);
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.body.appendChild(tag);
 
-      }
+    }
 
-      window.onYouTubeIframeAPIReady = () => {
+    window.onYouTubeIframeAPIReady = () => {
 
-        new window.YT.Player("youtube-player", {
+      new window.YT.Player("youtube-player", {
 
-          events: {
+        events: {
 
-            onStateChange: (event) => {
+          onStateChange: (event) => {
 
-              if (event.data === window.YT.PlayerState.ENDED) {
+            if (event.data === window.YT.PlayerState.ENDED) {
 
-                console.log("영상 끝");
-
-                setVideoEnded(true);
-
-              }
+              setVideoEnded(true);
 
             }
 
           }
 
-        });
+        }
 
-      };
+      });
 
-    }, [started, videoId]);
+    };
+
+  }, [started, videoId]);
 
   return (
 
@@ -195,7 +190,7 @@ function SVideo() {
         <div className="webcam-check">
 
           <h2>웹캠 상태 확인</h2>
-          
+
           <p className="webcam-guide">
             상담 분석을 위해 웹캠이 사용됩니다.
           </p>
@@ -207,11 +202,11 @@ function SVideo() {
           />
 
           <button
-              className="start-btn"
-              disabled={!webcamReady}
-              onClick={handleStart}
-            >
-              시작하기
+            className="start-btn"
+            disabled={!webcamReady}
+            onClick={handleStart}
+          >
+            시작하기
           </button>
 
         </div>
@@ -240,6 +235,7 @@ function SVideo() {
                   allowFullScreen
                 />
               )}
+
             </div>
 
             <h3>{currentVideo.title}</h3>
@@ -249,12 +245,12 @@ function SVideo() {
           <div className="svideo-bottom">
 
             <button
-                className={`survey-btn ${videoEnded ? "enabled" : ""}`}
-                onClick={handleGoSurvey}
-                disabled={!videoEnded}
-              >
+              className={`survey-btn ${videoEnded ? "enabled" : ""}`}
+              onClick={handleGoSurvey}
+              disabled={!videoEnded}
+            >
               설문하러 가기
-          </button>
+            </button>
 
           </div>
 
