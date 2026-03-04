@@ -61,3 +61,20 @@
   display: block;
   margin-top: 8px;
 }
+
+.homeButton {
+    margin-top: 30px;
+    padding: 14px 40px;
+    background-color: #E50914;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.homeButton:hover {
+    background-color: #c40812;
+}
