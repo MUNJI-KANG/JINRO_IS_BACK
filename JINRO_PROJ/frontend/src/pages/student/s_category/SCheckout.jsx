@@ -50,7 +50,6 @@ function Checkout() {
                 </div>
               </div>
               <div className="video-info">
-                <span className="category-tag">ID: {video.id}</span>
                 <h4>{video.subCategory}</h4>
                 <p>준비된 영상을 시청하신 후 설문이 진행됩니다.</p>
               </div>

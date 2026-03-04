@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom"; // ✅ useLocation만 추가
+import React, { useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import styles from "../../../css/student_css/SMedCat.module.css";
 import VideoCard from "../../../component/VideoCard";
 import { useSelector, useDispatch } from 'react-redux';
-import { addVideo, deleteVideo } from '../../../redux/cVideos'
+import { deleteVideo } from '../../../redux/cVideos';
 
-// ✅ 상담사 중분류와 동일 + id만 부여 (임의 부여: bigId*100 + index+1)
+// ✅ 상담사 중분류와 동일 + id만 부여
 const midCategoryMap = {
   1: [{ id: 101, name: "사업관리" }],
   2: [
@@ -139,15 +139,11 @@ const midCategoryMap = {
 function SMedCat() {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
 
-  // ✅ 주인님 기존 흐름 유지: bigId가 넘어온다고 가정(없으면 카드 안 나옴)
-  const { bigId, bigName } = location.state
+  const { bigId, bigName } = location.state;
   const safeBigId = Number(bigId);
 
-  // 현재 선택된 중분류의 ID 또는 이름을 저장하는 상태 (주인님 코드 유지)
-  const [selectedSub, setSelectedSub] = useState(null);
-
-  // 선택된 영상 리스트
   const selectedVideos = useSelector((state) => state.cVideos);
 
   const midCategories = useMemo(() => {
@@ -155,14 +151,16 @@ function SMedCat() {
     return midCategoryMap[safeBigId] || [];
   }, [safeBigId]);
 
-  // 중분류 클릭 핸들러 (주인님 코드 유지: selectedSub만 업데이트)
-  const handleCardClick = (midId) => {
-    setSelectedSub(midId);
-    // ✅ 여기서는 다른 기능 안 건드립니다.
+  const handleCardClick = (mid) => {
+    navigate("/student/category/small", {
+      state: {
+        bigId: safeBigId,
+        bigName,
+        midId: mid.id,
+        midName: mid.name
+      }
+    });
   };
-
-  // 삭제 핸들러 (주인님 코드 유지)
-  const dispatch = useDispatch();
 
   const handleDelete = (id) => {
     dispatch(deleteVideo(id));
@@ -170,12 +168,6 @@ function SMedCat() {
 
   const handleBack = () => {
     navigate(-1);
-  };
-
-  const handleNext = () => {
-    navigate("/student/category/small", {
-      state: { bigId: safeBigId, bigName, midId: selectedSub },
-    });
   };
 
   return (
@@ -193,17 +185,15 @@ function SMedCat() {
         <button className={styles.backButton} onClick={handleBack}>
           ← 뒤로
         </button>
-        <h2 className={styles.categoryTitle}>{bigName || "카테고리"}</h2>
+        <h2 className={styles.categoryTitle}>{bigName}</h2>
       </div>
 
       <div className={styles.cardGrid}>
         {midCategories.map((mid) => (
           <div
             key={mid.id}
-            className={`${styles.card} ${
-              selectedSub === mid.id ? styles.activeCard : ""
-            }`}
-            onClick={() => handleCardClick(mid.id)}
+            className={styles.card}
+            onClick={() => handleCardClick(mid)}
           >
             {mid.name}
           </div>
@@ -218,10 +208,6 @@ function SMedCat() {
           ))}
         </div>
       </div>
-
-      <button className={styles.nextButton} onClick={handleNext}>
-        다음으로 ({selectedVideos.length}/3)
-      </button>
     </div>
   );
 }

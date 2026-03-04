@@ -206,15 +206,21 @@
 .nextButton {
     margin-top: 30px;
     background-color: #888;
-    /* 이미지와 유사한 회색 */
     color: white;
     border: none;
     padding: 12px 60px;
     border-radius: 6px;
     font-size: 14px;
     cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.activeNewxButton {
-    background-color: #FFB454;
+/* 활성화 버튼 */
+.activeNextButton {
+    background-color: #3b82f6;
+}
+
+/* hover 효과 */
+.activeNextButton:hover {
+    background-color: #2563eb;
 }
