@@ -1,9 +1,18 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from '../../css/student_css/SComplete.module.css';
 
 function SComplete() {
+
+    const navigate = useNavigate();
+
+    const handleGoHome = () => {
+        navigate('/');
+    };
+
     return (
         <main className={styles.container}>
+
             {/* 상단 체크 아이콘 영역 */}
             <div className={styles.iconWrapper}>
                 <div className={styles.checkIcon}></div>
@@ -18,8 +27,17 @@ function SComplete() {
                     이제 당신의 마음 리포트를 확인해 보세요.
                 </span>
             </p>
+
+            {/* 홈으로 버튼 */}
+            <button
+                className={styles.homeButton}
+                onClick={handleGoHome}
+            >
+                홈으로 돌아가기
+            </button>
+
         </main>
     );
-};
+}
 
 export default SComplete;
