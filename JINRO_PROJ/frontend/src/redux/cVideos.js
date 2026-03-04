@@ -9,7 +9,7 @@ export const cVideos = createSlice({
 
     addVideo: (state, action) => {
 
-      const payload = action.payload;
+      const payload = action.payload[0];
 
       // 같은 영상 중복 방지
       const exist = state.find(v => v.id === payload.id);
