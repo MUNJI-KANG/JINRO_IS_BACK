@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/counselor", tags=["Counselor (상담사)"])
 
+
 def get_db():
     db = SessionLocal()
     try:
@@ -16,7 +17,7 @@ def get_db():
 
 
 # ===============================
-# 🔹 카테고리 관련 API (위에 배치)
+# 🔹 카테고리 API
 # ===============================
 
 # 카테고리 저장
@@ -39,52 +40,100 @@ def create_or_update_category(request: counselor.CategoryCreateRequest, db: Sess
             db.add(new_category)
 
         db.commit()
-        return {"success": True, "message": "카테고리가 성공적으로 저장되었습니다."}
+
+        return {"success": True, "message": "카테고리 저장 완료"}
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"저장 중 오류 발생: {str(e)}")
-    
-# 소분류 조회 
-@router.get("/category/{kind}")
-def get_category_by_kind(kind: int, db: Session = Depends(get_db)):
-    categories = db.query(Category).filter(Category.kind == kind).all()
-
-    return [
-        {
-            "c_id": c.c_id,
-            "title": c.title,
-            "url": c.url,
-            "survey": c.survey,
-            "kind": c.kind
-        }
-        for c in categories
-    ]
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-# 카테고리 전체 조회
+# 전체 카테고리 조회
 @router.get("/category")
 def get_categories(db: Session = Depends(get_db)):
     categories = db.query(Category).all()
 
-    result = []
-    for cat in categories:
-        result.append({
-            "c_id": cat.c_id,
-            "title": cat.title,
-            "url": cat.url,
-            "kind": cat.kind,
-            "survey": cat.survey
-        })
+    return {
+        "success": True,
+        "data": [
+            {
+                "c_id": c.c_id,
+                "title": c.title,
+                "url": c.url,
+                "kind": c.kind,
+                "survey": c.survey
+            }
+            for c in categories
+        ]
+    }
 
-    return {"success": True, "data": result}
+
+# 🔹 중분류 기준 조회
+@router.get("/category/kind/{kind}")
+def get_category_by_kind(kind: int, db: Session = Depends(get_db)):
+    categories = db.query(Category).filter(Category.kind == kind).all()
+
+    return {
+        "success": True,
+        "data": [
+            {
+                "c_id": c.c_id,
+                "title": c.title,
+                "url": c.url,
+                "kind": c.kind,
+                "survey": c.survey
+            }
+            for c in categories
+        ]
+    }
+
+
+# 🔹 카테고리 상세 조회
+@router.get("/category/detail/{c_id}")
+def get_category_detail(c_id: int, db: Session = Depends(get_db)):
+    category = db.query(Category).filter(Category.c_id == c_id).first()
+
+    if not category:
+        raise HTTPException(status_code=404, detail="카테고리를 찾을 수 없습니다.")
+
+    return {
+        "success": True,
+        "data": {
+            "c_id": category.c_id,
+            "title": category.title,
+            "url": category.url,
+            "kind": category.kind,
+            "survey": category.survey
+        }
+    }
+
+
+# 카테고리 수정
+@router.put("/category/{c_id}")
+def update_category(
+        c_id: int,
+        request: counselor.CategoryCreateRequest,
+        db: Session = Depends(get_db)
+):
+    category = db.query(Category).filter(Category.c_id == c_id).first()
+
+    if not category:
+        raise HTTPException(status_code=404, detail="카테고리를 찾을 수 없습니다.")
+
+    category.title = request.title
+    category.url = request.url
+    category.kind = request.kind
+    category.survey = request.survey
+
+    db.commit()
+
+    return {"success": True, "message": "카테고리 수정 완료"}
 
 
 # ===============================
-# 🔹 상담사 관련 API
+# 🔹 상담사 API
 # ===============================
 
-# 상담사 로그인
 @router.post("/login")
 def login(request: counselor.CounselorLoginRequest, db: Session = Depends(get_db)):
     counselor_obj = db.query(Counselor).filter(
@@ -102,18 +151,16 @@ def login(request: counselor.CounselorLoginRequest, db: Session = Depends(get_db
 
     return {
         "success": True,
-        "message": f"{counselor_obj.name}님 환영합니다!",
         "name": counselor_obj.name,
         "counselor_id": counselor_obj.counselor_id
     }
 
 
-# 상담사 정보 수정
 @router.put("/{counselor_id}")
 def update_counselor(
-    counselor_id: int,
-    request: counselor.CounselorModifyInfo,
-    db: Session = Depends(get_db)
+        counselor_id: int,
+        request: counselor.CounselorModifyInfo,
+        db: Session = Depends(get_db)
 ):
     counselor_obj = db.query(Counselor).filter(
         Counselor.counselor_id == counselor_id
@@ -128,22 +175,4 @@ def update_counselor(
 
     db.commit()
 
-    return {"success": True, "message": "회원정보가 수정되었습니다."}
-
-
-# 상담사 정보 조회 (🔥 맨 아래)
-@router.get("/{counselor_id}")
-def get_counselor(counselor_id: int, db: Session = Depends(get_db)):
-    counselor_obj = db.query(Counselor).filter(
-        Counselor.counselor_id == counselor_id
-    ).first()
-
-    if not counselor_obj:
-        return {"success": False, "message": "존재하지 않는 상담사입니다."}
-
-    return {
-        "success": True,
-        "name": counselor_obj.name,
-        "phone": counselor_obj.phone_num,
-        "email": counselor_obj.email
-    }
+    return {"success": True}
