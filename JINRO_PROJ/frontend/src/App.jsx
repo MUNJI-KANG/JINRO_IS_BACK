@@ -37,6 +37,8 @@ import SSmallCat from "./pages/student/s_category/SSmallCat";
 import STest from "./pages/student/STest"
 import STest2 from "./pages/student/STest_copy"
 
+import PrivateRoute from "./routes/PrivateRoute";
+
 function App() {
   return (
     <BrowserRouter>
@@ -68,19 +70,22 @@ function App() {
 
         {/* student */}
         <Route path="/student/login" element={<SLogin />} />
-        <Route path="/student/survey/:categoryId" element={<SSurvey />} />
-        <Route path="/student/video/:categoryId" element={<SVideo />} />
         <Route path="/student/agreement" element={<SAgreement />} />
-        <Route path="/student/loading" element={<SLoading />} />
-        <Route path="/student/complete" element={<SComplete />} />
 
-        <Route path="/student/category/big" element={<SBigCat />} />
-        <Route path="/student/category/checkout" element={<SCheckout />} />
-        <Route path="/student/category/medium" element={<SMedCat />} />
-        <Route path="/student/category/small" element={<SSmallCat />} />
-        
-        <Route path="/student/test" element={<STest />} />
-        <Route path="/student/test_copy" element={<STest2 />} />
+        <Route path="/student" element={<PrivateRoute />}>
+          <Route path="survey/:categoryId" element={<SSurvey />} />
+          <Route path="video/:categoryId" element={<SVideo />} />
+          <Route path="loading" element={<SLoading />} />
+          <Route path="complete" element={<SComplete />} />
+
+          <Route path="category/big" element={<SBigCat />} />
+          <Route path="category/checkout" element={<SCheckout />} />
+          <Route path="category/medium" element={<SMedCat />} />
+          <Route path="category/small" element={<SSmallCat />} />
+
+          <Route path="test" element={<STest />} />
+          <Route path="test_copy" element={<STest2 />} />
+        </Route>
       </Routes>
     </BrowserRouter>
 
