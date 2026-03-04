@@ -1,5 +1,5 @@
 /* ============================= */
-/* 페이지 영역 (CCatList와 동일 톤) */
+/* 페이지 영역 */
 /* ============================= */
 
 .student-category-page {
@@ -23,7 +23,6 @@
 /* 카테고리 그리드 */
 /* ============================= */
 
-/* 기본 6열 */
 .category-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -38,6 +37,7 @@
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
+
   padding: 30px 10px;
 
   display: flex;
@@ -46,11 +46,12 @@
   justify-content: center;
 
   cursor: pointer;
+
   transition: all 0.2s ease;
+
   min-height: 130px;
 }
 
-/* Hover 효과 (상담사 화면과 동일) */
 .category-card:hover {
   background: #eef2ff;
   border-color: #3b82f6;
@@ -81,16 +82,111 @@
 }
 
 /* ============================= */
+/* 선택된 영상 */
+/* ============================= */
+
+.selected-video-container {
+
+  margin-top: 40px;
+
+  padding: 24px;
+
+  background: #ffffff;
+
+  border-radius: 16px;
+
+  box-shadow:
+    0 10px 25px rgba(0,0,0,0.06),
+    0 3px 8px rgba(0,0,0,0.05);
+
+  max-width: 800px;
+
+  margin-left: auto;
+  margin-right: auto;
+
+}
+
+.selected-video-container h3 {
+
+  font-size: 18px;
+  font-weight: 700;
+
+  margin-bottom: 18px;
+
+  color: #1e293b;
+
+}
+
+.selected-video-item {
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  padding: 10px 14px;
+
+  margin-bottom: 10px;
+
+  border-radius: 10px;
+
+  background: #f8fafc;
+
+  border: 1px solid #e2e8f0;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  color: #334155;
+
+  transition: all 0.2s ease;
+
+}
+
+.selected-video-item:hover {
+  background: #f1f5f9;
+}
+
+.delete-button {
+
+  border: none;
+
+  background: #ef4444;
+
+  color: white;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  padding: 4px 10px;
+
+  border-radius: 6px;
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+
+}
+
+.delete-button:hover {
+  background: #dc2626;
+}
+
+/* ============================= */
 /* 반응형 */
 /* ============================= */
 
 @media (max-width: 1200px) {
+
   .category-grid {
     grid-template-columns: repeat(4, 1fr);
   }
+
 }
 
 @media (max-width: 768px) {
+
   .category-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -98,4 +194,5 @@
   .student-category-page {
     padding: 30px;
   }
+
 }

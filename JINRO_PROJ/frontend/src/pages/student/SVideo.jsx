@@ -19,8 +19,72 @@ function SVideo() {
 
   const [currentVideo, setCurrentVideo] = useState(null);
   const [webcamReady, setWebcamReady] = useState(false);
+  const [webcamError, setWebcamError] = useState(false);
   const [videoEnded, setVideoEnded] = useState(false);
   const [started, setStarted] = useState(false);
+
+  // 웹캠 초기화
+  useEffect(() => {
+
+    const initWebcam = async () => {
+
+      try {
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true
+        });
+
+        if (webcamRef.current) {
+          webcamRef.current.srcObject = stream;
+          setWebcamReady(true);
+          setWebcamError(false);
+        }
+
+      } catch (err) {
+
+        console.error("카메라 연결 실패:", err);
+        setWebcamError(true);
+        setWebcamReady(false);
+
+      }
+
+    };
+
+    initWebcam();
+
+    return () => {
+
+      if (webcamRef.current && webcamRef.current.srcObject) {
+        const tracks = webcamRef.current.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+      }
+
+    };
+
+  }, []);
+
+  // 영상 가져오기
+  const fetchVideo = async () => {
+
+    try {
+
+      const res = await axios.get(
+        `http://127.0.0.1:8000/client/survey/${categoryId}`
+      );
+
+      if (res.data.success) {
+        setCurrentVideo(res.data.data);
+        setVideoEnded(false); // 🔥 영상 바뀔 때 초기화
+      }
+
+    } catch (err) {
+
+      console.error(err);
+
+    }
+
+  };
 
   const extractVideoId = (url) => {
 
@@ -48,36 +112,6 @@ function SVideo() {
 
   };
 
-  useEffect(() => {
-
-    const initWebcam = async () => {
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
-      });
-
-      webcamRef.current.srcObject = stream;
-      setWebcamReady(true);
-
-    };
-
-    initWebcam();
-
-  }, []);
-
-  const fetchVideo = async () => {
-
-    const res = await axios.get(
-      `http://127.0.0.1:8000/client/survey/${categoryId}`
-    );
-
-    if (res.data.success) {
-      setCurrentVideo(res.data.data);
-    }
-
-  };
-
   const startRecording = () => {
 
     const stream = webcamRef.current.srcObject;
@@ -89,10 +123,10 @@ function SVideo() {
     recorderRef.current = mediaRecorder;
     recordedChunks.current = [];
 
-    mediaRecorder.ondataavailable = (event) => {
+    mediaRecorder.ondataavailable = (e) => {
 
-      if (event.data.size > 0) {
-        recordedChunks.current.push(event.data);
+      if (e.data.size > 0) {
+        recordedChunks.current.push(e.data);
       }
 
     };
@@ -124,40 +158,53 @@ function SVideo() {
   const handleStart = async () => {
 
     await fetchVideo();
-
     setStarted(true);
-
     startRecording();
 
   };
 
   const handleGoSurvey = async () => {
 
-    await stopRecording();
+    try {
 
-    navigate(`/student/survey/${categoryId}`, {
-      state: {
-        currentIndex: currentIndex
-      }
-    });
+      const blob = await stopRecording();
+
+      const formData = new FormData();
+
+      // 🔥 파일 이름을 example.webm으로 고정
+      formData.append("file", blob, "example.webm");
+
+      await axios.post(
+        "http://127.0.0.1:8000/client/video/upload",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data"
+          }
+        }
+      );
+
+      navigate(`/student/survey/${categoryId}`, {
+        state: { currentIndex: currentIndex }
+      });
+
+    } catch (err) {
+
+      console.error("영상 업로드 실패:", err);
+
+    }
 
   };
-
   const videoId = extractVideoId(currentVideo?.url);
 
+  // YouTube Player 이벤트
   useEffect(() => {
 
     if (!started || !videoId) return;
 
-    if (!window.YT) {
+    setVideoEnded(false);
 
-      const tag = document.createElement("script");
-      tag.src = "https://www.youtube.com/iframe_api";
-      document.body.appendChild(tag);
-
-    }
-
-    window.onYouTubeIframeAPIReady = () => {
+    const createPlayer = () => {
 
       new window.YT.Player("youtube-player", {
 
@@ -166,9 +213,7 @@ function SVideo() {
           onStateChange: (event) => {
 
             if (event.data === window.YT.PlayerState.ENDED) {
-
               setVideoEnded(true);
-
             }
 
           }
@@ -179,7 +224,21 @@ function SVideo() {
 
     };
 
-  }, [started, videoId]);
+    if (!window.YT) {
+
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.body.appendChild(tag);
+
+      window.onYouTubeIframeAPIReady = createPlayer;
+
+    } else {
+
+      createPlayer();
+
+    }
+
+  }, [videoId, started]);
 
   return (
 
@@ -191,19 +250,28 @@ function SVideo() {
 
           <h2>웹캠 상태 확인</h2>
 
-          <p className="webcam-guide">
-            상담 분석을 위해 웹캠이 사용됩니다.
-          </p>
+          {webcamError ? (
 
-          <video
-            ref={webcamRef}
-            autoPlay
-            playsInline
-          />
+            <div className="webcam-error-msg">
+              ⚠️ 카메라를 찾을 수 없거나 권한이 거부되었습니다. <br />
+              설정을 확인하고 새로고침 해주세요.
+            </div>
+
+          ) : (
+
+            <p className="webcam-guide">
+              상담 분석을 위해 웹캠이 사용됩니다.
+            </p>
+
+          )}
+
+          <div className={`webcam-view ${webcamError ? "error-border" : ""}`}>
+            <video ref={webcamRef} autoPlay playsInline muted />
+          </div>
 
           <button
             className="start-btn"
-            disabled={!webcamReady}
+            disabled={!webcamReady || webcamError}
             onClick={handleStart}
           >
             시작하기
@@ -226,6 +294,7 @@ function SVideo() {
             <div className="video-container">
 
               {videoId && (
+
                 <iframe
                   id="youtube-player"
                   src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1`}
@@ -234,6 +303,7 @@ function SVideo() {
                   allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
+
               )}
 
             </div>

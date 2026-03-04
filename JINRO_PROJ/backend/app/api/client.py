@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import Request, APIRouter, Depends, HTTPException
+from fastapi import Request, APIRouter, Depends, HTTPException, UploadFile, File
 from app.db.database import SessionLocal, engine, Base
 from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV
 from app.schemas.client import ClientCreate,CounselingCreateRequest,ReportCompleteRequest
@@ -8,6 +8,8 @@ from app.schemas.client import ClientCreate,CounselingCreateRequest,ReportComple
 from sqlalchemy.orm import Session
 import random
 import datetime
+import os
+import shutil
 
 
 
@@ -32,34 +34,37 @@ def get_client_detail(client_id: int):
 @router.post("/login")
 def login_or_create_client(client_data: ClientCreate, request: Request, db: Session = Depends(get_db)):
     try:
-
-        existing_client = db.query(Client).filter(Client.phone_num == client_data.phone_num, Client.name == client_data.name).first()
+        # 기존 회원 확인 (이름과 핸드폰 번호 기준)
+        existing_client = db.query(Client).filter(
+            Client.phone_num == client_data.phone_num, 
+            Client.name == client_data.name
+        ).first()
         
         if existing_client:
-            request.session['client_id'] = existing_client.client_id
-            return {"message": "기존 회원 로그인 성공", "client_id": existing_client.client_id}
+            request.session['client_id'] = existing_client.c_id
+            return {"message": "기존 회원 로그인 성공", "client_id": existing_client.c_id}
 
+        # 신규 회원 생성 (데이터는 이미 검증된 숫자/형식임)
         new_client = Client(
             c_id=str(uuid.uuid4()), 
             name=client_data.name,
-            phone_num=client_data.phone_num,
-            email=client_data.email,
-            birthdate=client_data.birthdate,
+            phone_num=client_data.phone_num, # 예: 01012345678
+            email=client_data.email,         # 예: user@naver.com
+            birthdate=client_data.birthdate, # 예: 0001011
             agree='Y'
-
         )
         
         db.add(new_client)
         db.commit()
         db.refresh(new_client)
-        
-        request.session['client_id'] = new_client.client_id
 
-        return {"message": "신규 회원 가입 및 로그인 성공", "client_id": new_client.client_id}
+        request.session['client_id'] = new_client.c_id
+        return {"message": "신규 회원 등록 및 로그인 성공", "client_id": new_client.c_id}
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"데이터베이스 오류: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
     
 @router.get("/list/{kind_id}")
 def get_videos_by_kind(kind_id: int, db: Session = Depends(get_db)):
@@ -214,42 +219,34 @@ def create_counselling_and_reports(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"상담 데이터 생성 중 오류 발생: {str(e)}")
+    
+    
+# 🔥 나중에 저장 경로 지정할 곳
+# 예: UPLOAD_DIR = "D:/ai_project/videos"
+# 예: UPLOAD_DIR = "/home/server/videos"
+UPLOAD_DIR = "videos"   # 지금은 로컬 프로젝트 폴더에 저장
+
+# 폴더 없으면 생성
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-@router.post("/client/pComplete")
-def complete_video_report(
-    payload: ReportCompleteRequest, 
-    request: Request, 
-    db: Session = Depends(get_db)
-):
-    client_id = request.session.get('client_id')
-    if not client_id:
-        raise HTTPException(status_code=401, detail="로그인이 만료되었거나 비정상적인 접근입니다.")
+@router.post("/video/upload")
+async def upload_video(file: UploadFile = File(...)):
 
     try:
-        target_report = db.query(ReportAiV).filter(
-            ReportAiV.ai_v_erp_id == payload.report_id
-        ).first()
+        # 🔥 나중에 파일 경로 바꾸려면 여기 수정
+        # 예: file_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}.webm")
+        file_path = os.path.join(UPLOAD_DIR, "example.webm")
 
-        if not target_report:
-            raise HTTPException(status_code=404, detail="해당 리포트를 찾을 수 없습니다.")
-
-        target_report.complete_yn = 'Y'
-        target_report.answer = payload.answer  
-        
-        target_report.re_comment = ReCommentEnum.SUCCESS 
-
-        db.commit()
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
 
         return {
-            "success": True, 
-            "message": "영상 시청 및 설문 작성이 완료되었습니다.",
-            "report_id": target_report.ai_v_erp_id,
-            "complete_yn": target_report.complete_yn,
-            "re_comment": target_report.re_comment.value, 
-            "answer": target_report.answer
+            "success": True,
+            "message": "영상 저장 성공",
+            "path": file_path
         }
 
     except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"데이터 업데이트 중 오류 발생: {str(e)}")
+        print("영상 저장 오류:", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
