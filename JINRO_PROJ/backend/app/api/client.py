@@ -42,7 +42,7 @@ def login_or_create_client(client_data: ClientCreate, request: Request, db: Sess
         
         if existing_client:
             request.session['client_id'] = existing_client.c_id
-            return {"message": "기존 회원 로그인 성공", "client_id": existing_client.c_id}
+            return {"message": "기존 회원 로그인 성공", "client_id": existing_client.client_id}
 
         # 신규 회원 생성 (데이터는 이미 검증된 숫자/형식임)
         new_client = Client(
@@ -59,6 +59,7 @@ def login_or_create_client(client_data: ClientCreate, request: Request, db: Sess
         db.refresh(new_client)
 
         request.session['client_id'] = new_client.c_id
+        print("LOGIN SESSION:", request.session)
         return {"message": "신규 회원 등록 및 로그인 성공", "client_id": new_client.c_id}
 
     except Exception as e:
@@ -251,3 +252,4 @@ async def upload_video(file: UploadFile = File(...)):
     except Exception as e:
         print("영상 저장 오류:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
+    
