@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom"; // ✅ useLocation�
 import styles from "../../../css/student_css/SMedCat.module.css";
 import VideoCard from "../../../component/VideoCard";
 import { useSelector, useDispatch } from 'react-redux';
+import { addVideo, deleteVideo } from '../../../redux/cVideos'
 
 // ✅ 상담사 중분류와 동일 + id만 부여 (임의 부여: bigId*100 + index+1)
 const midCategoryMap = {
@@ -147,7 +148,7 @@ function SMedCat() {
   const [selectedSub, setSelectedSub] = useState(null);
 
   // 선택된 영상 리스트
-  const [selectedVideos, setSelectedVideos] = useState([]);
+  const selectedVideos = useSelector((state) => state.cVideos);
 
   const midCategories = useMemo(() => {
     if (!safeBigId) return [];
@@ -161,8 +162,10 @@ function SMedCat() {
   };
 
   // 삭제 핸들러 (주인님 코드 유지)
+  const dispatch = useDispatch();
+
   const handleDelete = (id) => {
-    setSelectedVideos(selectedVideos.filter((video) => video.id !== id));
+    dispatch(deleteVideo(id));
   };
 
   const handleBack = () => {
