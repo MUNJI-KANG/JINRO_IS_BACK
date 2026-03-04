@@ -37,27 +37,38 @@ const categories = [
 ];
 
 function SBigCat() {
+
   const navigate = useNavigate();
-  // ✅ Redux에서 선택된 영상들 가져오기
+  const dispatch = useDispatch();
+
+  // Redux에 저장된 선택 영상
   const selectedVideos = useSelector((state) => state.cVideos);
 
-  {/* ✅ 선택된 영상 개수 표시 */}
-      <div className="progress-badge" style={{textAlign: 'center', marginBottom: '20px'}}>
-        <span>🛒 선택한 영상: {selectedVideos.length} / 3</span>
-      </div>
+  const handleDelete = (id) => {
+    dispatch(deleteVideo(id));
+  };
 
   return (
     <div className="student-category-page">
+
       <h2 className="page-title">카테고리 선택</h2>
 
+      {/* 선택 영상 개수 */}
+      <div className="progress-badge">
+        🛒 선택한 영상 {selectedVideos.length} / 3
+      </div>
+
       <div className="category-grid">
+
         {categories.map((cat) => {
+
           const Icon = cat.icon;
+
           return (
             <button
               key={cat.id}
               className="category-card"
-              onClick={() => {
+              onClick={() =>
                 navigate("/student/category/medium", {
                   state: {
                     bigId: cat.id,
@@ -65,16 +76,48 @@ function SBigCat() {
                   },
                 })
               }
-              }
             >
               <Icon className="category-icon" />
+
               <div className="category-text">
                 {String(cat.id).padStart(2, "0")}. {cat.name}
               </div>
+
             </button>
           );
+
         })}
+
       </div>
+
+      {/* 선택된 영상 목록 */}
+      {selectedVideos.length > 0 && (
+
+        <div className="selected-video-container">
+
+          <h3>선택된 영상</h3>
+
+          {selectedVideos.map((video) => (
+
+            <div key={video.id} className="selected-video-item">
+
+              <span>{video.subCategory}</span>
+
+              <button
+                className="delete-button"
+                onClick={() => handleDelete(video.id)}
+              >
+                ✕
+              </button>
+
+            </div>
+
+          ))}
+
+        </div>
+
+      )}
+
     </div>
   );
 }

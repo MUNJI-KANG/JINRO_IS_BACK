@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import styles from "../../../css/student_css/SSmallCat.module.css";
-import VideoCard from "../../../component/VideoCard";
 import { useSelector, useDispatch } from "react-redux";
 import { addVideo, deleteVideo } from "../../../redux/cVideos";
 
@@ -13,15 +12,37 @@ function SSmallCat() {
 
     const select = useSelector((state) => state.cVideos);
 
-    const { midId, bigName, midName } = location.state ?? {};
+    const { midId, bigName, midName } = location.state || {};
 
     const [videos, setVideos] = useState([]);
     const [selectedVideo, setSelectedVideo] = useState(null);
 
+    const extractVideoId = (url) => {
+
+        if (!url) return null;
+
+        try {
+
+            const parsed = new URL(url);
+
+            if (parsed.hostname.includes("youtu.be"))
+            return parsed.pathname.slice(1);
+
+            if (parsed.searchParams.get("v"))
+            return parsed.searchParams.get("v");
+
+            return null;
+
+        } catch {
+
+            return null;
+
+        }
+
+        };
     useEffect(() => {
 
         if (!midId) {
-            console.error("midId 없음 → big 카테고리로 이동");
             navigate("/student/category/big");
             return;
         }
@@ -32,16 +53,15 @@ function SSmallCat() {
                 return res.json();
             })
             .then((data) => {
+
                 if (data.success) {
                     setVideos(data.data || []);
                 } else {
                     setVideos([]);
                 }
+
             })
-            .catch((err) => {
-                console.error("영상 불러오기 실패:", err);
-                setVideos([]);
-            });
+            .catch(() => setVideos([]));
 
     }, [midId, navigate]);
 
@@ -50,9 +70,15 @@ function SSmallCat() {
 
         if (!video) return;
 
-        if (select.find((v) => v.id === video.c_id)) return;
+        if (select.find((v) => v.id === video.c_id)) {
+            alert("이미 선택된 영상입니다.");
+            return;
+        }
 
-        if (select.length >= 3) return;
+        if (select.length >= 3) {
+            alert("최대 3개까지만 선택 가능합니다.");
+            return;
+        }
 
         const newVideo = {
             id: video.c_id,
@@ -60,9 +86,7 @@ function SSmallCat() {
             subCategory: video.title,
         };
 
-        // 🔥 Redux slice 구조에 맞게 배열로 전달
         dispatch(addVideo([newVideo]));
-
         setSelectedVideo(video.c_id);
     };
 
@@ -71,18 +95,13 @@ function SSmallCat() {
         dispatch(deleteVideo(id));
     };
 
-
-    const handleBack = () => {
-        navigate(-1);
-    };
-
+    const handleBack = () => navigate(-1);
 
     const handleNext = () => {
         navigate("/student/category/checkout");
     };
 
-
-    const handelNextVideoSelect = () => {
+    const handleNextVideoSelect = () => {
         navigate("/student/category/big");
     };
 
@@ -97,70 +116,91 @@ function SSmallCat() {
             </p>
 
             <div className={styles.progressBadge}>
-                <span>🛒 선택한 영상: {select.length} / 3</span>
+                🛒 선택한 영상: {select.length} / 3
             </div>
 
+
             <div className={styles.headerRow}>
-                <button className={styles.backButton} onClick={handleBack}>
+
+                <button
+                    className={styles.backButton}
+                    onClick={handleBack}
+                >
                     ← 뒤로
                 </button>
 
                 <h2 className={styles.categoryTitle}>
                     {bigName} &gt; {midName}
                 </h2>
+
             </div>
 
 
             <div className={styles.cardGrid}>
+
                 {videos.map((video) => (
 
                     <div
                         key={video.c_id}
-                        className={`${styles.card} ${selectedVideo === video.c_id ? styles.activeCard : ""
-                            }`}
+                        className={`${styles.card} ${selectedVideo === video.c_id ? styles.activeCard : ""}`}
                         onClick={() => handleCardClick(video)}
                     >
 
-                        <div className={styles.imageContainer}>
-                            <div style={{
-                                color: "#E50914",
-                                fontSize: "48px",
-                                fontWeight: "bold"
-                            }}>
-                                N
-                            </div>
-                        </div>
+                    <div className={styles.imageContainer}>
 
+                        <img
+                            src={`https://img.youtube.com/vi/${extractVideoId(video.url)}/hqdefault.jpg`}
+                            alt={video.title}
+                            className={styles.thumbnail}
+                        />
+
+                    </div>
                         <div className={styles.content}>
+
                             <strong className={styles.title}>
                                 {video.title}
                             </strong>
-                            <p className={styles.duration}>영상보기</p>
+
+                            <p className={styles.duration}>
+                                영상보기
+                            </p>
+
                         </div>
 
                     </div>
 
                 ))}
+
             </div>
 
 
-            <div className={styles.selectedListContainer}>
+            {/* Big과 동일한 선택 영상 UI */}
+            {select.length > 0 && (
 
-                <h3 className={styles.listTitle}>선택된 영상</h3>
+                <div className="selected-video-container">
 
-                <div className={styles.listWrapper}>
+                    <h3>선택된 영상</h3>
 
                     {select.map((video) => (
-                        <VideoCard
-                            key={video.id}
-                            video={video}
-                            handleDelete={handleDelete}
-                        />
+
+                        <div key={video.id} className="selected-video-item">
+
+                            <span>{video.subCategory}</span>
+
+                            <button
+                                className="delete-button"
+                                onClick={() => handleDelete(video.id)}
+                            >
+                                ✕
+                            </button>
+
+                        </div>
+
                     ))}
 
                 </div>
 
-            </div>
+            )}
 
 
             {select.length === 3 ? (
@@ -176,15 +216,16 @@ function SSmallCat() {
 
                 <button
                     className={styles.nextButton}
-                    onClick={handelNextVideoSelect}
+                    onClick={handleNextVideoSelect}
                 >
-                    다음영상고르기 ({select.length}/3)
+                    카테고리로 이동 ({select.length}/3)
                 </button>
 
             )}
 
         </div>
     );
+
 }
 
 export default SSmallCat;
