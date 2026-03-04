@@ -1,36 +1,51 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { loadVideos, saveVideos } from "./persistVideos";
 
-const initialState = [];
-
-export const cVideos = createSlice({
+const cVideosSlice = createSlice({
   name: "cVideos",
-  initialState,
+  initialState: loadVideos(),
+
   reducers: {
 
     addVideo: (state, action) => {
 
-      const payload = action.payload[0];
+      const newVideos = action.payload;
 
-      // 같은 영상 중복 방지
-      const exist = state.find(v => v.id === payload.id);
-      if (exist) return;
+      newVideos.forEach((video) => {
 
-      // 최대 3개
-      if (state.length >= 3) return;
+        const exists = state.find((v) => v.id === video.id);
 
-      state.push(payload);
+        if (!exists) {
+          state.push(video);
+        }
+
+      });
+
+      saveVideos(state);
     },
 
     deleteVideo: (state, action) => {
-      return state.filter(video => video.id !== action.payload);
+
+      const newState = state.filter(
+        (video) => video.id !== action.payload
+      );
+
+      saveVideos(newState);
+
+      return newState;
     },
 
     clearVideos: () => {
+
+      localStorage.removeItem("selectedVideos");
+
       return [];
     }
 
   }
+
 });
 
-export const { addVideo, deleteVideo, clearVideos } = cVideos.actions;
-export default cVideos.reducer;
+export const { addVideo, deleteVideo, clearVideos } = cVideosSlice.actions;
+
+export default cVideosSlice.reducer;

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo,useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import styles from "../../../css/student_css/SMedCat.module.css";
 import VideoCard from "../../../component/VideoCard";
@@ -137,14 +137,23 @@ const midCategoryMap = {
 };
 
 function SMedCat() {
+
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
 
-  const { bigId, bigName } = location.state;
+  const selectedVideos = useSelector((state) => state.cVideos);
+
+  const { bigId, bigName } = location.state || {};
+
   const safeBigId = Number(bigId);
 
-  const selectedVideos = useSelector((state) => state.cVideos);
+  // 새로고침 시 state 사라지면 big 페이지로 이동
+  useEffect(() => {
+    if (!safeBigId) {
+      navigate("/student/category/big");
+    }
+  }, [safeBigId, navigate]);
 
   const midCategories = useMemo(() => {
     if (!safeBigId) return [];
@@ -157,8 +166,8 @@ function SMedCat() {
         bigId: safeBigId,
         bigName,
         midId: mid.id,
-        midName: mid.name
-      }
+        midName: mid.name,
+      },
     });
   };
 
@@ -172,19 +181,22 @@ function SMedCat() {
 
   return (
     <div className={styles.container}>
+
       <h1 className={styles.title}>분야 선택</h1>
+
       <p className={styles.subtitle}>
         서로 다른 카테고리에서 3개의 영상을 선택하세요
       </p>
 
       <div className={styles.progressBadge}>
-        <span>🛒 선택한 영상: {selectedVideos.length} / 3</span>
+        🛒 선택한 영상: {selectedVideos.length} / 3
       </div>
 
       <div className={styles.headerRow}>
         <button className={styles.backButton} onClick={handleBack}>
           ← 뒤로
         </button>
+
         <h2 className={styles.categoryTitle}>{bigName}</h2>
       </div>
 
@@ -200,14 +212,33 @@ function SMedCat() {
         ))}
       </div>
 
-      <div className={styles.selectedListContainer}>
-        <h3 className={styles.listTitle}>선택된 영상</h3>
-        <div className={styles.listWrapper}>
-          {selectedVideos.map((video) => (
-            <VideoCard key={video.id} video={video} handleDelete={handleDelete} />
-          ))}
-        </div>
+     {selectedVideos.length > 0 && (
+
+    <div className="selected-video-container">
+
+        <h3>선택된 영상</h3>
+
+        {selectedVideos.map((video) => (
+
+          <div key={video.id} className="selected-video-item">
+
+            <span>{video.subCategory}</span>
+
+            <button
+              className="delete-button"
+              onClick={() => handleDelete(video.id)}
+            >
+              ✕
+            </button>
+
+          </div>
+
+        ))}
+
       </div>
+
+    )}
+
     </div>
   );
 }
