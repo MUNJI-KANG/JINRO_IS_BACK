@@ -4,6 +4,9 @@ from app.db.database import SessionLocal
 from app.models.schema_models import Counselor, Category
 from app.schemas import counselor
 from pydantic import BaseModel
+from app.models.schema_models import ReportAiV, AiVideoAnalyze, ReCommentEnum
+from sqlalchemy import func
+from app.models.schema_models import ReportFinal
 
 router = APIRouter(prefix="/counselor", tags=["Counselor (상담사)"])
 
@@ -185,3 +188,148 @@ def update_counselor(
     db.commit()
 
     return {"success": True}
+
+# ===============================
+# 🔹 상담 최종 리포트 조회
+# ===============================
+
+@router.get("/report/final/{counseling_id}")
+def get_final_report(counseling_id: int, db: Session = Depends(get_db)):
+
+    videos = db.query(ReportAiV).filter(
+        ReportAiV.counseling_id == counseling_id
+    ).all()
+
+    focus_data = []
+    interest_data = []
+    alerts = []
+
+    for v in videos:
+
+        analyze = db.query(AiVideoAnalyze).filter(
+            AiVideoAnalyze.ai_v_erp_id == v.ai_v_erp_id
+        ).first()
+
+        # 1️⃣ 집중도 평균 계산
+        avg_focus = 0
+
+        if analyze and analyze.emotion_v_score:
+
+            scores = analyze.emotion_v_score
+
+            total = sum(item["value"] for item in scores)
+            avg_focus = round(total / len(scores), 2)
+
+        # 2️⃣ 영상별 집중도 그래프
+        focus_data.append({
+            "subject": v.category,
+            "value": avg_focus
+        })
+
+        # 3️⃣ 관심도 그래프 (기존 유지)
+        interest_data.append({
+            "subject": v.category,
+            "관심도": 70,
+            "자신감": 65,
+            "수행도": 75
+        })
+
+        # 4️⃣ 실패 알림
+        if v.re_comment == ReCommentEnum.ANALYZE_FAIL:
+            alerts.append({
+                "id": v.ai_v_erp_id,
+                "time": "[영상]",
+                "level": "높음",
+                "msg": f"{v.category} 영상 AI 분석 실패",
+                "videoId": v.ai_v_erp_id
+            })
+
+    return {
+        "success": True,
+        "focus": focus_data,
+        "interest": interest_data,
+        "alerts": alerts
+    }
+
+# 최종 리포트 조회 API
+@router.get("/report/final/comment/{counseling_id}")
+def get_final_comment(counseling_id: int, db: Session = Depends(get_db)):
+
+    report = db.query(ReportFinal).filter(
+        ReportFinal.counseling_id == counseling_id
+    ).first()
+
+    if not report:
+        return {
+            "success": True,
+            "comment": "",
+            "complete": "N"
+        }
+
+    return {
+        "success": True,
+        "comment": report.final_comment,
+        "complete": report.complete_yn
+    }
+
+# ===============================
+# 🔹 최종 리포트 저장/완료 API
+# ===============================
+
+class FinalReportSave(BaseModel):
+    counseling_id: int
+    comment: str
+
+
+# 수정 완료 (저장만)
+@router.post("/report/final/save")
+def save_final_report(data: FinalReportSave, db: Session = Depends(get_db)):
+
+    report = db.query(ReportFinal).filter(
+        ReportFinal.counseling_id == data.counseling_id
+    ).first()
+
+    # 이미 존재하면 수정
+    if report:
+        report.final_comment = data.comment
+
+    # 없으면 새로 생성
+    else:
+        report = ReportFinal(
+            counseling_id=data.counseling_id,
+            final_comment=data.comment,
+            complete_yn='N'
+        )
+        db.add(report)
+
+    db.commit()
+
+    return {
+        "success": True,
+        "message": "리포트 저장 완료"
+    }
+
+
+# 작성 완료 (잠금)
+@router.post("/report/final/complete")
+def complete_final_report(data: FinalReportSave, db: Session = Depends(get_db)):
+
+    report = db.query(ReportFinal).filter(
+        ReportFinal.counseling_id == data.counseling_id
+    ).first()
+
+    if not report:
+        raise HTTPException(
+            status_code=404,
+            detail="최종 리포트가 존재하지 않습니다."
+        )
+
+    report.final_comment = data.comment
+    report.complete_yn = 'Y'
+
+    db.commit()
+
+    return {
+        "success": True,
+        "message": "최종 리포트 작성 완료"
+    }
