@@ -90,6 +90,7 @@ export default function CCatWrite() {
           `http://127.0.0.1:8000/counselor/category/${editData.c_id}`,
           {
             method: "PUT",
+            credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           }
@@ -99,6 +100,7 @@ export default function CCatWrite() {
           "http://127.0.0.1:8000/counselor/category",
           {
             method: "POST",
+            credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           }
