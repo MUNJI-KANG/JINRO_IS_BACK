@@ -5,7 +5,6 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-
 # ---------------------------------------------------------
 # [수정된 부분] MySQL 연결 URL 세팅
 # 형식: "mysql+pymysql://사용자이름:비밀번호@호스트:포트/DB이름"

@@ -1,17 +1,24 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import "../../../css/counselor_css/CCatDetail.css";
 
 export default function CCatDetail() {
   const { videoId } = useParams();
   const navigate = useNavigate();
+  const [detailData, setDetailData] = useState(null);
 
-  // 🔥 추후 API로 교체 가능
-  const detailData = {
-    id: videoId,
-    category: "축구",
-    url: "https://www.example.com",
-    question: "진로상담 내용이 만족스러웠나요?",
-  };
+  useEffect(() => {
+    fetch(`http://127.0.0.1:8000/counselor/category/detail/${videoId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setDetailData(data.data);
+        }
+      })
+      .catch((err) => console.error("상세 조회 실패:", err));
+  }, [videoId]);
+
+  if (!detailData) return <div>로딩 중...</div>;
 
   return (
     <div className="detail-page">
@@ -21,7 +28,7 @@ export default function CCatDetail() {
 
         <div className="detail-content">
           <p>
-            <strong>카테고리:</strong> {detailData.category}
+            <strong>카테고리:</strong> {detailData.title}
           </p>
 
           <p>
@@ -36,31 +43,24 @@ export default function CCatDetail() {
             </a>
           </p>
 
-          <p className="question">
-            <strong>질문:</strong> {detailData.question}
-          </p>
-
-          <div className="rating-group">
-            {["매우만족", "만족", "보통", "불만족", "매우불만족"].map(
-              (label) => (
-                <button key={label} className="rating-btn">
-                  {label}
-                </button>
-              )
-            )}
-          </div>
+          {detailData.survey?.map((q, idx) => (
+            <div key={idx} className="question">
+              <strong>질문 {idx + 1}:</strong> {q.questionText}
+            </div>
+          ))}
         </div>
 
         <div className="detail-btn-wrapper">
-            <button
+          <button
             onClick={() =>
-                navigate("/counselor/category/write", {
+              navigate("/counselor/category/write", {
                 state: detailData,
-                })
+              })
             }
-            >
+          >
             수정
-            </button>
+          </button>
+
           <button
             className="list-btn"
             onClick={() => navigate(-1)}
