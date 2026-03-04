@@ -3,7 +3,7 @@ import styles from '../css/component_css/VideoCard.module.css'
 export default function VideoCard(props) {
 
     return (
-        <div key={props.video.id} className={styles.selectedItem}>
+        <div className={styles.selectedItem}>
             <div className={styles.thumbnail}>
                 <span style={{ color: '#E50914', fontWeight: 'bold' }}>N</span>
             </div>

@@ -7,7 +7,7 @@ export const cVideos = createSlice({
     initialState,
     reducers: {
         addVideo: (state, action) => {
-            state.push(action.payload);
+            state.push(action.payload[0]);
         },
 
         deleteVideo: (state, action) => {

@@ -21,7 +21,7 @@ function SSmallCat() {
     useEffect(() => {
         if (!midId) return;
 
-        fetch(`http://127.0.0.1:8000/counselor/category/${midId}`)
+        fetch(`http://127.0.0.1:8000/counselor/category/kind/${midId}`)
             .then(res => {
                 if (!res.ok) {
                     throw new Error("서버 응답 오류");
@@ -29,7 +29,7 @@ function SSmallCat() {
                 return res.json();
             })
             .then(data => {
-                setVideos(Array.isArray(data) ? data : []);
+                setVideos(data.data);
             })
             .catch(err => {
                 console.error("영상 불러오기 실패:", err);
@@ -38,14 +38,10 @@ function SSmallCat() {
 
     }, [midId]);
 
-    useEffect(() => { console.log(select) }, [select])
-
     const handleCardClick = (video) => {
-            // 1. 단순 UI 선택 상태 업데이트
-            setSelectedVideo(video.c_id);
-
+            setSelectedVideo(null);
             // 2. 이미 선택된 영상인지 확인
-            if (selectedVideos.find(v => v.id === video.c_id)) {
+            if (selectedVideos.find(v => v.id === video.c_id) || select.find(v => v.id === video.c_id)) {
                 return; // 이미 있으면 중단
             }
 
@@ -57,9 +53,8 @@ function SSmallCat() {
                     subCategory: video.title
                 };
 
-                // ✅ [수정] dispatch를 setState 밖에서 실행합니다.
-                dispatch(addVideo(newVideo));
-                
+                // 1. 단순 UI 선택 상태 업데이트
+                setSelectedVideo(video.c_id);
                 // ✅ [수정] 상태 업데이트는 순수하게 데이터만 추가합니다.
                 setSelectedVideos(prev => [...prev, newVideo]);
             }
@@ -75,10 +70,12 @@ function SSmallCat() {
     };
 
     const handleNext = () => {
+        dispatch(addVideo(selectedVideos.filter(data => data.id === selectedVideo)))
         navigate('/student/category/checkout');
     };
 
     const handelNextVideoSelect = () => {
+        dispatch(addVideo(selectedVideos.filter(data => data.id === selectedVideo)))
         navigate('/student/category/big')
     }
 
@@ -90,7 +87,7 @@ function SSmallCat() {
             </p>
 
             <div className={styles.progressBadge}>
-                <span>🛒 선택한 영상: {selectedVideos.length} / 3</span>
+                <span>🛒 선택한 영상: {select.length} / 3</span>
             </div>
 
             <div className={styles.headerRow}>
@@ -129,9 +126,9 @@ function SSmallCat() {
             <div className={styles.selectedListContainer}>
                 <h3 className={styles.listTitle}>선택된 영상</h3>
                 <div className={styles.listWrapper}>
-                    {selectedVideos.map(video => (
+                    {select.map((video, idx) => (
                         <VideoCard
-                            key={video.id}
+                            key={idx}
                             video={video}
                             handleDelete={handleDelete}
                         />
@@ -139,7 +136,7 @@ function SSmallCat() {
                 </div>
             </div>
 
-            {selectedVideos.length >= 2 ? (
+            {select.length >= 2 ? (
                 <div>
                     <button className={`${styles.nextButton} ${selectedVideo != null ? styles.activeNewxButton : ''}`} onClick={handleNext} disabled={selectedVideo == null}>
                         영상보기
@@ -148,7 +145,7 @@ function SSmallCat() {
             ) : (
                 <div>
                     <button className={`${styles.nextButton} ${selectedVideo != null ? styles.activeNewxButton : ''}`} onClick={handelNextVideoSelect} disabled={selectedVideo == null}>
-                        다음영상고르기 ({selectedVideos.length}/3)
+                        다음영상고르기 ({select.length}/3)
                     </button>
                 </div>
             )}

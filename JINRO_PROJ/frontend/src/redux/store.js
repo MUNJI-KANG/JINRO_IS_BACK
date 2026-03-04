@@ -6,7 +6,8 @@ import { applyMiddleware } from 'redux';
 
 export const store = configureStore({
   reducer: {
-    cVideos: cVideos, 
+    cVideos: cVideos,
   },
-  
-});
+}, composeWithDevTools(
+  applyMiddleware()
+));
