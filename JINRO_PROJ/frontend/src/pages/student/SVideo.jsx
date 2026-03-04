@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axios from "axios";
+import { useSelector } from "react-redux";
 import "../../css/student_css/SVideo.css";
 
 function SVideo() {

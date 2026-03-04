@@ -15,13 +15,19 @@ function SSmallCat() {
 
     const [videos, setVideos] = useState([]);
     const [selectedVideo, setSelectedVideo] = useState(null);
-    const [selectedVideos, setSelectedVideos] = useState(select); // 🔥 더미 제거
+    const selectedVideos = useSelector((state) => state.cVideos); // 🔥 더미 제거
 
     // 🔥 DB에서 데이터만 불러오기
     useEffect(() => {
-        if (!midId) return;
+        if (!midId) {
+            console.error("midId 없음", location.state);
+            return;
+        }
 
-        fetch(`http://127.0.0.1:8000/counselor/category/${midId}`)
+        const url = `http://127.0.0.1:8000/counselor/category/kind/${midId}`;
+        console.log("API 호출:", url);
+
+        fetch(url)
             .then(res => {
                 if (!res.ok) {
                     throw new Error("서버 응답 오류");
@@ -29,7 +35,11 @@ function SSmallCat() {
                 return res.json();
             })
             .then(data => {
-                setVideos(Array.isArray(data) ? data : []);
+                if (data.success) {
+                    setVideos(data.data || []);
+                } else {
+                    setVideos([]);
+                }
             })
             .catch(err => {
                 console.error("영상 불러오기 실패:", err);
@@ -41,33 +51,20 @@ function SSmallCat() {
     useEffect(() => { console.log(select) }, [select])
 
     const handleCardClick = (video) => {
-            // 1. 단순 UI 선택 상태 업데이트
-            setSelectedVideo(video.c_id);
 
-            // 2. 이미 선택된 영상인지 확인
-            if (selectedVideos.find(v => v.id === video.c_id)) {
-                return; // 이미 있으면 중단
-            }
+        setSelectedVideo(video.c_id);
 
-            // 3. 최대 3개까지만 추가 가능하도록 로직 변경
-            if (selectedVideos.length < 3) {
-                const newVideo = {
-                    id: video.c_id,
-                    mainCategory: bigName,
-                    subCategory: video.title
-                };
-
-                // ✅ [수정] dispatch를 setState 밖에서 실행합니다.
-                dispatch(addVideo(newVideo));
-                
-                // ✅ [수정] 상태 업데이트는 순수하게 데이터만 추가합니다.
-                setSelectedVideos(prev => [...prev, newVideo]);
-            }
+        const newVideo = {
+            id: video.c_id,
+            mainCategory: bigName,
+            subCategory: video.title
         };
+
+        dispatch(addVideo(newVideo));
+    };
 
     const handleDelete = (id) => {
         dispatch(deleteVideo(id));
-        setSelectedVideos(selectedVideos.filter(video => video.id !== id));
     };
 
     const handleBack = () => {
@@ -141,13 +138,13 @@ function SSmallCat() {
 
             {selectedVideos.length >= 2 ? (
                 <div>
-                    <button className={`${styles.nextButton} ${selectedVideo != null ? styles.activeNewxButton : ''}`} onClick={handleNext} disabled={selectedVideo == null}>
+                    <button className={`${styles.nextButton} ${selectedVideo != null ? styles.activeNewxButton : ''}`} onClick={handleNext} disabled={selectedVideos.length === 0}>
                         영상보기
                     </button>
                 </div>
             ) : (
                 <div>
-                    <button className={`${styles.nextButton} ${selectedVideo != null ? styles.activeNewxButton : ''}`} onClick={handelNextVideoSelect} disabled={selectedVideo == null}>
+                    <button className={`${styles.nextButton} ${selectedVideo != null ? styles.activeNewxButton : ''}`} onClick={handelNextVideoSelect} disabled={selectedVideos.length === 0}>
                         다음영상고르기 ({selectedVideos.length}/3)
                     </button>
                 </div>

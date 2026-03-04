@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../../../css/student_css/Checkout.css";
 
@@ -6,7 +7,7 @@ function Checkout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [selectedVideos, setSelectedVideos] = useState(location.state?.selectedVideos || []);
+  const selectedVideos = useSelector((state) => state.cVideos);
 
   useEffect(() => {
     if (selectedVideos.length === 0) {
@@ -50,7 +51,7 @@ function Checkout() {
               </div>
               <div className="video-info">
                 <span className="category-tag">ID: {video.id}</span>
-                <h4>{video.title}</h4>
+                <h4>{video.subCategory}</h4>
                 <p>준비된 영상을 시청하신 후 설문이 진행됩니다.</p>
               </div>
             </div>
