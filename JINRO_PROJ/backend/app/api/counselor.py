@@ -1,12 +1,27 @@
 from fastapi import Request, APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
-from app.models.schema_models import Counselor, Category, Counseling, Client
+
 from app.schemas.counselor import CounselorLoginRequest,CategoryCreateRequest,CounselorModifyInfo,ScheduleDetailResponse,ScheduleListResponse
 from pydantic import BaseModel
 from app.models.schema_models import ReportAiV, AiVideoAnalyze, ReCommentEnum
 from sqlalchemy import func, or_, and_
 from app.models.schema_models import ReportFinal
+# from app.schemas import counselor
+
+from app.models.schema_models import (
+    Counselor,
+    Category,
+    ReportAiV,
+    AiVideoAnalyze,
+    ReCommentEnum,
+    ReportFinal,
+    ReportCon,
+    ReportAiM,
+    Client,
+    Counseling
+)
+
 
 
 from datetime import datetime
@@ -197,6 +212,68 @@ def update_counselor(
 
 
 # ===============================
+# 🔹 시청 영상 리스트 조회
+# ===============================
+
+@router.get("/video/list/{counseling_id}")
+def get_video_list(counseling_id:int, db:Session=Depends(get_db)):
+
+    videos = db.query(ReportAiV).filter(
+        ReportAiV.counseling_id == counseling_id
+    ).all()
+
+    return {
+        "success":True,
+        "data":[
+            {
+                "id":v.ai_v_erp_id,
+                "category":v.category,
+                "date":v.reg_date.strftime("%Y-%m-%d")
+            }
+            for v in videos
+        ]
+    }
+# ===============================
+# 🔹 상담 리포트 리스트
+# ===============================
+
+@router.get("/conversation/list/{counseling_id}")
+def get_conversation_list(counseling_id:int, db:Session=Depends(get_db)):
+
+    cons = db.query(ReportCon).filter(
+        ReportCon.counseling_id == counseling_id
+    ).all()
+
+    return {
+        "success":True,
+        "data":[
+            {
+                "id":c.con_rep_id,
+                "date":c.reg_date.strftime("%Y-%m-%d")
+            }
+            for c in cons
+        ]
+    }
+# ===============================
+# 🔹 영상 URL 조회
+# ===============================
+
+@router.get("/video/{ai_v_erp_id}")
+def get_video(ai_v_erp_id:int, db:Session=Depends(get_db)):
+
+    video = db.query(ReportAiV).filter(
+        ReportAiV.ai_v_erp_id == ai_v_erp_id
+    ).first()
+
+    if not video:
+        raise HTTPException(status_code=404, detail="영상 없음")
+
+    return {
+        "success":True,
+        "url":video.url
+    }
+
+# ===============================
 # 🔹 상담 최종 리포트 조회
 # ===============================
 
@@ -341,7 +418,6 @@ def complete_final_report(data: FinalReportSave, db: Session = Depends(get_db)):
         "message": "최종 리포트 작성 완료"
     }
 
-
 @router.get("/counselor/schedules", response_model=ScheduleListResponse)
 def get_daily_schedules(
     request: Request,
@@ -429,3 +505,118 @@ def get_pending_students(request: Request, db: Session = Depends(get_db)):
     except Exception as e:
         print(f"Error details: {str(e)}") # 서버 터미널에서 상세 에러 확인용
         raise HTTPException(status_code=500, detail=f"DB 조회 중 에러: {str(e)}")
+
+# ===============================
+# 🔹 AI 시청영상 분석 리포트 조회
+# ===============================
+
+@router.get("/ai-report/{counseling_id}/{ai_v_erp_id}")
+def get_ai_report(counseling_id: int, ai_v_erp_id: int, db: Session = Depends(get_db)):
+
+    video = db.query(ReportAiV).filter(
+        ReportAiV.counseling_id == counseling_id,
+        ReportAiV.ai_v_erp_id == ai_v_erp_id
+    ).first()
+
+    if not video:
+        raise HTTPException(status_code=404, detail="영상 데이터 없음")
+
+    analyze = db.query(AiVideoAnalyze).filter(
+        AiVideoAnalyze.ai_v_erp_id == ai_v_erp_id
+    ).first()
+
+    if not analyze:
+        raise HTTPException(status_code=404, detail="AI 분석 데이터 없음")
+
+    answer_data = video.answer or {}
+
+    return {
+        "success": True,
+        "data": {
+            "focus": answer_data.get("focus", []),
+            "interest": answer_data.get("interest", []),
+            "summary": analyze.ai_v_comment,
+            "prompt": analyze.prompt
+        }
+    }
+
+# ===============================
+# 🔹 AI 상담영상 분석 리포트 조회
+# ===============================
+
+@router.get("/report/ai/{counseling_id}/{con_rep_id}")
+def get_counseling_ai_report(counseling_id: int, con_rep_id: int, db: Session = Depends(get_db)):
+
+    con_report = db.query(ReportCon).filter(
+        ReportCon.counseling_id == counseling_id,
+        ReportCon.con_rep_id == con_rep_id
+    ).first()
+
+    if not con_report:
+        raise HTTPException(status_code=404, detail="상담 리포트 없음")
+
+    ai_report = db.query(ReportAiM).filter(
+        ReportAiM.con_rep_id == con_rep_id
+    ).first()
+
+    if not ai_report:
+        raise HTTPException(status_code=404, detail="AI 분석 데이터 없음")
+
+    scores = ai_report.emotion_m_score or []
+
+    focus_data = []
+    interest_data = []
+
+    for i, s in enumerate(scores):
+
+        focus_data.append({
+            "time": str(i),
+            "value": s.get("value", 0)
+        })
+
+        interest_data.append({
+            "subject": s.get("subject", "기타"),
+            "관심도": s.get("interest", 0),
+            "자신감": s.get("confidence", 0)
+        })
+
+    return {
+        "success": True,
+        "data": {
+            "focus": focus_data,
+            "interest": interest_data,
+            "summary": ai_report.ai_m_comment,
+            "prompt": ai_report.prompt
+        }
+    }
+
+
+
+# ===============================
+# 🔹 학생 목록 조회
+# ===============================
+@router.get("/students")
+def get_students(db: Session = Depends(get_db)):
+
+    students = (
+        db.query(Client)
+        .join(Counseling, Client.client_id == Counseling.client_id)
+        .distinct()
+        .all()
+    )
+
+    result = []
+
+    for s in students:
+        result.append({
+            "client_id": s.client_id,
+            "name": s.name,
+            "student_id": s.c_id,
+            "tel": s.phone_num,
+            "email": s.email
+        })
+
+    return {
+        "success": True,
+        "data": result
+    }

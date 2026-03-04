@@ -60,6 +60,7 @@ const SLogin = () => {
                 birthdate: fullSsn,
                 phone_num: fullPhone,
                 email: fullEmail,
+
             });
 
             const data = await response.data;

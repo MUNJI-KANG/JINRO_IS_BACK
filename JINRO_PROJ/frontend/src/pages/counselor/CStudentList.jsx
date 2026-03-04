@@ -2,50 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../css/counselor_css/CStudentList.css";
 
-const mockStudents = [
-  {
-    id: "1",
-    name: "김민준",
-    studentId: "S2024011",
-    tel: "010-1234-5678",
-    email: "minjun@example.com",
-    tag: "이공계 진로 희망",
-    consultations: [
-      {
-        id: "1-1",
-        title: "진로 상담 - 대학 진학 고민",
-        description: "이공계 VS 예체능계 진로 선택 고민",
-        date: "2026-02-16",
-        unread: 2,
-      },
-      {
-        id: "1-2",
-        title: "가정사 상담",
-        description: "가정 불화로 인한 스트레스",
-        date: "2026-01-18",
-        unread: 2,
-      },
-    ],
-  },
-  {
-    id: "2",
-    name: "이시영",
-    studentId: "S2024012",
-    tel: "010-6789-1234",
-    email: "siyeong@example.com",
-    tag: "이공계 진로 희망",
-    consultations: [
-      {
-        id: "2-1",
-        title: "학업 상담",
-        description: "수학 성적 향상 방법",
-        date: "2026-02-10",
-        unread: 1,
-      },
-    ],
-  },
-];
-
 function sumUnread(list = []) {
   return list.reduce((acc, c) => acc + (c.unread || 0), 0);
 }
@@ -54,12 +10,45 @@ export default function CStudentList() {
   const dialogRef = useRef(null);
   const navigate = useNavigate();
 
-  const [students, setStudents] = useState(mockStudents);
+  const [students, setStudents] = useState([]);
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState({
     isOpen: false,
     studentId: null,
   });
+
+  /* ===============================
+     🔹 학생 목록 DB 조회
+  =============================== */
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:8000/counselor/students"
+        );
+
+        const data = await response.json();
+
+        if (data.success) {
+          const mappedStudents = data.data.map((s) => ({
+            id: s.client_id.toString(),
+            name: s.name,
+            studentId: s.student_id,
+            tel: s.tel,
+            email: s.email,
+            tag: "상담 기록 존재",
+            consultations: [],
+          }));
+
+          setStudents(mappedStudents);
+        }
+      } catch (error) {
+        console.error("학생 목록 조회 실패:", error);
+      }
+    };
+
+    fetchStudents();
+  }, []);
 
   const currentStudent = students.find(
     (s) => s.id === modal.studentId
@@ -98,7 +87,6 @@ export default function CStudentList() {
   };
 
   const goToFinalReport = (consultation) => {
-    // unread 0 처리
     setStudents((prev) =>
       prev.map((s) =>
         s.id === modal.studentId

@@ -46,7 +46,7 @@ function App() {
         <Route path="/counselor/login" element={<CLogin />} />
 
         <Route index element={<Home />} />
-        
+
         {/* 공통 레이아웃 */}
         <Route path="/" element={<Layout />}>
           {/* 로그인 후 진입시 바로 scheduler 화면 보여줌 */}
@@ -68,9 +68,11 @@ function App() {
 
         {/* student */}
         <Route path="/student/login" element={<SLogin />} />
+        <Route path="/student/agreement" element={<SAgreement />} />
+
+
         <Route path="/student/survey/:categoryId" element={<SSurvey />} />
         <Route path="/student/video/:categoryId" element={<SVideo />} />
-        <Route path="/student/agreement" element={<SAgreement />} />
         <Route path="/student/loading" element={<SLoading />} />
         <Route path="/student/complete" element={<SComplete />} />
 
@@ -78,7 +80,7 @@ function App() {
         <Route path="/student/category/checkout" element={<SCheckout />} />
         <Route path="/student/category/medium" element={<SMedCat />} />
         <Route path="/student/category/small" element={<SSmallCat />} />
-        
+
         <Route path="/student/test" element={<STest />} />
         <Route path="/student/test_copy" element={<STest2 />} />
       </Routes>

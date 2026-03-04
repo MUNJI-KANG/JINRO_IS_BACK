@@ -3,12 +3,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 import styles from "../../../css/student_css/SSmallCat.module.css";
 import { useSelector, useDispatch } from "react-redux";
 import { addVideo, deleteVideo } from "../../../redux/cVideos";
+import axios from 'axios';
 
 function SSmallCat() {
-
     const navigate = useNavigate();
     const location = useLocation();
     const dispatch = useDispatch();
+    const host = import.meta.env.VITE_HOST;
 
     const select = useSelector((state) => state.cVideos);
 
@@ -97,8 +98,26 @@ function SSmallCat() {
 
     const handleBack = () => navigate(-1);
 
-    const handleNext = () => {
-        navigate("/student/category/checkout");
+    const handleNext = async () => {
+        const payload = [];
+
+        for (let d of select) {
+            payload.push({id: String(d.id)});
+        }
+        const result = {
+            videos: payload
+        }
+        try {
+            const response = await axios.post(`${host}/client/client/counselling`, result);
+
+            if (response.data.success) {
+                navigate("/student/category/checkout");
+            } else {
+                alert('전송 실패')
+            }
+        } catch (error) {
+            alert('전송 실패')
+        }
     };
 
     const handleNextVideoSelect = () => {

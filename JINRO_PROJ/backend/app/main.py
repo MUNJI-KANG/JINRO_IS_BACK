@@ -22,6 +22,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="JINRO_IS_BACK API")
 
+
 # React 앱이 돌아가는 주소를 허용해줘야 통신이 됩니다.
 origins = [
     "http://localhost:5173",  # Vite 기본 포트

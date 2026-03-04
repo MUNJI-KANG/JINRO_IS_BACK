@@ -223,6 +223,7 @@ export default function CCatList() {
   const [selectedBigId, setSelectedBigId] = useState(null);
   const [selectedMidId, setSelectedMidId] = useState(null);   // 🔥 추가
   const [selectedMidName, setSelectedMidName] = useState(null);
+  const [selectedMid, setSelectedMid] = useState(null);
   const [dbCategories, setDbCategories] = useState([]);
 
   useEffect(() => {

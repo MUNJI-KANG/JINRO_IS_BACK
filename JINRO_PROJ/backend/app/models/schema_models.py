@@ -21,7 +21,7 @@ class Category(Base):
 class Client(Base):
     __tablename__ = 'CLIENT'
     
-    client_id = Column('CLINET_ID', Integer, primary_key=True, autoincrement=True, comment='PK')
+    client_id = Column('CLIENT_ID', Integer, primary_key=True, autoincrement=True, comment='PK')
     c_id = Column(String(100), unique=True, nullable=False, comment='고유번호')
     name = Column(String(100), nullable=False, comment='이름')
     phone_num = Column(String(100), unique=True, nullable=False, comment='전화번호')
@@ -51,9 +51,9 @@ class Counseling(Base):
     # 수정: counselor_id (소문자)
     counselor_id = Column(Integer, ForeignKey('COUNSELOR.counselor_id'), nullable=False)
     # 유지: CLINET_ID (Client 모델에서 대문자로 강제 지정했으므로)
-    client_id = Column(Integer, ForeignKey('CLIENT.CLINET_ID'), nullable=False)
+    client_id = Column(Integer, ForeignKey('CLIENT.CLIENT_ID'), nullable=False)
 
-class ReporCon(Base):
+class ReportCon(Base):
     __tablename__ = 'REPOR_CON'
     
     con_rep_id = Column(Integer, primary_key=True, autoincrement=True, comment='PK')
