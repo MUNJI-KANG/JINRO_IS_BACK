@@ -1,55 +1,207 @@
 import uuid
-from fastapi import APIRouter, Depends, HTTPException
+
+from fastapi import Request, APIRouter, Depends, HTTPException
 from app.db.database import SessionLocal, engine, Base
-from app.models.schema_models import Client
-from app.schemas.client import ClientCreate
+from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV
+from app.schemas.client import ClientCreate,CounselingCreateRequest
+
 from sqlalchemy.orm import Session
+import random
+import datetime
 
-# prefix="/client"로 설정하면 이 파일의 모든 API 주소 앞에 /client가 자동으로 붙습니다.
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
+
+# DB 및 모델 임포트 
+from app.db.database import get_db
+from app.models.schema_models import Client, Category, ReportAiV, ReCommentEnum
+from app.schemas.client import ClientCreate, SurveySubmitRequest
 
 router = APIRouter(prefix="/client", tags=["Client (내담자)"])
+
 
 @router.get("/")
 def get_client_list():
     return {"message": "내담자 목록 조회 API 입니다."}
 
+
 @router.get("/{client_id}")
 def get_client_detail(client_id: int):
     return {"message": f"{client_id}번 내담자 상세 정보 조회 API 입니다."}
 
-
+# 로그인
 @router.post("/login")
-def login_or_create_client(client_data: ClientCreate, db: Session = Depends(get_db)):
+def login_or_create_client(client_data: ClientCreate, request: Request, db: Session = Depends(get_db)):
     try:
-        # 2. 이미 존재하는 회원인지 전화번호로 확인 (DB 무결성 오류 방지)
-        existing_client = db.query(Client).filter(Client.phone_num == client_data.phone_num).first()
+
+        existing_client = db.query(Client).filter(Client.phone_num == client_data.phone_num, Client.name == client_data.name).first()
         
         if existing_client:
+            request.session['client_id'] = existing_client.client_id
             return {"message": "기존 회원 로그인 성공", "client_id": existing_client.client_id}
 
-        # c_id는 고유해야 하므로 uuid를 사용하여 임의 생성합니다.
         new_client = Client(
             c_id=str(uuid.uuid4()), 
             name=client_data.name,
             phone_num=client_data.phone_num,
             email=client_data.email,
             birthdate=client_data.birthdate,
-            agree='Y'  # 약관 동의를 거쳤다고 가정
+            agree='Y'
+
         )
         
         db.add(new_client)
         db.commit()
         db.refresh(new_client)
         
+        request.session['client_id'] = new_client.client_id
+
         return {"message": "신규 회원 가입 및 로그인 성공", "client_id": new_client.client_id}
 
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"데이터베이스 오류: {str(e)}")
+    
+@router.get("/list/{kind_id}")
+def get_videos_by_kind(kind_id: int, db: Session = Depends(get_db)):
+    """특정 kind(중분류 ID)에 해당하는 영상 카테고리 목록을 조회합니다."""
+    try:
+        categories = db.query(Category).filter(Category.kind == kind_id).all()
+        result = [
+            {
+                "id": cat.c_id,
+                "title": cat.title,
+                "url": cat.url,
+                "kind": cat.kind
+            }
+            for cat in categories
+        ]
+        return {"success": True, "data": result, "message": "조회 성공"}
+    except Exception as e:
+        return {"success": False, "data": [], "message": str(e)}
+
+@router.get("/video/{category_id}")
+def get_video(category_id: int, db: Session = Depends(get_db)):
+    """영상 정보만 반환하는 API"""
+    try:
+        category = db.query(Category).filter(Category.c_id == category_id).first()
+
+        if not category:
+            raise HTTPException(status_code=404, detail="영상 카테고리를 찾을 수 없습니다.")
+
+        return {
+            "success": True,
+            "video": {
+                "id": category.c_id,
+                "title": category.title,
+                "url": category.url
+            }
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"영상 조회 오류: {str(e)}")
+
+@router.get("/survey/{category_id}")
+def get_survey_data(category_id: int, db: Session = Depends(get_db)):
+    """특정 카테고리의 설문 문항과 영상 URL을 가져옵니다."""
+    try:
+        category = db.query(Category).filter(Category.c_id == category_id).first()
+        if not category:
+            raise HTTPException(status_code=404, detail="해당 카테고리를 찾을 수 없습니다.")
+        
+        return {
+            "success": True,
+            "data": {
+                "c_id": category.c_id,
+                "title": category.title,
+                "url": category.url,
+                "survey": category.survey 
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
+
+
+@router.post("/survey/submit")
+def submit_survey(data: SurveySubmitRequest, db: Session = Depends(get_db)):
+    """설문 결과를 REPORT_AI_V 테이블에 JSON 형태로 저장합니다."""
+    try:
+        # Pydantic 스키마를 통해 안전하게 검증된 데이터를 DB에 삽입합니다.
+        new_report = ReportAiV(
+            category=data.category,
+            url=data.url,
+            answer=data.answer,            # 🔥 JSON 형태 그대로 저장됩니다.
+            counseling_id=data.counseling_id,
+            re_comment=ReCommentEnum.SUCCESS # 분석 상태값을 우선 SUCCESS(영상저장성공)로 부여
+        )
+        
+        db.add(new_report)
+        db.commit()
+        db.refresh(new_report)
+        
+        return {"success": True, "message": "설문 결과가 성공적으로 저장되었습니다."}
+    except Exception as e:
+        db.rollback()
+        return {"success": False, "message": f"저장 중 오류 발생: {str(e)}"}
+
+
+# 상담시작(내담자의 영상선택 완료)
+@router.post("/client/counselling")
+def create_counselling_and_reports(
+    payload: CounselingCreateRequest, 
+    request: Request, 
+    db: Session = Depends(get_db)
+):
+    #  내담자(Client) ID 가져오기
+    client_id = request.session.get('client_id')
+    if not client_id:
+        raise HTTPException(status_code=401, detail="로그인이 만료되었거나 비정상적인 접근입니다.")
+
+    # 활성화된 상담사 중 한 명을 랜덤으로 선택
+    active_counselors = db.query(Counselor).filter(Counselor.active_yn == 'Y').all()
+    if not active_counselors:
+        raise HTTPException(status_code=404, detail="현재 배정 가능한 상담사가 없습니다.")
+    
+    assigned_counselor = random.choice(active_counselors)
+
+    try:
+        now = datetime.datetime.now()
+
+        # 3. Counseling(상담 매칭) 테이블 데이터 생성
+        new_counseling = Counseling(
+            client_id=client_id,
+            counselor_id=assigned_counselor.counselor_id,
+            datetime=now.date(),        # 오늘 날짜
+            regdate=now,                # 생성 일시
+            complete_yn=1               # 1(영상), 2(예정), 3(완료) 중 초기상태인 1로 설정
+        )
+        db.add(new_counseling)
+        
+        db.flush() 
+
+        for video in payload.videos:
+            category_info = db.query(Category).filter(Category.c_id == video.id).first()
+            
+            if not category_info:
+                db.rollback()
+                raise HTTPException(status_code=400, detail=f"존재하지 않는 영상입니다. (ID: {video.id})")
+
+            new_report = ReportAiV(
+                counseling_id=new_counseling.counseling_id, 
+                category=category_info.title[:20],  # DB 제약조건 String(20)에 맞춤
+                url=category_info.url               # Category 테이블에서 가져온 실제 URL
+            )
+            db.add(new_report)
+
+        db.commit()
+
+        return {
+            "success": True, 
+            "message": "상담사 배정 및 영상 등록이 완료되었습니다.",
+            "counseling_id": new_counseling.counseling_id,
+            "counselor_name": assigned_counselor.name # 배정된 상담사 이름 반환 (UI 표시용)
+        }
+
+    except Exception as e:
+        # 💡 중간에 하나라도 실패하면 추가했던 모든 작업을 취소(rollback)하여 데이터 꼬임을 방지합니다.
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"상담 데이터 생성 중 오류 발생: {str(e)}")

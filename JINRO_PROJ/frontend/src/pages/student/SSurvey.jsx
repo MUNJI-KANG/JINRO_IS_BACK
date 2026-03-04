@@ -1,72 +1,214 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import axios from 'axios';
 import styles from '../../css/student_css/SSurvey.module.css';
 
 function SSurvey() {
-    const [currentStep, setCurrentStep] = useState(1);
-    const [selectedOption, setSelectedOption] = useState(null);
 
-    const totalSteps = 6;
-    const options = [
-        { id: 1, text: '매우 설렌다' },
-        { id: 2, text: '흥미롭다' },
-        { id: 3, text: '보통이다' },
-        { id: 4, text: '나와 맞지 않을 것 같다' },
-    ];
+    const { categoryId } = useParams();
+    const location = useLocation();
+    const navigate = useNavigate();
 
-    const handleSelect = (id) => {
-        setSelectedOption(id);
+    const selectedVideos = useSelector((state) => state.cVideos);
+    const { currentIndex = 0 } = location.state || {};
+
+    const [surveyInfo, setSurveyInfo] = useState(null);
+    const [currentStep, setCurrentStep] = useState(0);
+    const [answers, setAnswers] = useState({});
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+
+        const fetchSurvey = async () => {
+
+            try {
+
+                const response = await axios.get(
+                    `http://127.0.0.1:8000/client/survey/${categoryId}`
+                );
+
+                if (response.data.success) {
+                    setSurveyInfo(response.data.data);
+                }
+
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+
+        };
+
+        fetchSurvey();
+
+    }, [categoryId]);
+
+
+    const handleNext = async () => {
+
+        const questions = typeof surveyInfo.survey === "string"
+            ? JSON.parse(surveyInfo.survey)
+            : surveyInfo.survey;
+
+        // 다음 질문
+        if (currentStep < questions.length - 1) {
+            setCurrentStep(prev => prev + 1);
+            return;
+        }
+
+        try {
+
+            const payload = {
+                counseling_id: 1,
+                category: surveyInfo.title,
+                url: surveyInfo.url,
+                answer: answers
+            };
+
+            await axios.post(
+                "http://127.0.0.1:8000/client/survey/submit",
+                payload
+            );
+
+            // 마지막 영상이면 바로 complete
+            if (currentIndex >= selectedVideos.length - 1) {
+
+                navigate("/student/complete");
+                return;
+
+            }
+
+            // 다음 영상 이동
+            const nextIdx = currentIndex + 1;
+            const nextVideoId = selectedVideos[nextIdx].id;
+
+            navigate(`/student/video/${nextVideoId}`, {
+                state: { currentIndex: nextIdx }
+            });
+
+        } catch (err) {
+            console.error(err);
+        }
+
     };
+
+
+    if (loading || !surveyInfo) {
+        return <div className={styles.surveyContainer}>로딩 중...</div>;
+    }
+
+    const questions = typeof surveyInfo.survey === "string"
+        ? JSON.parse(surveyInfo.survey)
+        : surveyInfo.survey;
+
+    const isLastQuestion = currentStep === questions.length - 1;
+    const isLastVideo = currentIndex === selectedVideos.length - 1;
+
 
     return (
         <div className={styles.surveyContainer}>
+
             <div className={styles.surveyCard}>
-                {/* 상단 버튼 영역 */}
-                <button className={styles.backButton} onClick={() => console.log('이전으로')}>
+
+                <button
+                    className={styles.backButton}
+                    onClick={() =>
+                        currentStep > 0
+                            ? setCurrentStep(prev => prev - 1)
+                            : navigate(-1)
+                    }
+                >
                     ← 이전으로
                 </button>
 
-                {/* 헤더: 타이틀 & 진행도 */}
                 <div className={styles.headerRow}>
                     <h1 className={styles.mainTitle}>
-                        직업 흥미도 진단
+                        {surveyInfo.title} 진단
                     </h1>
-                    <span className={styles.stepIndicator}>{currentStep} / {totalSteps}</span>
-                </div>
-                <p className={styles.subTitle}>해당 세션의 직무 분야에 대한 당신의 생각은?</p>
 
-                {/* 진행 바 */}
+                    <span className={styles.stepIndicator}>
+                        {currentStep + 1} / {questions.length}
+                    </span>
+                </div>
+
                 <div className={styles.progressWrapper}>
                     <div
                         className={styles.progressBar}
-                        style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+                        style={{
+                            width: `${((currentStep + 1) / questions.length) * 100}%`
+                        }}
                     />
                 </div>
 
-                {/* 문항 질문 */}
                 <h2 className={styles.questionText}>
-                    방금 본 영상의 활동을 실제로 직업으로 삼는다면 어떨 것 같나요?
+                    {questions[currentStep].questionText}
                 </h2>
 
-                {/* 선택지 목록 */}
                 <div className={styles.optionsList}>
-                    {options.map((option) => (
+
+                    {questions[currentStep].options.map((option, idx) => (
+
                         <div
-                            key={option.id}
-                            className={`${styles.optionItem} ${selectedOption === option.id ? styles.selected : ''}`}
-                            onClick={() => handleSelect(option.id)}
+                            key={idx}
+                            className={`${styles.optionItem} ${
+                                answers[currentStep] === idx ? styles.selected : ""
+                            }`}
+                            onClick={() =>
+                                setAnswers({
+                                    ...answers,
+                                    [currentStep]: idx
+                                })
+                            }
                         >
-                            <span className={styles.optionLabel}>{option.text}</span>
+
+                            <span className={styles.optionLabel}>
+                                {option}
+                            </span>
+
                             <div className={styles.radioCircle} />
+
                         </div>
+
                     ))}
+
                 </div>
 
-                <p className={styles.footerNotice}>
-                    모든 문항에 답하면 다음 세션으로 넘어갑니다.
-                </p>
+                <div style={{ textAlign: "center", marginTop: "30px" }}>
+
+                    <button
+                        className={styles.nextButton}
+                        onClick={handleNext}
+                        disabled={answers[currentStep] === undefined}
+                        style={{
+                            padding: "12px 60px",
+                            backgroundColor:
+                                answers[currentStep] !== undefined
+                                    ? "#E50914"
+                                    : "#ccc",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "8px",
+                            cursor: "pointer",
+                            fontSize: "18px",
+                            fontWeight: "bold"
+                        }}
+                    >
+
+                        {!isLastQuestion
+                            ? "다음 문항"
+                            : isLastVideo
+                            ? "제출"
+                            : "제출 및 다음"}
+
+                    </button>
+
+                </div>
+
             </div>
+
         </div>
     );
-};
+}
 
 export default SSurvey;

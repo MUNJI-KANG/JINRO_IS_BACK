@@ -1,92 +1,76 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useSelector } from "react-redux";
+import { useNavigate, useLocation } from "react-router-dom";
 import "../../../css/student_css/Checkout.css";
 
 function Checkout() {
   const navigate = useNavigate();
+  const location = useLocation();
 
+  const selectedVideos = useSelector((state) => state.cVideos);
 
-  /* =========================================================
-     실제 적용 시 (SSmallCat에서 선택된 영상 가져오기)
-  ========================================================= */
-  const mockVideos = [
-    {
-      id: 1,
-      big: "사업관리",
-      mid: "중분류 2",
-      title: "중분류 2 영상",
-      thumbnail:
-        "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg",
-    },
-    {
-      id: 2,
-      big: "영업·서비스",
-      mid: "소분류 2",
-      title: "소분류 2 영상",
-      thumbnail:
-        "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg",
-    },
-    {
-      id: 3,
-      big: "금융·보험",
-      mid: "중분류 3",
-      title: "중분류 3 영상",
-      thumbnail:
-        "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg",
-    },
-  ];
+  useEffect(() => {
+    if (selectedVideos.length === 0) {
+      alert("선택된 영상이 없습니다. 영상 선택 화면으로 이동합니다.");
+      navigate("/student/category/big");
+    }
+  }, [selectedVideos, navigate]);
+
+  const handleStartVideo = () => {
+    if (selectedVideos.length === 0) return;
+
+    const firstVideoId = selectedVideos[0].id;
+    navigate(`/student/video/${firstVideoId}`, { 
+      state: { 
+        selectedVideos: selectedVideos,
+        currentIndex: 0 
+      } 
+    });
+  };
 
   return (
     <div className="cart-page">
       <div className="cart-container">
-
-        {/* 상단 */}
         <div className="cart-header">
           <h2>선택 내역</h2>
           <div className="total-count">
-            총 선택 <span>{mockVideos.length}개</span>
+            총 선택 <span>{selectedVideos.length}개</span>
           </div>
         </div>
 
-        {/* 영상 리스트 */}
         <div className="video-list">
-          {mockVideos.map((video, index) => (
+          {selectedVideos.map((video, index) => (
             <div key={video.id} className="video-card">
-
               <div className="video-order">
                 {index + 1}
               </div>
-
               <div className="video-thumb">
-                <img src={video.thumbnail} alt="thumbnail" />
+                <div className="temp-thumb">
+                    <span style={{ color: '#E50914', fontSize: '24px', fontWeight: 'bold' }}>N</span>
+                </div>
               </div>
-
               <div className="video-info">
-                <span className="category-tag">{video.big}</span>
-                <h4>{video.title}</h4>
-                <p>{video.mid} · 영상</p>
+                <h4>{video.subCategory}</h4>
+                <p>준비된 영상을 시청하신 후 설문이 진행됩니다.</p>
               </div>
-
             </div>
           ))}
         </div>
 
-        {/* 하단 버튼 */}
         <div className="cart-bottom">
           <button
             className="cart-btn secondary"
-            onClick={() => navigate("/student/category/big")}
+            onClick={() => navigate("/student/category/big", { state: { selectedVideos } })}
           >
             ← 다시 선택
           </button>
-
           <button
             className="cart-btn primary"
-            onClick={() => navigate("/student/video")}
+            onClick={handleStartVideo}
           >
             영상 시청 시작
           </button>
         </div>
-
       </div>
     </div>
   );

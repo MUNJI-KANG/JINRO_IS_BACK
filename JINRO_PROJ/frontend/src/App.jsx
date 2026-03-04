@@ -13,7 +13,6 @@ import CInfoEdit from "./pages/counselor/CInfoEdit";
 import CScheduler from "./pages/counselor/CScheduler";
 import CStudentList from "./pages/counselor/CStudentList";
 
-import CCatDetail from "./pages/counselor/c_category/CCatDetail";
 import CCatList from "./pages/counselor/c_category/CCatList";
 import CCatWrite from "./pages/counselor/c_category/CCatWrite";
 
@@ -56,7 +55,6 @@ function App() {
           <Route path="counselor/info" element={<CInfoEdit />} />
           <Route path="counselor/category/list" element={<CCatList />} />
           <Route path="counselor/category/write" element={<CCatWrite />} />
-          <Route path="counselor/category/detail/:videoId" element={<CCatDetail />} />
 
           <Route path="counselor/report/counseling" element={<CCounseling />} />
           <Route path="counselor/report/ai" element={<CCounselingAI />} />
@@ -70,8 +68,8 @@ function App() {
 
         {/* student */}
         <Route path="/student/login" element={<SLogin />} />
-        <Route path="/student/survey" element={<SSurvey />} />
-        <Route path="/student/video" element={<SVideo />} />
+        <Route path="/student/survey/:categoryId" element={<SSurvey />} />
+        <Route path="/student/video/:categoryId" element={<SVideo />} />
         <Route path="/student/agreement" element={<SAgreement />} />
         <Route path="/student/loading" element={<SLoading />} />
         <Route path="/student/complete" element={<SComplete />} />
