@@ -7,6 +7,8 @@ from pydantic import BaseModel
 from app.models.schema_models import ReportAiV, AiVideoAnalyze, ReCommentEnum
 from sqlalchemy import func
 from app.models.schema_models import ReportFinal
+from app.models.schema_models import Client, Counseling # 상담사 - 학생목록
+
 
 router = APIRouter(prefix="/counselor", tags=["Counselor (상담사)"])
 
@@ -332,4 +334,33 @@ def complete_final_report(data: FinalReportSave, db: Session = Depends(get_db)):
     return {
         "success": True,
         "message": "최종 리포트 작성 완료"
+    }
+
+# ===============================
+# 🔹 학생 목록 조회
+# ===============================
+@router.get("/students")
+def get_students(db: Session = Depends(get_db)):
+
+    students = (
+        db.query(Client)
+        .join(Counseling, Client.client_id == Counseling.client_id)
+        .distinct()
+        .all()
+    )
+
+    result = []
+
+    for s in students:
+        result.append({
+            "client_id": s.client_id,
+            "name": s.name,
+            "student_id": s.c_id,
+            "tel": s.phone_num,
+            "email": s.email
+        })
+
+    return {
+        "success": True,
+        "data": result
     }

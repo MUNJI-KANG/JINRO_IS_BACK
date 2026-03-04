@@ -21,7 +21,7 @@ class Category(Base):
 class Client(Base):
     __tablename__ = 'CLIENT'
     
-    client_id = Column('CLINET_ID', Integer, primary_key=True, autoincrement=True, comment='PK')
+    client_id = Column('CLIENT_ID', Integer, primary_key=True, autoincrement=True, comment='PK')
     c_id = Column(String(100), unique=True, nullable=False, comment='고유번호')
     name = Column(String(100), nullable=False, comment='이름')
     phone_num = Column(String(100), unique=True, nullable=False, comment='전화번호')
