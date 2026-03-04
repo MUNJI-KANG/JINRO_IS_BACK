@@ -41,12 +41,17 @@ def login_or_create_client(client_data: ClientCreate, request: Request, db: Sess
         ).first()
         
         if existing_client:
-            request.session['client_id'] = existing_client.c_id
+            request.session['client_id'] = existing_client.client_id 
             return {"message": "기존 회원 로그인 성공", "client_id": existing_client.c_id}
 
+
         # 신규 회원 생성 (데이터는 이미 검증된 숫자/형식임)
+        current_year = datetime.datetime.now().strftime("%Y")
+        random_num = f"{random.randint(1, 999):03d}"
+        generated_c_id = f"S{current_year}{random_num}"
+
         new_client = Client(
-            c_id=str(uuid.uuid4()), 
+            c_id=generated_c_id, 
             name=client_data.name,
             phone_num=client_data.phone_num, # 예: 01012345678
             email=client_data.email,         # 예: user@naver.com
@@ -58,7 +63,7 @@ def login_or_create_client(client_data: ClientCreate, request: Request, db: Sess
         db.commit()
         db.refresh(new_client)
 
-        request.session['client_id'] = new_client.c_id
+        request.session['client_id'] = new_client.client_id
         return {"message": "신규 회원 등록 및 로그인 성공", "client_id": new_client.c_id}
 
     except Exception as e:
@@ -175,7 +180,6 @@ def create_counselling_and_reports(
         new_counseling = Counseling(
             client_id=client_id,
             counselor_id=assigned_counselor.counselor_id,
-            datetime=now.date(),        # 오늘 날짜
             regdate=now,                # 생성 일시
             complete_yn=1               # 1(영상), 2(예정), 3(완료) 중 초기상태인 1로 설정
         )
@@ -220,7 +224,45 @@ def create_counselling_and_reports(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"상담 데이터 생성 중 오류 발생: {str(e)}")
     
+@router.post("/client/pComplete")
+def complete_video_report(
+    payload: ReportCompleteRequest, 
+    request: Request, 
+    db: Session = Depends(get_db)
+):
+    client_id = request.session.get('client_id')
+    if not client_id:
+        raise HTTPException(status_code=401, detail="로그인이 만료되었거나 비정상적인 접근입니다.")
+
+    try:
+        target_report = db.query(ReportAiV).filter(
+            ReportAiV.ai_v_erp_id == payload.report_id
+        ).first()
+
+        if not target_report:
+            raise HTTPException(status_code=404, detail="해당 리포트를 찾을 수 없습니다.")
+
+        target_report.complete_yn = 'Y'
+        target_report.answer = payload.answer  
+        
+        target_report.re_comment = ReCommentEnum.SUCCESS 
+
+        db.commit()
+
+        return {
+            "success": True, 
+            "message": "영상 시청 및 설문 작성이 완료되었습니다.",
+            "report_id": target_report.ai_v_erp_id,
+            "complete_yn": target_report.complete_yn,
+            "re_comment": target_report.re_comment.value, 
+            "answer": target_report.answer
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"데이터 업데이트 중 오류 발생: {str(e)}")
     
+       
 # 🔥 나중에 저장 경로 지정할 곳
 # 예: UPLOAD_DIR = "D:/ai_project/videos"
 # 예: UPLOAD_DIR = "/home/server/videos"

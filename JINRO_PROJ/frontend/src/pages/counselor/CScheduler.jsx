@@ -3,6 +3,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import "../../css/counselor_css/CScheduler.css";
+import api from "../../services/app.js"
 
 function getLocalYYYYMMDD(date = new Date()) {
   const y = date.getFullYear();
@@ -23,53 +24,83 @@ function CScheduler() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
 
+  const [dailySchedules, setDailySchedules] = useState([]);
+
   useEffect(() => {
     const api = calendarRef.current?.getApi();
     if (!api) return;
     api.select(today);
   }, []);
 
-  const handleDateClick = (info) => {
-    const api = calendarRef.current?.getApi();
-    if (!api) return;
+  const handleDateClick = async (info) => {
+    const clickedDate = info.dateStr; // 예: "2026-03-04"
 
-    setSelectedDate(info.dateStr);
-    api.gotoDate(info.dateStr);
-    api.unselect();
-    api.select(info.dateStr);
+    // 1. UI 반응 (클릭한 날짜로 포커스 이동)
+    setSelectedDate(clickedDate);
+    const calendarApi = calendarRef.current?.getApi(); // 💡 변수명 변경 (api -> calendarApi)
+    if (calendarApi) {
+      calendarApi.gotoDate(clickedDate);
+      calendarApi.unselect();
+      calendarApi.select(clickedDate);
+    }
+
+    // 2. 백엔드 데이터 가져오기
+    try {
+      const response = await api.get(`/counselor/schedules?date=${clickedDate}`);
+
+      // 3. 받아온 데이터로 화면 업데이트
+      if (response.data.success) {
+        setDailySchedules(response.data.schedules);
+      }
+    } catch (error) {
+      console.error("일정 불러오기 실패:", error);
+      setDailySchedules([]); // 실패 시 빈 배열로 초기화
+    }
   };
 
-  const openModal = () => {
-    setModalStep("list");
-    setSelectedStudent(null);
-    setSelectedTime(null);
-    setSearch("");
-    dialogRef.current?.showModal();
+  const openModal = async () => {
+    try {
+      const response = await api.get("/counselor/pending-students");
+      if (response.data.success) {
+        setPendingStudents(response.data.students);
+        setModalStep("list");
+        setSelectedStudent(null);
+        setSelectedTime(null);
+        setSearch("");
+        dialogRef.current?.showModal();
+      }
+    } catch (error) {
+      alert("대상자 목록을 불러오지 못했습니다.");
+    }
   };
 
   const closeModal = () => {
     dialogRef.current?.close();
   };
 
-  const students = [
-    { id: 1, name: "김민준", studentNo: "S2024011" },
-    { id: 2, name: "이서연", studentNo: "S2024012" },
-    { id: 3, name: "박지훈", studentNo: "S2024013" },
-  ];
 
-  const dummySchedules = [
-    { id: 1, time: "09:00", name: "김민준", type: "진로 상담", status: "완료" },
-    { id: 2, time: "10:00", name: "이서연", type: "학업 상담", status: "완료" },
-    { id: 3, time: "11:00", name: "박지호", type: "진로 상담", status: "예정" },
-    { id: 4, time: "13:00", name: "최유진", type: "학업 상담", status: "예정" },
-  ];
+  const [pendingStudents, setPendingStudents] = useState([]);
 
-  const filteredStudents = students.filter(
+  // const students = [
+  //   { id: 1, name: "김민준", studentNo: "S2024011" },
+  //   { id: 2, name: "이서연", studentNo: "S2024012" },
+  //   { id: 3, name: "박지훈", studentNo: "S2024013" },
+  // ];
+
+  // const dummySchedules = [
+  //   { id: 1, time: "09:00", name: "김민준", type: "진로 상담", status: "완료" },
+  //   { id: 2, time: "10:00", name: "이서연", type: "학업 상담", status: "완료" },
+  //   { id: 3, time: "11:00", name: "박지호", type: "진로 상담", status: "예정" },
+  //   { id: 4, time: "13:00", name: "최유진", type: "학업 상담", status: "예정" },
+  // ];
+
+  // 💡 수정: 검색 필터링 (pendingStudents 기준)
+  const filteredStudents = pendingStudents.filter(
     (student) =>
       student.name.includes(search) ||
       student.studentNo.includes(search)
   );
-
+   
   const timeSlots = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
 
   return (
@@ -103,15 +134,15 @@ function CScheduler() {
           </button>
         </div>
 
-        {dummySchedules.length === 0 ? (
+        {dailySchedules.length === 0 ? (
           <div className="empty-box">등록된 일정이 없습니다.</div>
         ) : (
           <div className="schedule-list">
-            {dummySchedules.map((schedule) => (
+            {dailySchedules.map((schedule) => (
               <div key={schedule.id} className="schedule-card">
                 <div className="schedule-left">
                   <div className="schedule-time">
-                    <span className="time-icon">🕒</span> {/* 아이콘(react-icons 등 사용 시 교체) */}
+                    <span className="time-icon">🕒</span> {/* 아이콘 */}
                     <span>{schedule.time}</span>
                   </div>
                   <div className="schedule-info">
@@ -119,7 +150,7 @@ function CScheduler() {
                     <span className="schedule-type">{schedule.type}</span>
                   </div>
                 </div>
-                
+
                 {/* 상태에 따라 다른 클래스 적용 (완료: green, 예정: orange) */}
                 <div className={`status-badge ${schedule.status === "완료" ? "done" : "planned"}`}>
                   {schedule.status}
@@ -152,19 +183,23 @@ function CScheduler() {
             />
 
             <div className="dialog-body">
-              {filteredStudents.map((student) => (
-                <div
-                  key={student.id}
-                  className="dialog-card selectable"
-                  onClick={() => {
-                    setSelectedStudent(student);
-                    setModalStep("time");
-                  }}
-                >
-                  <strong>{student.name}</strong>
-                  <div>{student.studentNo}</div>
-                </div>
-              ))}
+              {filteredStudents.length === 0 ? (
+                <div className="empty-msg">대상 학생이 없습니다.</div>
+              ) : (
+                filteredStudents.map((student) => (
+                  <div
+                    key={student.counseling_id} // 💡 DB의 PK 사용
+                    className="dialog-card selectable"
+                    onClick={() => {
+                      setSelectedStudent(student);
+                      setModalStep("time");
+                    }}
+                  >
+                    <strong>{student.name}</strong>
+                    <div>{student.studentNo}</div>
+                  </div>
+                ))
+              )}
             </div>
           </>
         )}
@@ -190,9 +225,8 @@ function CScheduler() {
               {timeSlots.map((time) => (
                 <button
                   key={time}
-                  className={`time-btn ${
-                    selectedTime === time ? "active" : ""
-                  }`}
+                  className={`time-btn ${selectedTime === time ? "active" : ""
+                    }`}
                   onClick={() => setSelectedTime(time)}
                 >
                   {time}

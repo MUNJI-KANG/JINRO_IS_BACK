@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import style from '../../css/student_css/SLogin.module.css';
-
+import api from '../../services/app.js'
 const SLogin = () => {
     const navigate = useNavigate();
 
@@ -33,17 +33,17 @@ const SLogin = () => {
 
     // 3. 진단 시작 및 데이터 검증
     const handleStartDiagnosis = async () => {
-        const { 
-            name, ssn1, ssn2, 
-            phone1, phone2, phone3, 
-            emailId, emailDomain, customEmailDomain 
+        const {
+            name, ssn1, ssn2,
+            phone1, phone2, phone3,
+            emailId, emailDomain, customEmailDomain
         } = formData;
 
         const finalEmailDomain = emailDomain === "custom" ? customEmailDomain : emailDomain;
 
         if (
-            !name.trim() || !ssn1.trim() || !ssn2.trim() || 
-            !phone2.trim() || !phone3.trim() || 
+            !name.trim() || !ssn1.trim() || !ssn2.trim() ||
+            !phone2.trim() || !phone3.trim() ||
             !emailId.trim() || !finalEmailDomain
         ) {
             alert("모든 정보를 정확히 입력해주세요.");
@@ -55,23 +55,14 @@ const SLogin = () => {
         const fullEmail = `${emailId}@${finalEmailDomain}`;
 
         try {
-            const response = await fetch("http://localhost:8000/client/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    name: name,
-                    birthdate: fullSsn,
-                    phone_num: fullPhone,
-                    email: fullEmail
-                }),
+            const response = await api.post("/client/login", {
+                name: name,
+                birthdate: fullSsn,
+                phone_num: fullPhone,
+                email: fullEmail,
             });
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.detail || "서버 통신 실패");
-            }
-
-            const data = await response.json();
+            const data = await response.data;
             localStorage.setItem("client_id", data.client_id);
             navigate("/student/category/big");
 
@@ -99,12 +90,12 @@ const SLogin = () => {
                     <div className={style.formGroup}>
                         <label>이름</label>
                         <div className={style.inputRow}>
-                            <input 
-                                type="text" 
-                                name="name" 
-                                value={formData.name} 
-                                onChange={handleChange} 
-                                placeholder="예 : 홍길동" 
+                            <input
+                                type="text"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleChange}
+                                placeholder="예 : 홍길동"
                                 className={style.nameInput}
                             />
                         </div>
@@ -146,7 +137,7 @@ const SLogin = () => {
                             {formData.emailDomain === "custom" ? (
                                 <div style={{ flex: 1.2, display: 'flex', gap: '4px' }}>
                                     <input type="text" name="customEmailDomain" value={formData.customEmailDomain} onChange={handleChange} placeholder="직접 입력" style={{ width: '100%' }} />
-                                    <button type="button" onClick={() => setFormData(p => ({...p, emailDomain: ""}))} className={style.resetBtn}>✕</button>
+                                    <button type="button" onClick={() => setFormData(p => ({ ...p, emailDomain: "" }))} className={style.resetBtn}>✕</button>
                                 </div>
                             ) : (
                                 <select name="emailDomain" value={formData.emailDomain} onChange={handleChange} style={{ flex: 1.2 }}>

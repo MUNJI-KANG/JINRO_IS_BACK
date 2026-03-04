@@ -19,3 +19,18 @@ class CategoryCreateRequest(BaseModel):
     url: str
     kind: int
     survey: List[Dict[str, Any]]
+
+
+# 스케줄
+class ScheduleDetailResponse(BaseModel):
+    id: int
+    time: str       # "HH:MM" 형식
+    name: str       # 내담자 이름
+    type: str       # 상담 종류 (일단 "진로 상담"으로 고정하거나 로직 추가 가능)
+    status: str     # "예정" 또는 "완료"
+
+
+class ScheduleListResponse(BaseModel):
+    success: bool
+    date: str
+    schedules: List[ScheduleDetailResponse]

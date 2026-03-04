@@ -28,13 +28,10 @@ origins = [
     "http://127.0.0.1:5173",
 ]
 
-# 세션미드웨어 추가( secret_key는 복잡한 문자열 사용)
-app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET_KEY", "fallback-secret-key"))
 
 @app.get("/")
 def read_root():
     return {"message": "테이블 생성이 완료되었습니다!"}
-
 
 
 app.add_middleware(
@@ -45,6 +42,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(
+    SessionMiddleware, 
+    secret_key=os.getenv("SESSION_SECRET_KEY", "fallback-secret-key"),
+    session_cookie="session",
+    same_site="lax",   # 로컬 개발 환경(Lax) 설정
+    https_only=False   # HTTP 환경이므로 False 설정
+)
 
 app.include_router(client.router)
 app.include_router(counselor.router)

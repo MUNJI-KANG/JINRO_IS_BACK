@@ -1,12 +1,17 @@
-from fastapi import Request, APIRouter, Depends, HTTPException
+from fastapi import Request, APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
-from app.models.schema_models import Counselor, Category
-from app.schemas import counselor
+from app.models.schema_models import Counselor, Category, Counseling, Client
+from app.schemas.counselor import CounselorLoginRequest,CategoryCreateRequest,CounselorModifyInfo,ScheduleDetailResponse,ScheduleListResponse
 from pydantic import BaseModel
 from app.models.schema_models import ReportAiV, AiVideoAnalyze, ReCommentEnum
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 from app.models.schema_models import ReportFinal
+
+
+from datetime import datetime
+
+
 
 router = APIRouter(prefix="/counselor", tags=["Counselor (상담사)"])
 
@@ -22,7 +27,7 @@ def get_db():
 
 @router.post("/login")
 def login(
-    login_data: counselor.CounselorLoginRequest,
+    login_data: CounselorLoginRequest,
     request: Request,                            
     db: Session = Depends(get_db)):
 
@@ -41,6 +46,7 @@ def login(
 
     request.session['counselor_id'] = counselor_obj.counselor_id
     request.session['counselor_name'] = counselor_obj.name 
+    print(f"세션 저장 완료: {request.session.get('counselor_id')}")
 
     return {
         "success": True,
@@ -57,7 +63,7 @@ def login(
 
 # 카테고리 저장
 @router.post("/category")
-def create_or_update_category(request: counselor.CategoryCreateRequest, db: Session = Depends(get_db)):
+def create_or_update_category(request: CategoryCreateRequest, db: Session = Depends(get_db)):
     try:
         existing_category = db.query(Category).filter(Category.title == request.title).first()
 
@@ -147,7 +153,7 @@ def get_category_detail(c_id: int, db: Session = Depends(get_db)):
 @router.put("/category/{c_id}")
 def update_category(
         c_id: int,
-        request: counselor.CategoryCreateRequest,
+        request: CategoryCreateRequest,
         db: Session = Depends(get_db)
 ):
     category = db.query(Category).filter(Category.c_id == c_id).first()
@@ -171,7 +177,7 @@ def update_category(
 @router.put("/{counselor_id}")
 def update_counselor(
         counselor_id: int,
-        request: counselor.CounselorModifyInfo,
+        request: CounselorModifyInfo,
         db: Session = Depends(get_db)
 ):
     counselor_obj = db.query(Counselor).filter(
@@ -188,6 +194,7 @@ def update_counselor(
     db.commit()
 
     return {"success": True}
+
 
 # ===============================
 # 🔹 상담 최종 리포트 조회
@@ -333,3 +340,92 @@ def complete_final_report(data: FinalReportSave, db: Session = Depends(get_db)):
         "success": True,
         "message": "최종 리포트 작성 완료"
     }
+
+
+@router.get("/counselor/schedules", response_model=ScheduleListResponse)
+def get_daily_schedules(
+    request: Request,
+    date: str = Query(..., description="조회할 날짜 (YYYY-MM-DD)"),
+    db: Session = Depends(get_db)
+):
+    
+    counselor_id = request.session.get('counselor_id') # 현재 로그인한 상담사 계정
+    if not counselor_id:
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+
+    try:
+        records = db.query(Counseling, Client).join(
+            Client, Counseling.client_id == Client.c_id  
+        ).filter(
+            Counseling.counselor_id == counselor_id,
+            Counseling.datetime == date
+        ).all()
+
+        schedules = []
+        for counseling, client in records:
+            time_str = counseling.reservation_time.strftime("%H:%M") if counseling.reservation_time else "미정"
+
+            if counseling.complete_yn == 3:
+                status_str = "완료"
+            else:
+                status_str = "예정"
+
+            schedules.append({
+                "id": counseling.counseling_id,
+                "time": time_str,
+                "name": client.name,    # Client 테이블에서 가져온 이름
+                "type": "진로 상담",     # 필요 시 DB에 상담 카테고리를 추가하여 연동
+                "status": status_str
+            })
+
+        return {
+            "success": True,
+            "date": date,
+            "schedules": schedules
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"일정 조회 중 오류 발생: {str(e)}")
+
+
+# 💡 반드시 .get 인지, 주소에 오타가 없는지 확인!
+@router.get("/pending-students")
+def get_pending_students(request: Request, db: Session = Depends(get_db)):
+    # 1. 로그인한 상담사 확인
+    counselor_id = request.session.get('counselor_id')
+    print(f"완료: {request.session.get('counselor_id')}")
+    if not counselor_id:
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+
+    # 2. 현재 시간 (예약 시간 초과 체크용)
+    now = datetime.now()
+
+    try:
+        # 3. 위에서 말한 2가지 조건을 쿼리로 구현
+        pending_records = db.query(Counseling, Client).join(
+            Client, Counseling.client_id == Client.client_id
+        ).filter(
+            Counseling.counselor_id == counselor_id, # 상담사 본인 것만
+            or_(
+                Counseling.complete_yn == 1, # 조건 1: 영상 완료
+                and_(
+                    Counseling.complete_yn == 2, # 조건 2: 예약 중인데
+                    Counseling.reservation_time < now # 시간이 지남
+                )
+            )
+        ).all()
+
+        # 4. 프론트엔드에서 요구하는 S2026... 형태의 데이터로 가공
+        results = [
+            {
+                "counseling_id": c.counseling_id,
+                "name": cl.name,
+                "studentNo": cl.c_id # S2026... 형태의 학번
+            } for c, cl in pending_records
+        ]
+
+        return {"success": True, "students": results}
+        
+    except Exception as e:
+        print(f"Error details: {str(e)}") # 서버 터미널에서 상세 에러 확인용
+        raise HTTPException(status_code=500, detail=f"DB 조회 중 에러: {str(e)}")
