@@ -86,6 +86,7 @@ class ReportAiV(Base):
     answer = Column(JSON, comment='내담자 설문지 답변')
     # 수정: counseling_id (소문자)
     counseling_id = Column(Integer, ForeignKey('COUNSELING.counseling_id'), nullable=False)
+    complete_yn = Column(String(1), default='N', nullable=False, comment='최종작성여부')
     re_comment = Column(Enum(ReCommentEnum), comment='분석여부')
 
 class AiVideoAnalyze(Base):

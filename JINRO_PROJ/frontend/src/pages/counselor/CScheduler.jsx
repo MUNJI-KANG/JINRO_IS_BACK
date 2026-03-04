@@ -57,6 +57,13 @@ function CScheduler() {
     { id: 3, name: "박지훈", studentNo: "S2024013" },
   ];
 
+  const dummySchedules = [
+    { id: 1, time: "09:00", name: "김민준", type: "진로 상담", status: "완료" },
+    { id: 2, time: "10:00", name: "이서연", type: "학업 상담", status: "완료" },
+    { id: 3, time: "11:00", name: "박지호", type: "진로 상담", status: "예정" },
+    { id: 4, time: "13:00", name: "최유진", type: "학업 상담", status: "예정" },
+  ];
+
   const filteredStudents = students.filter(
     (student) =>
       student.name.includes(search) ||
@@ -77,6 +84,7 @@ function CScheduler() {
           initialDate={today}
           selectable={true}
           selectMirror={false}
+          unselectAuto={false}
           dateClick={handleDateClick}
           height="auto"
           headerToolbar={{
@@ -95,9 +103,31 @@ function CScheduler() {
           </button>
         </div>
 
-        <div className="empty-box">
-          등록된 일정이 없습니다.
-        </div>
+        {dummySchedules.length === 0 ? (
+          <div className="empty-box">등록된 일정이 없습니다.</div>
+        ) : (
+          <div className="schedule-list">
+            {dummySchedules.map((schedule) => (
+              <div key={schedule.id} className="schedule-card">
+                <div className="schedule-left">
+                  <div className="schedule-time">
+                    <span className="time-icon">🕒</span> {/* 아이콘(react-icons 등 사용 시 교체) */}
+                    <span>{schedule.time}</span>
+                  </div>
+                  <div className="schedule-info">
+                    <span className="schedule-name">{schedule.name}</span>
+                    <span className="schedule-type">{schedule.type}</span>
+                  </div>
+                </div>
+                
+                {/* 상태에 따라 다른 클래스 적용 (완료: green, 예정: orange) */}
+                <div className={`status-badge ${schedule.status === "완료" ? "done" : "planned"}`}>
+                  {schedule.status}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 🔥 dialog 모달 */}

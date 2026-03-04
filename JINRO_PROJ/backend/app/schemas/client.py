@@ -14,8 +14,11 @@ class SurveySubmitRequest(BaseModel):
     answer: Dict[str, Any]
 
 class SelectedVideo(BaseModel):
-    id: str             # video.c_id (DB에서는 url 또는 영상 식별자로 사용)
+    id: str             
 
 class CounselingCreateRequest(BaseModel):
     videos: List[SelectedVideo]
 
+class ReportCompleteRequest(BaseModel):
+    report_id: int
+    answer: Dict[str, Any]

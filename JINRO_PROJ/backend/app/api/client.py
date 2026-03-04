@@ -3,7 +3,7 @@ import uuid
 from fastapi import Request, APIRouter, Depends, HTTPException
 from app.db.database import SessionLocal, engine, Base
 from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV
-from app.schemas.client import ClientCreate,CounselingCreateRequest
+from app.schemas.client import ClientCreate,CounselingCreateRequest,ReportCompleteRequest
 
 from sqlalchemy.orm import Session
 import random
@@ -151,7 +151,7 @@ def create_counselling_and_reports(
     request: Request, 
     db: Session = Depends(get_db)
 ):
-    #  내담자(Client) ID 가져오기
+    # 내담자(Client) ID 가져오기
     client_id = request.session.get('client_id')
     if not client_id:
         raise HTTPException(status_code=401, detail="로그인이 만료되었거나 비정상적인 접근입니다.")
@@ -166,7 +166,7 @@ def create_counselling_and_reports(
     try:
         now = datetime.datetime.now()
 
-        # 3. Counseling(상담 매칭) 테이블 데이터 생성
+        #  Counseling(상담 매칭) 테이블 데이터 생성
         new_counseling = Counseling(
             client_id=client_id,
             counselor_id=assigned_counselor.counselor_id,
@@ -175,8 +175,10 @@ def create_counselling_and_reports(
             complete_yn=1               # 1(영상), 2(예정), 3(완료) 중 초기상태인 1로 설정
         )
         db.add(new_counseling)
-        
-        db.flush() 
+        db.flush() # 부모 PK(counseling_id) 발급
+
+        # 생성된 리포트 객체들을 담아둘 빈 리스트 준비
+        created_reports = []
 
         for video in payload.videos:
             category_info = db.query(Category).filter(Category.c_id == video.id).first()
@@ -188,9 +190,16 @@ def create_counselling_and_reports(
             new_report = ReportAiV(
                 counseling_id=new_counseling.counseling_id, 
                 category=category_info.title[:20],  # DB 제약조건 String(20)에 맞춤
-                url=category_info.url               # Category 테이블에서 가져온 실제 URL
+                url=category_info.url,               # Category 테이블에서 가져온 실제 URL
+                complete_yn='N'
             )
             db.add(new_report)
+            created_reports.append(new_report) # 리스트에 추가
+
+        db.flush() 
+
+        #  발급된 ID들만 뽑아서 새로운 리스트(report_ids) 생성
+        report_ids = [report.ai_v_erp_id for report in created_reports]
 
         db.commit()
 
@@ -198,10 +207,49 @@ def create_counselling_and_reports(
             "success": True, 
             "message": "상담사 배정 및 영상 등록이 완료되었습니다.",
             "counseling_id": new_counseling.counseling_id,
-            "counselor_name": assigned_counselor.name # 배정된 상담사 이름 반환 (UI 표시용)
+            "counselor_name": assigned_counselor.name, # 배정된 상담사 이름 반환 (UI 표시용)
+            "report_ids": report_ids                   # 새롭게 추가된 부분: 생성된 Report ID 리스트
         }
 
     except Exception as e:
-        # 💡 중간에 하나라도 실패하면 추가했던 모든 작업을 취소(rollback)하여 데이터 꼬임을 방지합니다.
         db.rollback()
         raise HTTPException(status_code=500, detail=f"상담 데이터 생성 중 오류 발생: {str(e)}")
+
+
+@router.post("/client/pComplete")
+def complete_video_report(
+    payload: ReportCompleteRequest, 
+    request: Request, 
+    db: Session = Depends(get_db)
+):
+    client_id = request.session.get('client_id')
+    if not client_id:
+        raise HTTPException(status_code=401, detail="로그인이 만료되었거나 비정상적인 접근입니다.")
+
+    try:
+        target_report = db.query(ReportAiV).filter(
+            ReportAiV.ai_v_erp_id == payload.report_id
+        ).first()
+
+        if not target_report:
+            raise HTTPException(status_code=404, detail="해당 리포트를 찾을 수 없습니다.")
+
+        target_report.complete_yn = 'Y'
+        target_report.answer = payload.answer  
+        
+        target_report.re_comment = ReCommentEnum.SUCCESS 
+
+        db.commit()
+
+        return {
+            "success": True, 
+            "message": "영상 시청 및 설문 작성이 완료되었습니다.",
+            "report_id": target_report.ai_v_erp_id,
+            "complete_yn": target_report.complete_yn,
+            "re_comment": target_report.re_comment.value, 
+            "answer": target_report.answer
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"데이터 업데이트 중 오류 발생: {str(e)}")

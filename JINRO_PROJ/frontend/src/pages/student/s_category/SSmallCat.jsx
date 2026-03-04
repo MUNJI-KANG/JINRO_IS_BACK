@@ -116,9 +116,8 @@ function SSmallCat() {
 
                     <div
                         key={video.c_id}
-                        className={`${styles.card} ${
-                            selectedVideo === video.c_id ? styles.activeCard : ""
-                        }`}
+                        className={`${styles.card} ${selectedVideo === video.c_id ? styles.activeCard : ""
+                            }`}
                         onClick={() => handleCardClick(video)}
                     >
 

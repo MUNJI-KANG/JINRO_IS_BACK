@@ -165,9 +165,6 @@ def update_category(
 # ===============================
 # 🔹 상담사 API
 # ===============================
-
-
-
 @router.put("/{counselor_id}")
 def update_counselor(
         counselor_id: int,
