@@ -1,16 +1,20 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ---------------------------------------------------------
 # [수정된 부분] MySQL 연결 URL 세팅
 # 형식: "mysql+pymysql://사용자이름:비밀번호@호스트:포트/DB이름"
 # ---------------------------------------------------------
-DB_USERNAME = "jinro"          # MySQL 사용자 이름 (예: root)
-DB_PASSWORD = "jinro1234"   # MySQL 비밀번호
-DB_HOST = "127.0.0.1"         # 호스트 주소 (로컬이면 127.0.0.1 또는 localhost)
-DB_PORT = "3306"              # MySQL 기본 포트
-DB_NAME = "jinro"          # 미리 생성해둔 데이터베이스 이름
+DB_USERNAME = os.getenv("DB_USERNAME")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
 
 SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
