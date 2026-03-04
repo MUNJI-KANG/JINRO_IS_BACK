@@ -229,7 +229,6 @@ UPLOAD_DIR = "videos"   # 지금은 로컬 프로젝트 폴더에 저장
 # 폴더 없으면 생성
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-
 @router.post("/video/upload")
 async def upload_video(file: UploadFile = File(...)):
 
