@@ -235,7 +235,9 @@ async def upload_video(file: UploadFile = File(...)):
     try:
         # 🔥 나중에 파일 경로 바꾸려면 여기 수정
         # 예: file_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}.webm")
-        file_path = os.path.join(UPLOAD_DIR, "example.webm")
+        filename = f"{uuid.uuid4()}.webm"
+
+        file_path = os.path.join(UPLOAD_DIR, filename)
 
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
