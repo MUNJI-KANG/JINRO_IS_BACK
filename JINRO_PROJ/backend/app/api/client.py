@@ -32,34 +32,37 @@ def get_client_detail(client_id: int):
 @router.post("/login")
 def login_or_create_client(client_data: ClientCreate, request: Request, db: Session = Depends(get_db)):
     try:
-
-        existing_client = db.query(Client).filter(Client.phone_num == client_data.phone_num, Client.name == client_data.name).first()
+        # 기존 회원 확인 (이름과 핸드폰 번호 기준)
+        existing_client = db.query(Client).filter(
+            Client.phone_num == client_data.phone_num, 
+            Client.name == client_data.name
+        ).first()
         
         if existing_client:
-            request.session['client_id'] = existing_client.client_id
-            return {"message": "기존 회원 로그인 성공", "client_id": existing_client.client_id}
+            request.session['client_id'] = existing_client.c_id
+            return {"message": "기존 회원 로그인 성공", "client_id": existing_client.c_id}
 
+        # 신규 회원 생성 (데이터는 이미 검증된 숫자/형식임)
         new_client = Client(
             c_id=str(uuid.uuid4()), 
             name=client_data.name,
-            phone_num=client_data.phone_num,
-            email=client_data.email,
-            birthdate=client_data.birthdate,
+            phone_num=client_data.phone_num, # 예: 01012345678
+            email=client_data.email,         # 예: user@naver.com
+            birthdate=client_data.birthdate, # 예: 0001011
             agree='Y'
-
         )
         
         db.add(new_client)
         db.commit()
         db.refresh(new_client)
-        
-        request.session['client_id'] = new_client.client_id
 
-        return {"message": "신규 회원 가입 및 로그인 성공", "client_id": new_client.client_id}
+        request.session['client_id'] = new_client.c_id
+        return {"message": "신규 회원 등록 및 로그인 성공", "client_id": new_client.c_id}
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"데이터베이스 오류: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
     
 @router.get("/list/{kind_id}")
 def get_videos_by_kind(kind_id: int, db: Session = Depends(get_db)):
