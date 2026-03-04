@@ -17,21 +17,11 @@ from app.api import client, counselor
 from starlette.middleware.sessions import SessionMiddleware
 import os
 
-from starlette.middleware.sessions import SessionMiddleware
-from app.core.auth_middleware import AuthMiddleware
-
 # FastAPI 실행 시 모델을 바탕으로 DB 테이블 자동 생성 (이미 있으면 무시됨)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="JINRO_IS_BACK API")
 
-app.add_middleware(
-    SessionMiddleware,
-    secret_key="super-secret-key"
-)
-
-# 로그인 체크
-app.add_middleware(AuthMiddleware)
 
 # React 앱이 돌아가는 주소를 허용해줘야 통신이 됩니다.
 origins = [

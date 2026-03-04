@@ -51,7 +51,7 @@ class Counseling(Base):
     # 수정: counselor_id (소문자)
     counselor_id = Column(Integer, ForeignKey('COUNSELOR.counselor_id'), nullable=False)
     # 유지: CLINET_ID (Client 모델에서 대문자로 강제 지정했으므로)
-    client_id = Column(Integer, ForeignKey('CLIENT.CLINET_ID'), nullable=False)
+    client_id = Column(Integer, ForeignKey('CLIENT.CLIENT_ID'), nullable=False)
 
 class ReportCon(Base):
     __tablename__ = 'REPOR_CON'
