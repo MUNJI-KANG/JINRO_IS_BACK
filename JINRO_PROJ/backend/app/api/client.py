@@ -66,6 +66,26 @@ def get_videos_by_kind(kind_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         return {"success": False, "data": [], "message": str(e)}
 
+@router.get("/video/{category_id}")
+def get_video(category_id: int, db: Session = Depends(get_db)):
+    """영상 정보만 반환하는 API"""
+    try:
+        category = db.query(Category).filter(Category.c_id == category_id).first()
+
+        if not category:
+            raise HTTPException(status_code=404, detail="영상 카테고리를 찾을 수 없습니다.")
+
+        return {
+            "success": True,
+            "video": {
+                "id": category.c_id,
+                "title": category.title,
+                "url": category.url
+            }
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"영상 조회 오류: {str(e)}")
 
 @router.get("/survey/{category_id}")
 def get_survey_data(category_id: int, db: Session = Depends(get_db)):

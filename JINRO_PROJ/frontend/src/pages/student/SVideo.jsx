@@ -1,96 +1,262 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axios from "axios";
 import "../../css/student_css/SVideo.css";
 
 function SVideo() {
+
   const navigate = useNavigate();
-  const { categoryId } = useParams(); 
+  const { categoryId } = useParams();
   const location = useLocation();
 
-  // 📦 데이터 유실 방지: 앞 페이지에서 넘겨준 데이터가 없으면 빈 배열/0으로 초기화
   const selectedVideos = location.state?.selectedVideos || [];
   const currentIndex = location.state?.currentIndex || 0;
 
-  const [currentVideo, setCurrentVideo] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const webcamRef = useRef(null);
+  const recorderRef = useRef(null);
+  const recordedChunks = useRef([]);
 
-  // 🔥 유튜브 비디오 ID만 추출하여 embed 주소를 생성하는 가장 확실한 방법
-  const getYoutubeSrc = (url) => {
-    if (!url) return "";
-    // URL에서 v= 뒤의 11자리 ID를 추출합니다.
-    const videoId = url.split("v=")[1]?.split("&")[0];
-    if (videoId) {
-      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&rel=0&showinfo=0&controls=1`;
+  const [currentVideo, setCurrentVideo] = useState(null);
+  const [webcamReady, setWebcamReady] = useState(false);
+  const [videoEnded, setVideoEnded] = useState(false);
+  const [started, setStarted] = useState(false);
+
+  const extractVideoId = (url) => {
+    if (!url) return null;
+
+    try {
+      const parsed = new URL(url);
+
+      if (parsed.hostname.includes("youtu.be")) {
+        return parsed.pathname.slice(1);
+      }
+
+      if (parsed.searchParams.get("v")) {
+        return parsed.searchParams.get("v");
+      }
+
+      return null;
+
+    } catch {
+      return null;
     }
-    return url;
   };
 
+  // 웹캠 초기화
   useEffect(() => {
-    const fetchVideo = async () => {
-      try {
-        setLoading(true);
-        // DB에서 id=1인 영상 정보를 가져옵니다.
-        const res = await axios.get(`http://127.0.0.1:8000/client/survey/${categoryId}`);
-        if (res.data.success) {
-          setCurrentVideo(res.data.data);
-        }
-      } catch (e) {
-        console.error("데이터 로드 실패:", e);
-      } finally {
-        setLoading(false);
+
+    const initWebcam = async () => {
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true
+      });
+
+      webcamRef.current.srcObject = stream;
+      setWebcamReady(true);
+
+    };
+
+    initWebcam();
+
+  }, []);
+
+  // 영상 데이터 가져오기
+  const fetchVideo = async () => {
+
+    const res = await axios.get(
+      `http://127.0.0.1:8000/client/survey/${categoryId}`
+    );
+
+    if (res.data.success) {
+      setCurrentVideo(res.data.data);
+    }
+
+  };
+
+  const startRecording = () => {
+
+    const stream = webcamRef.current.srcObject;
+
+    const mediaRecorder = new MediaRecorder(stream, {
+      mimeType: "video/webm"
+    });
+
+    recorderRef.current = mediaRecorder;
+    recordedChunks.current = [];
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        recordedChunks.current.push(event.data);
       }
     };
-    fetchVideo();
-  }, [categoryId]);
 
-  // 설문 페이지로 데이터(리스트, 인덱스)를 그대로 들고 이동합니다.
-  const handleGoSurvey = () => {
+    mediaRecorder.start();
+
+  };
+
+  const stopRecording = () => {
+
+    return new Promise((resolve) => {
+
+      recorderRef.current.onstop = () => {
+
+        const blob = new Blob(recordedChunks.current, {
+          type: "video/webm"
+        });
+
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `record_${Date.now()}.webm`;
+        a.click();
+
+        resolve(blob);
+
+      };
+
+      recorderRef.current.stop();
+
+    });
+
+  };
+
+  const handleStart = async () => {
+
+    await fetchVideo();
+
+    setStarted(true);
+
+    startRecording();
+
+  };
+
+  const handleGoSurvey = async () => {
+
+    await stopRecording();
+
     navigate(`/student/survey/${categoryId}`, {
       state: { selectedVideos, currentIndex }
     });
+
   };
 
-  if (loading || !currentVideo) return <div className="svideo-page">로딩 중...</div>;
+  const videoId = extractVideoId(currentVideo?.url);
+
+  const embedUrl = videoId
+    ? `https://www.youtube.com/embed/${videoId}?enablejsapi=1`
+    : "";
+
+  useEffect(() => {
+
+    if (!started) return;
+
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+
+    window.onYouTubeIframeAPIReady = () => {
+
+      new window.YT.Player("youtube-player", {
+
+        events: {
+
+          onStateChange: (event) => {
+
+            if (event.data === window.YT.PlayerState.ENDED) {
+              setVideoEnded(true);
+            }
+
+          }
+
+        }
+
+      });
+
+    };
+
+    document.body.appendChild(tag);
+
+  }, [started]);
 
   return (
+
     <div className="svideo-page">
-      <div className="analysis-status">
-        <span className="live-dot"></span>
-        실시간 분석 중...
-      </div>
 
-      <div className="video-wrapper">
-        <div className="video-order-badge">
-          {currentIndex + 1}
+      {!started && (
+
+        <div className="webcam-check">
+
+          <h2>웹캠 상태 확인</h2>
+          
+          <p className="webcam-guide">
+            상담 분석을 위해 웹캠이 사용됩니다.
+          </p>
+
+          <video
+            ref={webcamRef}
+            autoPlay
+            playsInline
+          />
+
+          <button
+              className="start-btn"
+              disabled={!webcamReady}
+              onClick={handleStart}
+            >
+              시작하기
+          </button>
+
         </div>
 
-        {/* ⭐ 유튜브 iframe 박스 (원본 디자인 유지) */}
-        <div className="video-container" style={{ width: '100%', aspectRatio: '16/9', backgroundColor: '#000', borderRadius: '12px', overflow: 'hidden' }}>
-          <iframe
-            width="100%"
-            height="100%"
-            src={getYoutubeSrc(currentVideo.url)}
-            title="YouTube Player"
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          ></iframe>
-        </div>
+      )}
 
-        <h3 className="video-title">{currentVideo.title}</h3>
-      </div>
+      {started && currentVideo && (
 
-      <div className="svideo-bottom dual-buttons">
-        <button
-          className="survey-btn active"
-          onClick={handleGoSurvey}
-        >
-          설문하러 가기
-        </button>
-      </div>
+        <>
+
+          <div className="analysis-status">
+            실시간 분석 중...
+          </div>
+
+          <div className="video-wrapper">
+
+            <div className="video-container">
+
+              <iframe
+                id="youtube-player"
+                src={embedUrl}
+                title="YouTube Player"
+                frameBorder="0"
+                allowFullScreen
+              />
+
+            </div>
+
+            <h3>{currentVideo.title}</h3>
+
+          </div>
+
+          <div className="svideo-bottom">
+
+            <button
+                className={`survey-btn ${videoEnded ? "enabled" : ""}`}
+                onClick={handleGoSurvey}
+                disabled={!videoEnded}
+              >
+              설문하러 가기
+          </button>
+
+          </div>
+
+        </>
+
+      )}
+
     </div>
+
   );
+
 }
 
 export default SVideo;
