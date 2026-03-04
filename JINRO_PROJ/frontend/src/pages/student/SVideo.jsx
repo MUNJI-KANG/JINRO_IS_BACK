@@ -145,39 +145,45 @@ function SVideo() {
   const videoId = extractVideoId(currentVideo?.url);
 
   const embedUrl = videoId
-    ? `https://www.youtube.com/embed/${videoId}?enablejsapi=1`
-    : "";
+    ? `https://www.youtube.com/embed/${videoId}`
+    : null;
+    useEffect(() => {
 
-  useEffect(() => {
+      if (!started || !videoId) return;
 
-    if (!started) return;
+      if (!window.YT) {
 
-    const tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
+        const tag = document.createElement("script");
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.body.appendChild(tag);
 
-    window.onYouTubeIframeAPIReady = () => {
+      }
 
-      new window.YT.Player("youtube-player", {
+      window.onYouTubeIframeAPIReady = () => {
 
-        events: {
+        new window.YT.Player("youtube-player", {
 
-          onStateChange: (event) => {
+          events: {
 
-            if (event.data === window.YT.PlayerState.ENDED) {
-              setVideoEnded(true);
+            onStateChange: (event) => {
+
+              if (event.data === window.YT.PlayerState.ENDED) {
+
+                console.log("영상 끝");
+
+                setVideoEnded(true);
+
+              }
+
             }
 
           }
 
-        }
+        });
 
-      });
+      };
 
-    };
-
-    document.body.appendChild(tag);
-
-  }, [started]);
+    }, [started, videoId]);
 
   return (
 
@@ -223,14 +229,16 @@ function SVideo() {
 
             <div className="video-container">
 
-              <iframe
-                id="youtube-player"
-                src={embedUrl}
-                title="YouTube Player"
-                frameBorder="0"
-                allowFullScreen
-              />
-
+              {videoId && (
+                <iframe
+                  id="youtube-player"
+                  src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1`}
+                  title="YouTube Player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              )}
             </div>
 
             <h3>{currentVideo.title}</h3>
