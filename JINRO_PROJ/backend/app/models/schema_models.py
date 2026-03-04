@@ -53,7 +53,7 @@ class Counseling(Base):
     # 유지: CLINET_ID (Client 모델에서 대문자로 강제 지정했으므로)
     client_id = Column(Integer, ForeignKey('CLIENT.CLINET_ID'), nullable=False)
 
-class ReporCon(Base):
+class ReportCon(Base):
     __tablename__ = 'REPOR_CON'
     
     con_rep_id = Column(Integer, primary_key=True, autoincrement=True, comment='PK')
