@@ -142,7 +142,7 @@ function SSmallCat() {
                 </div>
             </div>
 
-            {select.length >= 2 ? (
+            {selectedVideos.length == 3 ? (
                 <div>
                     <button className={`${styles.nextButton} ${selectedVideo != null ? styles.activeNewxButton : ''}`} onClick={handleNext} disabled={selectedVideos.length === 0}>
                         영상보기

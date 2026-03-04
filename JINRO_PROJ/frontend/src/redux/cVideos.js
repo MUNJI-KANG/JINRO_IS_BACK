@@ -6,36 +6,30 @@ export const cVideos = createSlice({
   name: "cVideos",
   initialState,
   reducers: {
+
     addVideo: (state, action) => {
-      const payload = action.payload; // {id, mainCategory, subCategory, url ...}
 
-      // 1) 같은 영상(id) 이미 있으면 무시
-      const sameId = state.find((v) => v.id === payload.id);
-      if (sameId) return;
+      const payload = action.payload;
 
-      // 2) 같은 대분류(mainCategory)에서 이미 선택한 게 있으면 "교체"
-      const sameMainIdx = state.findIndex(
-        (v) => v.mainCategory === payload.mainCategory
-      );
-      if (sameMainIdx !== -1) {
-        state[sameMainIdx] = payload;
-        return;
-      }
+      // 같은 영상 중복 방지
+      const exist = state.find(v => v.id === payload.id);
+      if (exist) return;
 
-      // 3) 최대 3개
+      // 최대 3개
       if (state.length >= 3) return;
 
       state.push(payload);
     },
 
     deleteVideo: (state, action) => {
-      return state.filter((video) => video.id !== action.payload);
+      return state.filter(video => video.id !== action.payload);
     },
 
     clearVideos: () => {
       return [];
-    },
-  },
+    }
+
+  }
 });
 
 export const { addVideo, deleteVideo, clearVideos } = cVideos.actions;
