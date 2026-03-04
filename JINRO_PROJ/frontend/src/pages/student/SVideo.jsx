@@ -165,14 +165,36 @@ function SVideo() {
 
   const handleGoSurvey = async () => {
 
-    await stopRecording();
+    try {
 
-    navigate(`/student/survey/${categoryId}`, {
-      state: { currentIndex: currentIndex }
-    });
+      const blob = await stopRecording();
+
+      const formData = new FormData();
+
+      // 🔥 파일 이름을 example.webm으로 고정
+      formData.append("file", blob, "example.webm");
+
+      await axios.post(
+        "http://127.0.0.1:8000/client/video/upload",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data"
+          }
+        }
+      );
+
+      navigate(`/student/survey/${categoryId}`, {
+        state: { currentIndex: currentIndex }
+      });
+
+    } catch (err) {
+
+      console.error("영상 업로드 실패:", err);
+
+    }
 
   };
-
   const videoId = extractVideoId(currentVideo?.url);
 
   // YouTube Player 이벤트

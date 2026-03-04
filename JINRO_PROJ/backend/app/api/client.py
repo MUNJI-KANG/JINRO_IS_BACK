@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import Request, APIRouter, Depends, HTTPException
+from fastapi import Request, APIRouter, Depends, HTTPException, UploadFile, File
 from app.db.database import SessionLocal, engine, Base
 from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV
 from app.schemas.client import ClientCreate,CounselingCreateRequest
@@ -8,6 +8,8 @@ from app.schemas.client import ClientCreate,CounselingCreateRequest
 from sqlalchemy.orm import Session
 import random
 import datetime
+import os
+import shutil
 
 
 
@@ -208,3 +210,34 @@ def create_counselling_and_reports(
         # 💡 중간에 하나라도 실패하면 추가했던 모든 작업을 취소(rollback)하여 데이터 꼬임을 방지합니다.
         db.rollback()
         raise HTTPException(status_code=500, detail=f"상담 데이터 생성 중 오류 발생: {str(e)}")
+    
+    
+# 🔥 나중에 저장 경로 지정할 곳
+# 예: UPLOAD_DIR = "D:/ai_project/videos"
+# 예: UPLOAD_DIR = "/home/server/videos"
+UPLOAD_DIR = "videos"   # 지금은 로컬 프로젝트 폴더에 저장
+
+# 폴더 없으면 생성
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+@router.post("/video/upload")
+async def upload_video(file: UploadFile = File(...)):
+
+    try:
+        # 🔥 나중에 파일 경로 바꾸려면 여기 수정
+        # 예: file_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}.webm")
+        file_path = os.path.join(UPLOAD_DIR, "example.webm")
+
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        return {
+            "success": True,
+            "message": "영상 저장 성공",
+            "path": file_path
+        }
+
+    except Exception as e:
+        print("영상 저장 오류:", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
