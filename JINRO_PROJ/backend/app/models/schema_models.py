@@ -101,7 +101,7 @@ class AiVideoAnalyze(Base):
     ai_v_erp_id = Column(Integer, ForeignKey('REPORT_AI_V.ai_v_erp_id'), nullable=False)
 
 class ReportFinal(Base):
-    __tablename__ = 'REPROT_FINAL'
+    __tablename__ = 'REPORT_FINAL'
     
     final_id = Column(Integer, primary_key=True, autoincrement=True, comment='PK')
     reg_date = Column(DateTime, default=func.now(), nullable=False, comment='리포트 생성 날짜')
