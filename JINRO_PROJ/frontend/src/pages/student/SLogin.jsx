@@ -58,6 +58,7 @@ const SLogin = () => {
             const response = await fetch("http://localhost:8000/client/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify({
                     name: name,
                     birthdate: fullSsn,
