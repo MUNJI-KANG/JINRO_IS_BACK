@@ -44,14 +44,12 @@ function SSurvey() {
 
     }, [categoryId]);
 
-
     const handleNext = async () => {
 
         const questions = typeof surveyInfo.survey === "string"
             ? JSON.parse(surveyInfo.survey)
             : surveyInfo.survey;
 
-        // 다음 질문
         if (currentStep < questions.length - 1) {
             setCurrentStep(prev => prev + 1);
             return;
@@ -71,28 +69,28 @@ function SSurvey() {
                 payload
             );
 
-            // 마지막 영상이면 바로 complete
-            if (currentIndex >= selectedVideos.length - 1) {
+            const nextIdx = currentIndex + 1;
 
+            if (!selectedVideos || nextIdx >= selectedVideos.length) {
                 navigate("/student/complete");
                 return;
-
             }
 
-            // 다음 영상 이동
-            const nextIdx = currentIndex + 1;
-            const nextVideoId = selectedVideos[nextIdx].id;
+            const nextVideo = selectedVideos[nextIdx];
 
-            navigate(`/student/video/${nextVideoId}`, {
+            if (!nextVideo) {
+                navigate("/student/complete");
+                return;
+            }
+
+            navigate(`/student/video/${nextVideo.id}`, {
                 state: { currentIndex: nextIdx }
             });
 
         } catch (err) {
             console.error(err);
         }
-
     };
-
 
     if (loading || !surveyInfo) {
         return <div className={styles.surveyContainer}>로딩 중...</div>;
@@ -103,8 +101,17 @@ function SSurvey() {
         : surveyInfo.survey;
 
     const isLastQuestion = currentStep === questions.length - 1;
-    const isLastVideo = currentIndex === selectedVideos.length - 1;
 
+    const isLastVideo =
+        selectedVideos &&
+        selectedVideos.length > 0 &&
+        currentIndex === selectedVideos.length - 1;
+
+    let buttonText = "다음 문항";
+
+    if (isLastQuestion) {
+        buttonText = isLastVideo ? "결과 제출" : "다음 섹션으로";
+    }
 
     return (
         <div className={styles.surveyContainer}>
@@ -155,10 +162,10 @@ function SSurvey() {
                                 answers[currentStep] === idx ? styles.selected : ""
                             }`}
                             onClick={() =>
-                                setAnswers({
-                                    ...answers,
+                                setAnswers(prev => ({
+                                    ...prev,
                                     [currentStep]: idx
-                                })
+                                }))
                             }
                         >
 
@@ -194,13 +201,7 @@ function SSurvey() {
                             fontWeight: "bold"
                         }}
                     >
-
-                        {!isLastQuestion
-                            ? "다음 문항"
-                            : isLastVideo
-                            ? "제출"
-                            : "제출 및 다음"}
-
+                        {buttonText}
                     </button>
 
                 </div>
