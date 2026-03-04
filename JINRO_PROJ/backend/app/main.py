@@ -1,7 +1,5 @@
 # main.py
 # uvicorn main:app --reload 실행코드
-
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -15,6 +13,10 @@ from app.db.database import engine, Base
 
 
 from app.api import client, counselor
+
+from starlette.middleware.sessions import SessionMiddleware
+import os
+
 # FastAPI 실행 시 모델을 바탕으로 DB 테이블 자동 생성 (이미 있으면 무시됨)
 Base.metadata.create_all(bind=engine)
 
@@ -26,6 +28,8 @@ origins = [
     "http://127.0.0.1:5173",
 ]
 
+# 세션미드웨어 추가( secret_key는 복잡한 문자열 사용)
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET_KEY", "fallback-secret-key"))
 
 @app.get("/")
 def read_root():
@@ -44,6 +48,10 @@ app.add_middleware(
 
 app.include_router(client.router)
 app.include_router(counselor.router)
+
+
+
+
 
 
 # 여긴 테스트영역 앞으로 안쓸예정일것

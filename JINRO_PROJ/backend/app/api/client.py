@@ -1,6 +1,15 @@
 import uuid
-from fastapi import APIRouter, Depends, HTTPException
+
+from fastapi import Request, APIRouter, Depends, HTTPException
+from app.db.database import SessionLocal, engine, Base
+from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV
+from app.schemas.client import ClientCreate,CounselingCreateRequest
+
 from sqlalchemy.orm import Session
+import random
+import datetime
+
+
 
 # DB 및 모델 임포트 
 from app.db.database import get_db
@@ -19,14 +28,16 @@ def get_client_list():
 def get_client_detail(client_id: int):
     return {"message": f"{client_id}번 내담자 상세 정보 조회 API 입니다."}
 
-
+# 로그인
 @router.post("/login")
-def login_or_create_client(client_data: ClientCreate, db: Session = Depends(get_db)):
+def login_or_create_client(client_data: ClientCreate, request: Request, db: Session = Depends(get_db)):
     try:
-        # existing_client = db.query(Client).filter(Client.phone_num == client_data.phone_num).first()
+
+        existing_client = db.query(Client).filter(Client.phone_num == client_data.phone_num, Client.name == client_data.name).first()
         
-        # if existing_client:
-        #     return {"message": "기존 회원 로그인 성공", "client_id": existing_client.client_id}
+        if existing_client:
+            request.session['client_id'] = existing_client.client_id
+            return {"message": "기존 회원 로그인 성공", "client_id": existing_client.client_id}
 
         new_client = Client(
             c_id=str(uuid.uuid4()), 
@@ -35,19 +46,21 @@ def login_or_create_client(client_data: ClientCreate, db: Session = Depends(get_
             email=client_data.email,
             birthdate=client_data.birthdate,
             agree='Y'
+
         )
         
         db.add(new_client)
         db.commit()
         db.refresh(new_client)
         
+        request.session['client_id'] = new_client.client_id
+
         return {"message": "신규 회원 가입 및 로그인 성공", "client_id": new_client.client_id}
 
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"데이터베이스 오류: {str(e)}")
     
-
 @router.get("/list/{kind_id}")
 def get_videos_by_kind(kind_id: int, db: Session = Depends(get_db)):
     """특정 kind(중분류 ID)에 해당하는 영상 카테고리 목록을 조회합니다."""
@@ -129,3 +142,66 @@ def submit_survey(data: SurveySubmitRequest, db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         return {"success": False, "message": f"저장 중 오류 발생: {str(e)}"}
+
+
+# 상담시작(내담자의 영상선택 완료)
+@router.post("/client/counselling")
+def create_counselling_and_reports(
+    payload: CounselingCreateRequest, 
+    request: Request, 
+    db: Session = Depends(get_db)
+):
+    #  내담자(Client) ID 가져오기
+    client_id = request.session.get('client_id')
+    if not client_id:
+        raise HTTPException(status_code=401, detail="로그인이 만료되었거나 비정상적인 접근입니다.")
+
+    # 활성화된 상담사 중 한 명을 랜덤으로 선택
+    active_counselors = db.query(Counselor).filter(Counselor.active_yn == 'Y').all()
+    if not active_counselors:
+        raise HTTPException(status_code=404, detail="현재 배정 가능한 상담사가 없습니다.")
+    
+    assigned_counselor = random.choice(active_counselors)
+
+    try:
+        now = datetime.datetime.now()
+
+        # 3. Counseling(상담 매칭) 테이블 데이터 생성
+        new_counseling = Counseling(
+            client_id=client_id,
+            counselor_id=assigned_counselor.counselor_id,
+            datetime=now.date(),        # 오늘 날짜
+            regdate=now,                # 생성 일시
+            complete_yn=1               # 1(영상), 2(예정), 3(완료) 중 초기상태인 1로 설정
+        )
+        db.add(new_counseling)
+        
+        db.flush() 
+
+        for video in payload.videos:
+            category_info = db.query(Category).filter(Category.c_id == video.id).first()
+            
+            if not category_info:
+                db.rollback()
+                raise HTTPException(status_code=400, detail=f"존재하지 않는 영상입니다. (ID: {video.id})")
+
+            new_report = ReportAiV(
+                counseling_id=new_counseling.counseling_id, 
+                category=category_info.title[:20],  # DB 제약조건 String(20)에 맞춤
+                url=category_info.url               # Category 테이블에서 가져온 실제 URL
+            )
+            db.add(new_report)
+
+        db.commit()
+
+        return {
+            "success": True, 
+            "message": "상담사 배정 및 영상 등록이 완료되었습니다.",
+            "counseling_id": new_counseling.counseling_id,
+            "counselor_name": assigned_counselor.name # 배정된 상담사 이름 반환 (UI 표시용)
+        }
+
+    except Exception as e:
+        # 💡 중간에 하나라도 실패하면 추가했던 모든 작업을 취소(rollback)하여 데이터 꼬임을 방지합니다.
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"상담 데이터 생성 중 오류 발생: {str(e)}")

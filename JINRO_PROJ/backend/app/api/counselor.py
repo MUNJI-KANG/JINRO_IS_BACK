@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import Request, APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
 from app.models.schema_models import Counselor, Category
@@ -14,6 +14,38 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+
+@router.post("/login")
+def login(
+    login_data: counselor.CounselorLoginRequest,
+    request: Request,                            
+    db: Session = Depends(get_db)):
+
+    counselor_obj = db.query(Counselor).filter(
+        Counselor.login_id == login_data.login_id
+    ).first()
+
+    if not counselor_obj:
+        return {"success": False, "message": "존재하지 않는 아이디입니다."}
+
+    if counselor_obj.pw != login_data.pw:
+        return {"success": False, "message": "비밀번호가 일치하지 않습니다."}
+
+    if counselor_obj.active_yn != 'Y':
+        return {"success": False, "message": "비활성화된 계정입니다."}
+
+    request.session['counselor_id'] = counselor_obj.counselor_id
+    request.session['counselor_name'] = counselor_obj.name 
+
+    return {
+        "success": True,
+        "message": f"{counselor_obj.name}님 환영합니다!",
+        "name": counselor_obj.name,
+        "counselor_id": counselor_obj.counselor_id
+    }
+
 
 
 # ===============================
@@ -134,26 +166,6 @@ def update_category(
 # 🔹 상담사 API
 # ===============================
 
-@router.post("/login")
-def login(request: counselor.CounselorLoginRequest, db: Session = Depends(get_db)):
-    counselor_obj = db.query(Counselor).filter(
-        Counselor.login_id == request.login_id
-    ).first()
-
-    if not counselor_obj:
-        return {"success": False, "message": "존재하지 않는 아이디입니다."}
-
-    if counselor_obj.pw != request.pw:
-        return {"success": False, "message": "비밀번호가 일치하지 않습니다."}
-
-    if counselor_obj.active_yn != 'Y':
-        return {"success": False, "message": "비활성화된 계정입니다."}
-
-    return {
-        "success": True,
-        "name": counselor_obj.name,
-        "counselor_id": counselor_obj.counselor_id
-    }
 
 
 @router.put("/{counselor_id}")
