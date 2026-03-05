@@ -23,7 +23,6 @@ const ReportAi = ({ pageTitle, studentName, apiUrl }) => {
     const [videoUrl, setVideoUrl] = useState("");
 
 
-
     // 날짜 목록 가져오기
     useEffect(() => {
 
@@ -37,7 +36,6 @@ const ReportAi = ({ pageTitle, studentName, apiUrl }) => {
 
                     setDates(res.data);
 
-                    // 첫번째 데이터 자동 로딩
                     if (res.data.length > 0) {
                         loadReport(res.data[0].ai_v_erp_id);
                         setSelectedDate(res.data[0].ai_v_erp_id);
@@ -51,8 +49,7 @@ const ReportAi = ({ pageTitle, studentName, apiUrl }) => {
     }, [counselingId]);
 
 
-
-    // 리포트 조회 함수
+    // 리포트 조회
     const loadReport = (videoId) => {
 
         api.get(`${apiUrl}/video/${videoId}`)
@@ -79,8 +76,6 @@ const ReportAi = ({ pageTitle, studentName, apiUrl }) => {
     };
 
 
-
-    // 날짜 변경
     const handleDateChange = (e) => {
 
         const videoId = e.target.value;
@@ -94,8 +89,6 @@ const ReportAi = ({ pageTitle, studentName, apiUrl }) => {
     };
 
 
-
-    // 영상보기
     const handleVideoOpen = () => {
 
         if (!videoUrl) {
@@ -106,7 +99,6 @@ const ReportAi = ({ pageTitle, studentName, apiUrl }) => {
         window.open(videoUrl);
 
     };
-
 
 
     return (
@@ -139,10 +131,9 @@ const ReportAi = ({ pageTitle, studentName, apiUrl }) => {
             </div>
 
 
-
             <div className={styles['video-wrap']}>
 
-                {/* 그래프 카드 */}
+                {/* ================= 그래프 카드 ================= */}
                 <section className={styles['report-card']}>
 
                     <div className={styles['inner-graph-grid']}>
@@ -156,11 +147,8 @@ const ReportAi = ({ pageTitle, studentName, apiUrl }) => {
                                 <LineChart data={currentData.focus}>
 
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
-
                                     <XAxis dataKey="time" />
-
                                     <YAxis />
-
                                     <Tooltip />
 
                                     <Line
@@ -186,9 +174,7 @@ const ReportAi = ({ pageTitle, studentName, apiUrl }) => {
                                 <BarChart data={currentData.interest}>
 
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
-
                                     <XAxis dataKey="subject" />
-
                                     <Tooltip />
 
                                     <Bar
@@ -210,7 +196,6 @@ const ReportAi = ({ pageTitle, studentName, apiUrl }) => {
                         </div>
 
                     </div>
-
 
 
                     <div className={styles['analysis-summary-box']}>
@@ -235,8 +220,31 @@ const ReportAi = ({ pageTitle, studentName, apiUrl }) => {
                 </section>
 
 
+                {/* ================= AI 요약 카드 ================= */}
+                <section className={styles['report-card']}>
 
-                {/* 메모 입력 */}
+                    <label className={styles['report-label']}>
+                        시청영상 분석 리포트 요약
+                    </label>
+
+                    <div className={styles['ai-summary-box']}>
+
+                        {currentData.summary ? (
+                            <p className={styles['ai-summary-text']}>
+                                {currentData.summary}
+                            </p>
+                        ) : (
+                            <p className={styles['ai-summary-empty']}>
+                                분석 결과가 없습니다.
+                            </p>
+                        )}
+
+                    </div>
+
+                </section>
+
+
+                {/* ================= 메모 카드 ================= */}
                 <section className={styles['report-card']}>
 
                     <label className={styles['report-label']}>
@@ -253,7 +261,6 @@ const ReportAi = ({ pageTitle, studentName, apiUrl }) => {
                 </section>
 
             </div>
-
 
 
             <div className={styles['report-buttons']}>
@@ -273,7 +280,6 @@ const ReportAi = ({ pageTitle, studentName, apiUrl }) => {
                     </Link>
 
                 </div>
-
 
 
                 <div className={styles['right-btn-area']}>

@@ -2,264 +2,235 @@
    COUNSELING LAYOUT
 ================================ */
 
-.c-counseling-container {
+.c-counseling-container{
 
-  display: flex;
+  display:flex;
+  padding:40px;
+  max-width:1400px;
+  margin:0 auto;
 
-  gap: 40px;
-
-  padding: 40px;
-
-  max-width: 1300px;
-
-  margin: 0 auto;
 }
 
-.main-content { flex: 2; }
+.main-content{
 
-.side-content {
+  width:100%;
 
-  flex: 1;
-
-  position: relative;
-
-  padding-top: 50px;
 }
 
 /* ===============================
    TITLE
 ================================ */
 
-.student-title {
+.title-row{
 
-  font-size: 28px;
+  display:flex;
 
-  font-weight: 800;
+  align-items:center;
 
-  margin-bottom: 30px;
+  gap:20px;
 
-  color: var(--text-main);
+  margin-bottom:30px;
+
+}
+
+
+.student-title{
+
+  font-size:28px;
+  font-weight:800;
+  color:var(--text-main);
+
+}
+
+/* ===============================
+   RECORD CONTROL
+================================ */
+
+.record-control{
+
+  display:flex;
+  align-items:center;
+  gap:10px;
+
+}
+
+.record-box{
+
+  display:flex;
+  align-items:center;
+  gap:12px;
+
+  padding:12px 10px;
+
+  border:1px solid var(--border);
+  border-radius:12px;
+
+  background:var(--bg-card);
+
+}
+
+.rec-text{
+
+  font-weight:700;
+  font-size:14px;
+
+}
+
+.rec-dot{
+
+  color:red;
+  margin-left:4px;
+
+  animation:blink 1s infinite;
+
 }
 
 /* ===============================
    INPUT GROUP
 ================================ */
 
-.input-group {
+.input-group{
 
-  position: relative;
+  margin-bottom:25px;
 
-  margin-bottom: 20px;
 }
 
-.num-badge {
+.title-input{
 
-  position: absolute;
+  width:100%;
+  padding:14px 20px;
 
-  left: -35px;
+  border:2px solid var(--border);
+  border-radius:15px;
 
-  top: 5px;
+  font-size:18px;
 
-  background: #ff4d4d;
+  background:var(--bg-card);
 
-  color: #fff;
-
-  width: 25px;
-
-  height: 25px;
-
-  border-radius: 50%;
-
-  display: flex;
-
-  justify-content: center;
-
-  align-items: center;
-
-  font-size: 14px;
-
-  font-weight: bold;
 }
 
-/* ===============================
-   INPUT
-================================ */
+.title-input:focus{
 
-.title-input {
+  border-color:var(--primary);
+  outline:none;
 
-  width: 100%;
-
-  padding: 12px 20px;
-
-  border: 2px solid var(--border);
-
-  border-radius: 15px;
-
-  font-size: 18px;
-
-  background: var(--bg-card);
-}
-
-.title-input:focus {
-
-  border-color: var(--primary);
-
-  outline: none;
 }
 
 /* ===============================
    TEXTAREA
 ================================ */
 
-.content-textarea {
+.content-textarea{
 
-  width: 100%;
+  width:100%;
+  height:520px;
 
-  height: 450px;
+  padding:25px;
 
-  padding: 25px;
+  border:2px solid var(--border);
+  border-radius:20px;
 
-  border: 2px solid var(--border);
+  font-size:16px;
+  line-height:1.6;
 
-  border-radius: 20px;
+  resize:none;
 
-  font-size: 16px;
+  background:var(--bg-card);
 
-  resize: none;
-
-  background: var(--bg-card);
 }
 
-.content-textarea:focus {
+.content-textarea:focus{
 
-  border-color: var(--primary);
+  border-color:var(--primary);
+  outline:none;
 
-  outline: none;
 }
 
 /* ===============================
-   FORM FOOTER
+   SUBMIT
 ================================ */
 
-.form-footer {
+.form-footer{
 
-  display: flex;
+  display:flex;
+  justify-content:flex-end;
+  margin-top:20px;
 
-  justify-content: flex-end;
-
-  position: relative;
-
-  margin-top: 15px;
 }
 
-.btn-submit {
+.btn-submit{
 
-  background: var(--primary);
+  background:var(--primary);
 
-  border: none;
+  border:none;
 
-  padding: 10px 40px;
+  padding:12px 45px;
 
-  border-radius: 12px;
+  border-radius:12px;
 
-  font-size: 20px;
+  font-size:20px;
+  font-weight:800;
 
-  font-weight: 800;
+  cursor:pointer;
 
-  cursor: pointer;
+  color:#fff;
 
-  color: #fff;
-
-  transition: all .2s ease;
-}
-
-.btn-submit:hover {
-
-  background: var(--primary-hover);
-
-  transform: translateY(-1px);
 }
 
 /* ===============================
    RECORD BUTTON
 ================================ */
 
-.btn-record {
+.btn-record{
 
-  background: var(--accent);
+  background:var(--accent);
 
-  border: 1px solid var(--border);
+  border:1px solid var(--border);
 
-  padding: 10px 30px;
+  padding:8px 18px;
 
-  border-radius: 12px;
+  border-radius:10px;
 
-  font-size: 18px;
+  font-size:16px;
+  font-weight:700;
 
-  font-weight: 800;
+  cursor:pointer;
 
-  cursor: pointer;
-
-  color: var(--text-main);
 }
 
-/* ===============================
-   VIDEO BOX
-================================ */
+.btn-record.small{
 
-.video-box {
+  padding:6px 10px;
+  font-size:14px;
 
-  border: 1px solid var(--border);
-
-  border-radius: 20px;
-
-  padding: 20px;
-
-  background: var(--bg-card);
-
-  text-align: center;
-
-  box-shadow: var(--shadow);
 }
 
-.video-label {
+.btn-record:hover{
 
-  font-weight: 800;
+  transform:translateY(-1px);
 
-  margin-bottom: 15px;
-
-  font-size: 18px;
-
-  color: var(--text-main);
 }
 
-.rec-dot {
+.record-timer{
 
-  color: red;
+  font-weight:700;
 
-  font-size: 14px;
+  font-size:14px;
 
-  margin-left: 10px;
+  margin-left:6px;
 
-  animation: blink 1s infinite;
-}
+  color:var(--text-main);
 
-.preview-video {
-
-  width: 100%;
-
-  border-radius: 10px;
-
-  background: #000;
-
-  transform: scaleX(-1);
 }
 
 /* ===============================
    ANIMATION
 ================================ */
 
-@keyframes blink {
+@keyframes blink{
 
-  50% { opacity: 0; }
+  50%{
+    opacity:0;
+  }
+
 }
