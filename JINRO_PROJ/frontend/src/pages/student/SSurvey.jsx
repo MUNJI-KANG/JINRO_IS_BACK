@@ -13,6 +13,7 @@ function SSurvey() {
     const selectedVideos = useSelector((state) => state.cVideos);
     const { currentIndex = 0 } = location.state || {};
 
+    const counselingId = useSelector((state) => state.counselingId);
     const [surveyInfo, setSurveyInfo] = useState(null);
     const [currentStep, setCurrentStep] = useState(0);
     const [answers, setAnswers] = useState({});
@@ -58,9 +59,9 @@ function SSurvey() {
         try {
 
             const payload = {
-                counseling_id: 1,
+                counseling_id: counselingId,
                 category: surveyInfo.title,
-                url: surveyInfo.url,
+                url: surveyInfo.url || "",
                 answer: answers
             };
 
@@ -96,9 +97,12 @@ function SSurvey() {
         return <div className={styles.surveyContainer}>로딩 중...</div>;
     }
 
-    const questions = typeof surveyInfo.survey === "string"
-        ? JSON.parse(surveyInfo.survey)
-        : surveyInfo.survey;
+    const questions = React.useMemo(() => {
+        if (!surveyInfo) return [];
+        return typeof surveyInfo.survey === "string"
+            ? JSON.parse(surveyInfo.survey)
+            : surveyInfo.survey;
+    }, [surveyInfo]);
 
     const isLastQuestion = currentStep === questions.length - 1;
 

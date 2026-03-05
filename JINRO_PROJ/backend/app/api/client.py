@@ -136,25 +136,35 @@ def get_survey_data(category_id: int, db: Session = Depends(get_db)):
 
 @router.post("/survey/submit")
 def submit_survey(data: SurveySubmitRequest, db: Session = Depends(get_db)):
-    """설문 결과를 REPORT_AI_V 테이블에 JSON 형태로 저장합니다."""
+    """설문 결과를 REPORT_AI_V 테이블에 저장(UPDATE)"""
     try:
-        # Pydantic 스키마를 통해 안전하게 검증된 데이터를 DB에 삽입합니다.
-        new_report = ReportAiV(
-            category=data.category,
-            url=data.url,
-            answer=data.answer,            # 🔥 JSON 형태 그대로 저장됩니다.
-            counseling_id=data.counseling_id,
-            re_comment=ReCommentEnum.SUCCESS # 분석 상태값을 우선 SUCCESS(영상저장성공)로 부여
-        )
-        
-        db.add(new_report)
+        # 기존 ReportAiV 찾기 (같은 상담 + 같은 영상)
+        report = db.query(ReportAiV).filter(
+            ReportAiV.counseling_id == data.counseling_id,
+            ReportAiV.url == data.url
+        ).first()
+
+        if not report:
+            raise HTTPException(status_code=404, detail="해당 영상 리포트를 찾을 수 없습니다.")
+
+        # 설문 답변 저장
+        report.answer = data.answer
+        report.complete_yn = 'Y'
+
+        # 분석 상태 업데이트
+        report.re_comment = ReCommentEnum.SUCCESS
+
         db.commit()
-        db.refresh(new_report)
-        
-        return {"success": True, "message": "설문 결과가 성공적으로 저장되었습니다."}
+
+        return {
+            "success": True,
+            "message": "설문 결과가 성공적으로 저장되었습니다.",
+            "ai_v_erp_id": report.ai_v_erp_id
+        }
+
     except Exception as e:
         db.rollback()
-        return {"success": False, "message": f"저장 중 오류 발생: {str(e)}"}
+        raise HTTPException(status_code=500, detail=f"저장 중 오류 발생: {str(e)}")
 
 
 # 상담시작(내담자의 영상선택 완료)

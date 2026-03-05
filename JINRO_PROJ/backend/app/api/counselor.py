@@ -4,7 +4,7 @@ from app.db.database import SessionLocal
 
 from app.schemas.counselor import CounselorLoginRequest,CategoryCreateRequest,CounselorModifyInfo,ScheduleDetailResponse,ScheduleListResponse,ScheduleUpdateRequest
 from pydantic import BaseModel
-from app.models.schema_models import ReportAiV, AiVideoAnalyze, ReCommentEnum
+
 from sqlalchemy import func, or_, and_
 from app.models.schema_models import ReportFinal
 # from app.schemas import counselor
@@ -22,6 +22,7 @@ from app.models.schema_models import (
     ReportAiM,
     Client,
     Counseling
+    
 )
 
 
@@ -71,8 +72,6 @@ def login(
         "name": counselor_obj.name,
         "counselor_id": counselor_obj.counselor_id
     }
-
-
 
 # ===============================
 # 🔹 카테고리 API
