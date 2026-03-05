@@ -7,11 +7,7 @@ import { clearVideos } from '../../redux/cVideos'
 
 const Home = () => {
   const navigate = useNavigate();
-<<<<<<< Updated upstream
   const dispatch = useDispatch();
-=======
-
->>>>>>> Stashed changes
 
   useEffect(() => {
     sessionStorage.clear();
