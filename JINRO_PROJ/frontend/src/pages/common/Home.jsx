@@ -5,7 +5,6 @@ import api from '../../services/app'
 
 const Home = () => {
   const navigate = useNavigate();
-  const navType = useNavigationType();
 
   useEffect(() => {
     sessionStorage.clear();
