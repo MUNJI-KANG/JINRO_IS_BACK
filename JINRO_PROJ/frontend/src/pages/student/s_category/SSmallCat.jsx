@@ -4,6 +4,7 @@ import styles from "../../../css/student_css/SSmallCat.module.css";
 import { useSelector, useDispatch } from "react-redux";
 import { addVideo, deleteVideo } from "../../../redux/cVideos";
 import axios from 'axios';
+import api from '../../../services/app'
 
 function SSmallCat() {
     const navigate = useNavigate();
@@ -48,10 +49,9 @@ function SSmallCat() {
             return;
         }
 
-        fetch(`http://127.0.0.1:8000/counselor/category/kind/${midId}`)
+        api.get(`/counselor/category/kind/${midId}`)
             .then((res) => {
-                if (!res.ok) throw new Error("서버 응답 오류");
-                return res.json();
+                return res.data;
             })
             .then((data) => {
 
@@ -108,7 +108,7 @@ function SSmallCat() {
             videos: payload
         }
         try {
-            const response = await axios.post(`${host}/client/client/counselling`, result);
+            const response = await api.post(`${host}/client/client/counselling`, result);
 
             if (response.data.success) {
                 navigate("/student/category/checkout");

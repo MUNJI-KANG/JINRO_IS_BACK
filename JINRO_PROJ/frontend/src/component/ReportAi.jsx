@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from 'recharts';
 import { Link, useLocation } from 'react-router-dom';
+import api from '../services/app'
 
 import styles from '../css/component_css/ReportAi.module.css';
 
@@ -28,8 +29,8 @@ const ReportAi = ({ pageTitle, studentName, apiUrl }) => {
 
         if (!counselingId) return;
 
-        fetch(`${apiUrl}/dates/${counselingId}`)
-            .then(res => res.json())
+        api.get(`${apiUrl}/dates/${counselingId}`)
+            .then(res => res.data)
             .then(res => {
 
                 if (res.success) {
@@ -54,8 +55,8 @@ const ReportAi = ({ pageTitle, studentName, apiUrl }) => {
     // 리포트 조회 함수
     const loadReport = (videoId) => {
 
-        fetch(`${apiUrl}/video/${videoId}`)
-            .then(res => res.json())
+        api.get(`${apiUrl}/video/${videoId}`)
+            .then(res => res.data)
             .then(res => {
 
                 if (res.success) {

@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import styles from '../../css/student_css/SSurvey.module.css';
+import api from '../../services/app'
 
 function SSurvey() {
 
@@ -25,8 +26,8 @@ function SSurvey() {
 
             try {
 
-                const response = await axios.get(
-                    `http://127.0.0.1:8000/client/survey/${categoryId}`
+                const response = await api.get(
+                    `/client/survey/${categoryId}`
                 );
 
                 if (response.data.success) {
@@ -65,8 +66,8 @@ function SSurvey() {
                 answer: answers
             };
 
-            await axios.post(
-                "http://127.0.0.1:8000/client/survey/submit",
+            await api.post(
+                "/client/survey/submit",
                 payload
             );
 

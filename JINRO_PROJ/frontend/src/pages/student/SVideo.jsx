@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import "../../css/student_css/SVideo.css";
+import api from '../../services/app'
 
 function SVideo() {
 
@@ -69,8 +70,8 @@ function SVideo() {
 
     try {
 
-      const res = await axios.get(
-        `http://127.0.0.1:8000/client/survey/${categoryId}`
+      const res = await api.get(
+        `/client/survey/${categoryId}`
       );
 
       if (res.data.success) {
@@ -174,8 +175,8 @@ function SVideo() {
       // 🔥 파일 이름을 example.webm으로 고정
       formData.append("file", blob, "example.webm");
 
-      await axios.post(
-        "http://127.0.0.1:8000/client/video/upload",
+      await api.post(
+        "/client/video/upload",
         formData,
         {
           headers: {

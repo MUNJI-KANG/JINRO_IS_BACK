@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import "../../css/counselor_css/CInfoEdit.css";
+import api from '../../services/app'
 
 function CInfoEdit() {
   const [formData, setFormData] = useState({
@@ -14,11 +15,11 @@ function CInfoEdit() {
       if (!counselorId) return;
 
       try {
-        const response = await fetch(
+        const response = await api.get(
           `http://localhost:8000/counselor/${counselorId}`
         );
 
-        const data = await response.json();
+        const data = await response.data;
 
         if (data.success) {
           setFormData({
@@ -48,13 +49,7 @@ function CInfoEdit() {
     if (!counselorId) return;
 
     try {
-      await fetch(`http://localhost:8000/counselor/${counselorId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      await api.put(`/counselor/${counselorId}`, formData);
 
       alert("정보가 저장되었습니다.");
     } catch (error) {

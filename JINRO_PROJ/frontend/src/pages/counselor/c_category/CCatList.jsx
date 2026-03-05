@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../../common/Layout";
 import "../../../css/counselor_css/Category.css";
+import api from '../../../services/app'
 
 import {
   Briefcase,
@@ -229,8 +230,8 @@ export default function CCatList() {
   useEffect(() => {
   if (selectedMidId === null) return;
 
-  fetch(`http://127.0.0.1:8000/counselor/category/kind/${selectedMidId}`)
-    .then((res) => res.json())
+  api.get(`/counselor/category/kind/${selectedMidId}`)
+    .then((res) => res.data)
     .then((data) => {
       if (data.success) {
         setDbCategories(data.data);

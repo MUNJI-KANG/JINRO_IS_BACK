@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../css/counselor_css/CStudentList.css";
+import api from '../../services/app'
 
 function sumUnread(list = []) {
   return list.reduce((acc, c) => acc + (c.unread || 0), 0);
@@ -23,11 +24,11 @@ export default function CStudentList() {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        const response = await fetch(
-          "http://localhost:8000/counselor/students"
+        const response = await api.get(
+          "/counselor/students"
         );
 
-        const data = await response.json();
+        const data = await response.data;
 
         if (data.success) {
           const mappedStudents = data.data.map((s) => ({
