@@ -1,3 +1,7 @@
+/* ===============================
+   SCHEDULER LAYOUT
+================================ */
+
 .scheduler-container {
   display: flex;
   gap: 30px;
@@ -12,11 +16,12 @@
 
 .list-section {
   width: 60%;
-  background: #fff;
-  border: 1px solid #eaeaea;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 20px;
   min-height: 500px;
+
   display: flex;
   flex-direction: column;
 }
@@ -28,7 +33,7 @@
 }
 
 .add-btn {
-  background: var(--accent);
+  background: var(--primary);
   color: #fff;
   border: none;
   padding: 8px 16px;
@@ -37,18 +42,23 @@
 }
 
 .add-btn:hover {
-  opacity: 0.9;
+  background: var(--primary-hover);
 }
 
 .empty-box {
   flex: 1;
+
   display: flex;
   justify-content: center;
   align-items: center;
-  color: #888;
+
+  color: var(--text-sub);
 }
 
-/* FullCalendar 안정화 */
+/* ===============================
+   FULLCALENDAR
+================================ */
+
 .fc {
   width: 100%;
 }
@@ -58,41 +68,48 @@
 }
 
 .fc .fc-daygrid-day {
-  transition: background-color 0.2s ease;
+  transition: background-color .2s ease;
 }
 
 .fc .fc-daygrid-day:hover {
-  background-color: rgba(255, 180, 84, 0.2);
+  background: var(--accent);
   cursor: pointer;
 }
 
-/* 기본 today 배경 제거 */
 .fc .fc-daygrid-day.fc-day-today {
   background: none;
 }
 
-/* ===== dialog 모달 ===== */
+/* ===============================
+   MODAL DIALOG
+================================ */
 
 .custom-dialog {
+
   width: 700px;
   max-width: 90%;
+
   border: none;
   border-radius: 14px;
-  padding: 30px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 
-  margin: auto;                 /* 🔥 가운데 정렬 핵심 */
+  padding: 30px;
+
+  background: var(--bg-card);
+
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+
+  margin: auto;
 }
 
-/* 배경 어둡게 */
 .custom-dialog::backdrop {
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0,0,0,0.4);
 }
 
 .dialog-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+
   margin-bottom: 20px;
 }
 
@@ -105,9 +122,12 @@
 
 .dialog-search {
   width: 100%;
+
   padding: 10px;
-  border: 1px solid #ddd;
+
+  border: 1px solid var(--border);
   border-radius: 8px;
+
   margin-bottom: 20px;
 }
 
@@ -118,31 +138,37 @@
 }
 
 .dialog-card {
-  border: 1px solid #eaeaea;
+  border: 1px solid var(--border);
   padding: 12px;
   border-radius: 8px;
-  background: #f9f9f9;
+  background: var(--bg-card);
 }
 
 .selectable {
   cursor: pointer;
-  transition: 0.2s;
+  transition: .2s;
 }
 
 .selectable:hover {
-  background: #eef6ff;
+  background: var(--accent);
 }
+
+/* ===============================
+   TIME SELECT
+================================ */
 
 .time-student-box {
   display: flex;
   align-items: center;
   gap: 15px;
+
   margin-bottom: 25px;
+
   font-size: 18px;
 }
 
 .student-badge {
-  background: #a7c7e7;
+  background: var(--secondary);
   padding: 6px 12px;
   border-radius: 12px;
   font-size: 14px;
@@ -156,18 +182,27 @@
 }
 
 .time-btn {
+
   padding: 12px;
-  border: 1px solid #ccc;
+
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
+
+  background: var(--bg-card);
+
   cursor: pointer;
+
   font-size: 16px;
 }
 
 .time-btn.active {
-  border: 2px solid #000;
+  border: 2px solid var(--primary);
   font-weight: bold;
 }
+
+/* ===============================
+   TIME FOOTER
+================================ */
 
 .time-footer {
   display: flex;
@@ -175,7 +210,7 @@
 }
 
 .back-btn {
-  background: #ddd;
+  background: var(--border);
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
@@ -183,7 +218,7 @@
 }
 
 .submit-btn {
-  background: var(--accent);
+  background: var(--primary);
   color: #fff;
   padding: 10px 20px;
   border: none;
@@ -191,65 +226,90 @@
   cursor: pointer;
 }
 
+.submit-btn:hover {
+  background: var(--primary-hover);
+}
+
 .submit-btn:disabled {
-  background: #ccc;
+  background: var(--border);
   cursor: not-allowed;
 }
 
+/* ===============================
+   SCHEDULE LIST
+================================ */
 
-
-/* ===== 상담 일정 리스트 (list-box) ===== */
 .schedule-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
+
   margin-top: 20px;
-  overflow-y: auto; /* 리스트가 길어지면 스크롤 생성 */
-  padding-right: 5px; /* 스크롤바 여백 */
+
+  overflow-y: auto;
+
+  padding-right: 5px;
 }
 
-/* 개별 일정 카드 */
+/* ===============================
+   SCHEDULE CARD
+================================ */
+
 .schedule-card {
+
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   padding: 16px 20px;
-  border: 1px solid #eef0f2;
+
+  border: 1px solid var(--border);
+
   border-radius: 12px;
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  background: var(--bg-card);
+
+  transition: transform .2s ease, box-shadow .2s ease;
 }
 
 .schedule-card:hover {
+
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+
+  box-shadow: var(--shadow);
 }
 
-/* 시간과 정보 영역을 묶는 컨테이너 */
+/* ===============================
+   SCHEDULE INFO
+================================ */
+
 .schedule-left {
   display: flex;
   align-items: center;
   gap: 25px;
 }
 
-/* 시간 정보 (시계 아이콘 + 텍스트 세로 정렬) */
 .schedule-time {
+
   display: flex;
   flex-direction: column;
+
   align-items: center;
+
   gap: 4px;
-  color: #888;
+
+  color: var(--text-sub);
+
   font-size: 14px;
+
   min-width: 50px;
 }
 
 .time-icon {
   font-size: 16px;
-  color: #adb5bd;
+  color: var(--text-sub);
 }
 
-/* 이름과 상담 종류 영역 */
 .schedule-info {
   display: flex;
   flex-direction: column;
@@ -259,30 +319,34 @@
 .schedule-name {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-main);
 }
 
 .schedule-type {
   font-size: 14px;
-  color: #666;
+  color: var(--text-sub);
 }
 
-/* 상태 뱃지 공통 스타일 */
+/* ===============================
+   STATUS BADGE
+================================ */
+
 .status-badge {
   padding: 6px 14px;
+
   border-radius: 20px;
+
   font-size: 13px;
+
   font-weight: 600;
 }
 
-/* 완료 뱃지 스타일 (초록색 톤) */
 .status-badge.done {
-  background-color: #e6f6eb;
+  background: #e6f6eb;
   color: #279f53;
 }
 
-/* 예정 뱃지 스타일 (주황색 톤) */
 .status-badge.planned {
-  background-color: #fff1e6;
-  color: #f27b35;
+  background: var(--accent);
+  color: var(--primary);
 }

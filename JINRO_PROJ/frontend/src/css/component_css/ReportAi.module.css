@@ -1,12 +1,15 @@
 .analysis-page-container {
-    width: 1200px;
-    /* 📍 화면 폭에 맞게 시원하게 펼치되, 너무 과하게 퍼지지 않도록 최대치 고정 */
-    /* max-width: 1400px;  */
+    width: 95%;
+    max-width: 1200px;
     margin: 0 auto;
+
     display: flex;
     flex-direction: column;
+
     gap: 25px;
+
     padding: 20px 40px;
+
     box-sizing: border-box;
 }
 
@@ -25,32 +28,50 @@
 }
 
 /* 리포트 카드 박스 */
+
 .report-card {
-    background: #fff;
-    border: 3px solid #000; /* 기획안처럼 굵은 테두리 */
+
+    background: var(--bg-card);
+
+    border: 1px solid var(--border);
+
     border-radius: 25px;
+
     padding: 40px;
+
     width: 100%;
+
     box-sizing: border-box;
+
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
 }
 
-/* 📍 내부 그래프 그리드: 가로로 넓게 2열 배치 */
+/* 그래프 영역 */
+
 .inner-graph-grid {
+
     display: grid;
+
     grid-template-columns: 1fr 1fr;
+
     gap: 40px;
+
     margin-bottom: 30px;
+
     padding-bottom: 30px;
-    border-bottom: 2px solid #eee;
+
+    border-bottom: 1px solid var(--border);
 }
 
 .chart-title {
     font-size: 18px;
     font-weight: 700;
     margin-bottom: 15px;
+    color: var(--text-main);
 }
 
-/* 분석 요약 박스 */
+/* 분석 요약 */
+
 .analysis-summary-box {
     position: relative;
     padding-top: 10px;
@@ -59,144 +80,208 @@
 .analysis-text {
     font-size: 20px;
     line-height: 1.8;
-    color: #333;
+    color: var(--text-main);
     margin: 0;
 }
-/* 📍 날짜 선택 박스 스타일링 (5번 영역) */
+
+/* 날짜 선택 */
+
 .date-select {
+
     padding: 8px 35px 8px 15px;
+
     border-radius: 10px;
-    border: 2px solid #000;
+
+    border: 1px solid var(--border);
+
     font-weight: bold;
+
     font-size: 16px;
+
     cursor: pointer;
-    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;
+
+    background: var(--bg-card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;
+
     background-size: 18px;
-    appearance: none; /* 브라우저 기본 화살표 숨김 */
+
+    appearance: none;
+
     transition: all 0.2s ease;
 }
 
 .date-select:hover {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(91, 125, 177, 0.1);
 }
 
+/* 영상보기 버튼 */
 
-/* 📍 영상보기 버튼 소형화 */
 .video-btn-wrap {
     display: flex;
     justify-content: flex-end;
     margin-top: 10px;
 }
 
-/* 📍 영상보기 버튼 (6번 영역) - 호버 추가 */
 .btn-video-small {
-    border: 2px solid #000;
-    background: #fff;
+
+    border: 1px solid var(--border);
+
+    background: var(--bg-card);
+
     padding: 6px 20px;
+
     border-radius: 10px;
+
     font-size: 14px;
+
     font-weight: 700;
+
     cursor: pointer;
-    color: #000;
+
+    color: var(--text-main);
+
     transition: all 0.2s ease;
+
     display: inline-flex;
+
     align-items: center;
+
     justify-content: center;
 }
 
-/* 호버 시: 파란색 배경으로 반전 및 살짝 위로 이동 */
 .btn-video-small:hover {
-    background: var(--primary); /* #5B7DB1 */
+
+    background: var(--primary);
+
     border-color: var(--primary);
+
     color: #fff;
+
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(91, 125, 177, 0.2);
 }
-
-/* 활성화 시 살짝 눌리는 느낌 */
-.btn-video-small:active {
-    transform: translateY(0);
-}
-
 
 /* 메모 영역 */
+
 .report-label {
     display: block;
     font-size: 18px;
     font-weight: 700;
     margin-bottom: 15px;
+    color: var(--text-main);
 }
 
 .prompt-textarea {
+
     width: 100%;
+
     min-height: 150px;
-    border: none;
-    background-color: #F8F6F2;
+
+    border: 1px solid var(--border);
+
+    background: var(--bg-main);
+
     border-radius: 15px;
+
     padding: 25px;
+
     font-size: 18px;
+
     line-height: 1.6;
+
     resize: vertical;
+
     font-family: inherit;
+
     box-sizing: border-box;
 }
 
+/* 버튼 영역 */
+
 .report-buttons {
+
     display: flex;
-    justify-content: space-between; /* 양 끝 정렬 유지 */
+
+    justify-content: space-between;
+
     align-items: center;
+
     width: 100%;
+
     margin-top: 30px;
+
     padding-top: 20px;
 }
 
 .right-btn-area {
     display: flex;
-    gap: 15px; /* 버튼 사이 간격 */
+    gap: 15px;
 }
 
-/* 📍 공통 버튼 베이스 (상세 리포트 btn-analysis 스타일 이식) */
-.btn-action-sub, .btn-action-main {
-    border: 2px solid var(--primary); /* #5B7DB1 */
+/* 공통 버튼 */
+
+.btn-action-sub,
+.btn-action-main {
+
+    border: 1px solid var(--primary);
+
     padding: 16px 20px;
+
     border-radius: 14px;
+
     font-size: 16px;
+
     font-weight: 700;
+
     cursor: pointer;
+
     transition: all 0.2s ease;
+
     min-width: 150px;
+
     display: flex;
+
     justify-content: center;
+
     align-items: center;
 }
 
-/* 1. 뒤로가기 & 재분석 요청 (하얀색 바탕 + 파란색 테두리) */
+/* 보조 버튼 */
+
 .btn-action-sub {
-    background: #fff;
+
+    background: var(--bg-card);
+
     color: var(--primary);
 }
 
 .btn-action-sub:hover {
+
     background: var(--primary);
+
     color: #fff;
-    transform: translateY(-3px); /* 공중 부양 효과 */
+
+    transform: translateY(-2px);
 }
 
-/* 2. 최종 리포트에 적용 (파란색 바탕) */
+/* 메인 버튼 */
+
 .btn-action-main {
+
     background: var(--primary);
+
     color: #fff;
-    min-width: 220px; /* 적용 버튼은 조금 더 큼직하게 */
+
+    min-width: 220px;
 }
 
 .btn-action-main:hover {
-    filter: brightness(1.1);
-    transform: translateY(-3px);
-    box-shadow: 0 4px 12px rgba(91, 125, 177, 0.2);
+
+    background: var(--primary-hover);
+
+    transform: translateY(-2px);
 }
 
-/* Link 태그 레이아웃 방해 방지 */
+/* 링크 */
+
 .btn-link {
     text-decoration: none;
     display: block;

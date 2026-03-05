@@ -1,238 +1,415 @@
+/* ===============================
+   PAGE
+================================ */
+
 .counselor-category-page {
+
   padding: 40px;
+
   width: 100%;
-  background: #f8fafc;
+
+  background: var(--bg-main);
 }
 
 .page-title {
+
   font-size: 26px;
+
   font-weight: 700;
+
   margin-bottom: 30px;
-  color: #111827;
+
+  color: var(--text-main);
 }
 
-/* 4열 고정 */
+/* ===============================
+   CATEGORY GRID
+================================ */
+
 .category-grid {
+
   display: grid;
+
   grid-template-columns: repeat(6, 1fr);
+
   gap: 20px;
 }
 
-/* 카드 */
 .category-card {
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
+
+  background: var(--accent);
+
+  border: 1px solid var(--border);
+
   border-radius: 12px;
+
   padding: 30px 10px;
 
   display: flex;
+
   flex-direction: column;
+
   align-items: center;
+
   justify-content: center;
 
   text-decoration: none;
-  transition: all 0.2s ease;
+
+  transition: all .2s ease;
+
   min-height: 130px;
 }
 
 .category-card:hover {
-  background: #eef2ff;
-  border-color: #3b82f6;
+
+  background: var(--bg-card);
+
+  border-color: var(--primary);
+
   transform: translateY(-3px);
+
+  box-shadow: var(--shadow);
 }
 
-/* 아이콘 */
+/* ===============================
+   ICON
+================================ */
+
 .category-icon {
+
   width: 42px;
+
   height: 42px;
-  color: #3b82f6;
+
+  color: var(--primary);
+
   margin-bottom: 10px;
 }
 
-/* 텍스트 */
+/* ===============================
+   TEXT
+================================ */
+
 .category-text {
+
   font-size: 14px;
+
   font-weight: 500;
-  color: #374151;
+
+  color: var(--text-main);
+
   text-align: center;
+
   line-height: 1.4;
 }
 
-/* ===== 중분류 전환 UI ===== */
+/* ===============================
+   HEADER
+================================ */
 
 .page-header-row {
+
   display: flex;
+
   align-items: center;
+
   gap: 12px;
+
   margin-bottom: 20px;
 }
 
 .back-btn {
+
   display: inline-flex;
+
   align-items: center;
+
   gap: 6px;
 
-  border: 1px solid #e5e7eb;
-  background: #fff;
+  border: 1px solid var(--border);
+
+  background: var(--bg-card);
+
   padding: 8px 12px;
+
   border-radius: 10px;
+
   cursor: pointer;
 }
 
 .back-btn:hover {
-  background: #f3f4f6;
+
+  background: var(--accent);
 }
 
-/* Link 대신 button으로도 카드 동일 스타일 */
+/* ===============================
+   CATEGORY BUTTON
+================================ */
+
 .category-card-btn {
+
   width: 100%;
-  background: #fff;
-  border: 1px solid #e2e8f0;
+
+  background: var(--bg-card);
+
+  border: 1px solid var(--border);
+
   border-radius: 12px;
+
   cursor: pointer;
+
 }
 
 .category-card-btn:hover {
-  border-color: #3b82f6;
-  background-color: #f0f7ff;
+
+  border-color: var(--primary);
+
+  background: var(--accent);
+
   transform: translateY(-2px);
 }
 
-/* 중분류 카드 그리드 */
+/* ===============================
+   MID GRID
+================================ */
+
 .mid-grid {
+
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* 사진처럼 4개 정도면 4 */
+
+  grid-template-columns: repeat(4, 1fr);
+
   gap: 30px;
+
   margin-top: 40px;
 }
 
 .mid-card {
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
+
+  background: var(--accent);
+
+  border: 1px solid var(--border);
+
   border-radius: 12px;
 
   width: 200px;
-  min-height: 140px;          /* ✅ 카드 높이 증가 */
-  font-size: 18px;            /* ✅ 글자 키움 */
+
+  min-height: 140px;
+
+  font-size: 18px;
+
   font-weight: 700;
 
   display: flex;
+
   align-items: center;
+
   justify-content: center;
 
   text-decoration: none;
-  color: #111827;
-  font-weight: 600;
+
+  color: var(--text-main);
 }
 
 .mid-card:hover {
-  background: #eef2ff;
-  border-color: #3b82f6;
+
+  background: var(--bg-card);
+
+  border-color: var(--primary);
+
   transform: translateY(-2px);
-  transition: all 0.2s ease;
+
+  transition: all .2s ease;
+
+  box-shadow: var(--shadow);
 }
 
-/* =========================
-   소분류 (영상 카드)
-========================= */
+/* ===============================
+   VIDEO GRID
+================================ */
 
 .small-grid {
-  flex: 1; /* ⭐ 내부에서 공간 채우기 */
+
+  flex: 1;
+
   display: grid;
+
   grid-template-columns: repeat(3, 1fr);
+
   gap: 30px;
+
   margin-top: 30px;
 }
 
 .video-card {
-  background: #ffffff;
+
+  background: var(--bg-card);
+
   border-radius: 14px;
-  border: 1px solid #e5e5e5;
+
+  border: 1px solid var(--border);
+
   padding: 20px;
-  transition: 0.2s;
+
+  transition: .2s;
+
   cursor: pointer;
 }
 
 .video-card:hover {
+
   transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+
+  box-shadow: var(--shadow);
 }
 
 .card-info h4 {
+
   font-size: 16px;
+
   font-weight: 600;
+
   margin-bottom: 8px;
+
+  color: var(--text-main);
 }
 
 .card-info p {
+
   font-size: 14px;
-  color: #666;
+
+  color: var(--text-sub);
 }
 
-/* =========================
-   추가 버튼
-========================= */
+/* ===============================
+   ADD BUTTON
+================================ */
 
 .add-btn-wrapper {
+
   display: flex;
+
   justify-content: flex-end;
-  margin-top: auto; /* ⭐ 맨 아래로 밀어버림 */
+
+  margin-top: auto;
+
+  padding-top :30px;
 }
 
 .add-btn {
+
   padding: 10px 24px;
+
   font-size: 14px;
+
   border-radius: 10px;
+
   border: none;
-  background: #f6a13d;
+
+  background: var(--primary);
+
   color: #fff;
+
   cursor: pointer;
-  transition: 0.2s;
+
+  transition: .2s;
+
+
 }
 
 .add-btn:hover {
-  background: #e28d2c;
+
+  background: var(--primary-hover);
 }
 
-/* 콘텐츠 박스 고정 영역 */
+/* ===============================
+   CONTENT BOX
+================================ */
+
 .content-fixed-box {
-  background: #f4f6f9;
+
+  background: var(--accent);
+
   padding: 40px;
+
   border-radius: 16px;
 
-  /* ⭐ 이게 핵심 */
   min-height: 600px;
 
   display: flex;
+
   flex-direction: column;
 }
 
+/* ===============================
+   LIST
+================================ */
+
 .list-container {
+
   margin-top: 20px;
+
   display: flex;
+
   flex-direction: column;
+
   gap: 12px;
 }
 
 .list-item {
+
   display: flex;
+
   justify-content: space-between;
+
   align-items: center;
+
   padding: 14px 18px;
-  border: 1px solid #ddd;
+
+  border: 1px solid var(--border);
+
   border-radius: 8px;
-  background: #fff;
+
+  background: var(--bg-card);
 }
 
 .list-left h4 {
+
   margin: 0 0 4px 0;
+
+  color: var(--text-main);
 }
 
 .list-right button {
+
   padding: 6px 12px;
-  background: #f39c12;
+
+  background: var(--primary);
+
   border: none;
+
   border-radius: 6px;
-  color: white;
+
+  color: #fff;
+
   cursor: pointer;
+}
+
+.list-right button:hover {
+
+  background: var(--primary-hover);
+}
+
+.category-icon{
+  width:42px;
+  height:42px;
+
+  color: var(--primary);
+
+  transition: 0.2s;
+}
+
+.category-card:hover .category-icon{
+  color: var(--primary-hover);
+  transform: scale(1.1);
 }

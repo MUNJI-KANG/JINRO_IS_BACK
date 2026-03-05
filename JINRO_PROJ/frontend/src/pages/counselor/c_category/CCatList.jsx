@@ -273,7 +273,7 @@ export default function CCatList() {
                     setSelectedMidName(null);
                   }}
                 >
-                  <Icon className="category-icon" />
+                  <Icon className="category-icon" color="var(--primary)" />
                   <div className="category-text">
                     {String(cat.id).padStart(2, "0")}. {cat.name}
                   </div>

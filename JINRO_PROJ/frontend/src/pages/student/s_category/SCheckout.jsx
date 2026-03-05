@@ -45,9 +45,6 @@ function Checkout() {
                 {index + 1}
               </div>
               <div className="video-thumb">
-                <div className="temp-thumb">
-                    <span style={{ color: '#E50914', fontSize: '24px', fontWeight: 'bold' }}>N</span>
-                </div>
               </div>
               <div className="video-info">
                 <h4>{video.subCategory}</h4>
