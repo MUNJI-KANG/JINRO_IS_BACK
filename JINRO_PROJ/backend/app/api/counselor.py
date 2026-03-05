@@ -11,7 +11,9 @@ from app.models.schema_models import ReportFinal
 
 from app.models.schema_models import (
     Counselor,
+    Client,
     Category,
+    Counseling,
     ReportAiV,
     AiVideoAnalyze,
     ReCommentEnum,
@@ -335,7 +337,9 @@ def get_final_report(counseling_id: int, db: Session = Depends(get_db)):
         "alerts": alerts
     }
 
-# 최종 리포트 조회 API
+# ===============================
+# 🔹 최종 리포트 조회 API
+# ===============================
 @router.get("/report/final/comment/{counseling_id}")
 def get_final_comment(counseling_id: int, db: Session = Depends(get_db)):
 
@@ -619,4 +623,24 @@ def get_students(db: Session = Depends(get_db)):
     return {
         "success": True,
         "data": result
+    }
+
+# 상담사 정보 수정
+@router.get("/{counselor_id}")
+def get_counselor(counselor_id: int, db: Session = Depends(get_db)):
+
+    counselor = db.query(Counselor).filter(
+        Counselor.counselor_id == counselor_id
+    ).first()
+
+    if not counselor:
+        return {"success": False, "message": "상담사 없음"}
+
+    return {
+        "success": True,
+        "data": {
+            "name": counselor.name,
+            "phone": counselor.phone_num,
+            "email": counselor.email
+        }
     }
