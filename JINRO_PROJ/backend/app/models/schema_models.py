@@ -56,6 +56,7 @@ class Counseling(Base):
 class ReportCon(Base):
     __tablename__ = 'REPOR_CON'
     
+    title = Column(String(100), nullable=False, comment='상담 제목')
     con_rep_id = Column(Integer, primary_key=True, autoincrement=True, comment='PK')
     con_rep_comment = Column(Text, nullable=False, comment='상담 일지')
     reg_date = Column(DateTime, default=func.now(), nullable=False, comment='리포트 생성 날짜')

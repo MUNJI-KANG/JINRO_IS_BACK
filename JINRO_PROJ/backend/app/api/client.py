@@ -239,8 +239,8 @@ def create_counselling_and_reports(
     
 @router.post("/pComplete")
 def complete_video_report(
-    payload: ReportCompleteRequest, 
     request: Request, 
+    payload: ReportCompleteRequest, 
     db: Session = Depends(get_db)
 ):
     client_id = request.session.get('client_id')
@@ -290,6 +290,7 @@ def complete_video_report(
             if not existing_con:
                 new_report_con = ReportCon(
                     counseling_id=payload.counseling_id,
+                    title='상담 제목 미정',
                     con_rep_comment='상담예정',
                     complete_yn='N'
                 )

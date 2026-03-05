@@ -73,11 +73,28 @@ export default function CStudentList() {
     else if (dialog.open) dialog.close();
   }, [modal.isOpen]);
 
-  const openStudentModal = (student) => {
+  const openStudentModal = async (student) => {
     setModal({
       isOpen: true,
       studentId: student.id,
     });
+    try {
+      // 해당 학생(client_id)의 상담 기록을 백엔드에서 가져옵니다
+      const response = await api.get(`/counselor/consultations/${student.id}`);
+      
+      if (response.data.success) {
+        // 가져온 데이터를 해당 학생의 consultations 배열에 통째로 덮어씌웁니다
+        setStudents((prev) =>
+          prev.map((s) =>
+            s.id === student.id
+              ? { ...s, consultations: response.data.data }
+              : s
+          )
+        );
+      }
+    } catch (error) {
+      console.error("상담 기록 조회 실패:", error);
+    }
   };
 
   const closeModal = () => {
@@ -105,7 +122,10 @@ export default function CStudentList() {
 
     closeModal();
 
-    navigate("/counselor/report/final");
+    // navigate("/counselor/report/final");
+    navigate("/counselor/report/final", {
+      state: { counselingId: consultation.id } // 전달할 데이터
+    });
   };
 
   return (
@@ -189,6 +209,7 @@ export default function CStudentList() {
                   key={c.id}
                   className="consult-card"
                   onClick={() => goToFinalReport(c)}
+                  style={{ cursor: "pointer" }}
                 >
                   <div className="consult-card-left">
                     <div className="consult-card-title-row">

@@ -255,6 +255,67 @@ def get_conversation_list(counseling_id:int, db:Session=Depends(get_db)):
             for c in cons
         ]
     }
+
+# 학생목록 - 상담일정목록
+@router.get("/consultations/{client_id}")
+def get_student_consultations(client_id: int, db: Session = Depends(get_db)):
+    try:
+        # 해당 학생의 모든 상담 기록을 시간 역순(최신순)으로 가져옵니다
+        records = db.query(Counseling).filter(
+            Counseling.client_id == client_id
+        ).order_by(Counseling.datetime.desc()).all()
+
+        result = []
+        for c in records:
+            # 1. ReportFinal 조회 (description 용도)
+            final_report = db.query(ReportFinal).filter(
+                ReportFinal.counseling_id == c.counseling_id
+            ).first()
+
+            # 2. ReportCon 조회 (title 용도)
+            report_con = db.query(ReportCon).filter(
+                ReportCon.counseling_id == c.counseling_id
+            ).first()
+            
+            # ReportCon이 있고 title 값이 존재하면 그 값을, 아니면 '영상시청중' 할당
+            display_title = report_con.title if (report_con and report_con.title) else "영상시청중"
+
+            # 3. ReportAiV 조회 (unread 뱃지 계산 용도)
+            ai_videos = db.query(ReportAiV).filter(
+                ReportAiV.counseling_id == c.counseling_id
+            ).all()
+            
+            unread_count = 0
+            for v in ai_videos:
+                # 테이블에 값이 있고(None이 아니고), 그 값이 SUCCESS가 아닌 경우에만 +1
+                if v.re_comment and v.re_comment != ReCommentEnum.SUCCESS:
+                    unread_count += 1
+
+            display_date = "날짜 미정"
+            if final_report :
+                display_date = "작성중... "
+                if final_report.complete_yn == 'Y' and final_report.update_dt:
+                    display_date = final_report.update_dt.strftime("%Y-%m-%d")
+
+            # 4. 프론트엔드로 보낼 데이터 조립
+            result.append({
+                "id": c.counseling_id,
+                "title": display_title, 
+                "description": final_report.final_comment if final_report else "상담 진행 중 입니다.",
+                "date": display_date,
+                "unread": unread_count
+            })
+
+        return {
+            "success": True,
+            "data": result
+        }
+
+    except Exception as e:
+        import traceback
+        print("상담 기록 조회 오류:", traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"기록 조회 중 오류: {str(e)}")
+    
 # ===============================
 # 🔹 영상 URL 조회
 # ===============================
@@ -477,7 +538,7 @@ def get_pending_students(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
 
     # 2. 현재 시간 (예약 시간 초과 체크용)
-    now = datetime.now()
+    today_date = datetime.now().date()
 
     try:
         # 3. 위에서 말한 2가지 조건을 쿼리로 구현
@@ -489,7 +550,7 @@ def get_pending_students(request: Request, db: Session = Depends(get_db)):
                 Counseling.complete_yn == 1, # 조건 1: 영상 완료
                 and_(
                     Counseling.complete_yn == 2, # 조건 2: 예약 중인데
-                    Counseling.reservation_time < now # 시간이 지남
+                    func.date(Counseling.reservation_time) < today_date # 시간이 지남
                 )
             )
         ).all()
