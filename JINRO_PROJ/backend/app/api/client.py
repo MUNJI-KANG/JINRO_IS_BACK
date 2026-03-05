@@ -360,4 +360,9 @@ async def upload_video(file: UploadFile = File(...)):
     except Exception as e:
         print("영상 저장 오류:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+@router.get('/sesstion/clear')
+async def session_clear(request: Request):
+    request.session.clear()
+
+    return {}
