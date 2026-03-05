@@ -66,14 +66,15 @@ function SAgreement() {
           수집된 데이터는 연구 및 서비스 개선 목적으로만 사용됩니다.
         </div>
 
-        <button
-          className={`start-btn ${allAgreed ? "active" : "disabled"}`}
-          disabled={!allAgreed}
-          onClick={() => navigate("/student/login")}
-        >
-          {allAgreed ? "시작하기" : "모든 항목에 동의해 주세요"}
-        </button>
-
+        <div className="button-area">
+          <button
+            className={`start-btn ${allAgreed ? "active" : "disabled"}`}
+            disabled={!allAgreed}
+            onClick={() => navigate("/student/login")}
+          >
+            {allAgreed ? "시작하기" : "모든 항목에 동의해 주세요"}
+          </button>
+        </div>
       </div>
     </div>
   );

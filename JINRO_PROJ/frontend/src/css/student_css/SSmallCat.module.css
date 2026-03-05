@@ -1,10 +1,12 @@
 .container {
-    max-width: 1200px;
+    max-width: 900px;
     margin: 40px auto;
     padding: 20px;
     font-family: 'Pretendard', sans-serif;
     text-align: center;
 }
+
+/* 제목 */
 
 .title {
     font-size: 28px;
@@ -17,6 +19,8 @@
     margin-bottom: 24px;
 }
 
+/* 진행도 */
+
 .progressBadge {
     display: inline-flex;
     align-items: center;
@@ -24,10 +28,12 @@
     border: 1px solid #eee;
     padding: 8px 16px;
     border-radius: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     font-weight: bold;
     margin-bottom: 30px;
 }
+
+/* 안내 박스 */
 
 .alertBox {
     background-color: #f0f7ff;
@@ -43,6 +49,8 @@
     font-size: 13px;
 }
 
+/* 상단 영역 */
+
 .headerRow {
     display: flex;
     align-items: center;
@@ -50,158 +58,159 @@
     margin-bottom: 20px;
 }
 
-.backButton {
-    border: 1px solid #ddd;
-    background: white;
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-}
-
 .categoryTitle {
     font-size: 20px;
     font-weight: bold;
 }
 
+/* 뒤로가기 버튼 */
+
+.backButton {
+    border: 1px solid #ddd;
+    background: white;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+.backButton:hover {
+    background: #f1f5f9;
+}
+
+/* 영상 카드 grid */
+
 .cardGrid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
+    grid-template-columns: repeat(2, 1fr); /* 🔥 영상 2개씩 */
+    gap: 18px;
     margin-bottom: 40px;
 }
 
+/* 카드 */
+
 .card {
     background: white;
-    /* border: 1px solid #eee; */
+    border: 1px solid #eee;
     border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
+    overflow: hidden;
     cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
     transition: all 0.2s ease;
-    /* 부드러운 전환 */
-}
-
-.imageContainer {
-    width: 100%;
-    aspect-ratio: 4/ 3;
-    /* 이미지 비율 유지 */
-    background-color: #1a1a2e;
-    /* 썸네일 없을 때 배경색 */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-}
-
-.videoThumbnail {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 10px;
-}
-
-.content {
-    padding: 16px;
-    text-align: center;
-    width: 100%;
-}
-
-.title {
-    display: block;
-    font-size: 18px;
-    font-weight: 600;
-    color: #111;
-    margin-bottom: 8px;
-}
-
-.duration {
-    font-size: 14px;
-    color: #666;
-    margin: 0;
-}
-
-/* 클릭(선택) 되었을 때의 스타일 */
-.activeCard {
-    border: 2px solid #000;
-    /* 검정색 테두리로 강조 */
-    background-color: #f8f8f8;
-    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
 .card:hover {
     transform: translateY(-2px);
 }
 
+/* 선택된 카드 */
+
+.activeCard {
+    border: 2px solid #000;
+    background-color: #f8f8f8;
+}
+
+/* 썸네일 */
+
+.imageContainer {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #000;
+    overflow: hidden;
+}
+
+.videoThumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 카드 텍스트 */
+
+.content {
+    padding: 14px;
+    text-align: center;
+}
+
+.content .title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.duration {
+    font-size: 12px;
+    color: #777;
+}
+
+/* 선택된 영상 영역 */
+
 .selectedListContainer {
-    width: 1200px;
-    background-color: white;
-}
-
-.listWrapper {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-}
-
-.selectedList {
-    background: white;
-    border: 1px solid #eee;
-    border-radius: 12px;
+    margin-top: 40px;
     padding: 24px;
-    text-align: left;
+    background: white;
+    border-radius: 16px;
+
+    box-shadow:
+        0 10px 25px rgba(0,0,0,0.05),
+        0 2px 6px rgba(0,0,0,0.04);
 }
 
 .listTitle {
-    font-size: 16px;
-    font-weight: bold;
-    margin-bottom: 16px;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 18px;
 }
 
-.selectedItem {
+/* 선택된 영상 리스트 */
+
+.listWrapper {
     display: flex;
-    align-items: center;
-    background: #fcfcfc;
-    border-radius: 8px;
-    padding: 12px;
+    flex-wrap: wrap;
     gap: 12px;
-    position: relative;
-    max-width: 300px;
 }
 
-.thumbnail {
-    width: 50px;
-    height: 50px;
-    background-color: #000;
-    border-radius: 4px;
+/* 선택 영상 카드 */
+
+.videoCard {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 10px;
+
+    padding: 10px 14px;
+
+    border-radius: 10px;
+
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+
+    font-size: 14px;
 }
 
-.itemInfo h4 {
-    font-size: 13px;
-    margin: 0;
+.videoCard:hover {
+    background: #f1f5f9;
 }
 
-.itemInfo p {
-    font-size: 11px;
-    color: #888;
-    margin: 2px 0 0 0;
-}
+/* 삭제 버튼 */
 
-.deleteBtn {
-    position: absolute;
-    right: 12px;
-    color: #ff4d4f;
-    background: none;
+.deleteButton {
     border: none;
+    background: #ef4444;
+    color: white;
+
     font-size: 12px;
+    padding: 4px 8px;
+
+    border-radius: 6px;
     cursor: pointer;
 }
+
+.deleteButton:hover {
+    background: #dc2626;
+}
+
+/* 다음 버튼 */
 
 .nextButton {
     margin-top: 30px;
@@ -212,177 +221,12 @@
     border-radius: 6px;
     font-size: 14px;
     cursor: pointer;
-    transition: all 0.2s ease;
 }
 
-/* 활성화 버튼 */
 .activeNextButton {
     background-color: #3b82f6;
 }
 
-/* hover 효과 */
 .activeNextButton:hover {
     background-color: #2563eb;
-}
-
-.headerRow {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-
-  margin-bottom: 24px;
-}
-
-.backButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  padding: 10px 18px;
-  border-radius: 10px;
-
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-
-  font-size: 14px;
-  font-weight: 600;
-  color: #334155;
-
-  cursor: pointer;
-
-  transition: all 0.2s ease;
-
-  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-}
-
-.backButton:hover {
-  background: #f1f5f9;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
-}
-
-.backButton:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-}
-
-.selectedListContainer {
-
-  margin-top: 40px;
-  padding: 24px;
-
-  background: #ffffff;
-
-  border-radius: 16px;
-
-  box-shadow: 
-    0 10px 25px rgba(0,0,0,0.05),
-    0 2px 6px rgba(0,0,0,0.04);
-
-  max-width: 900px;
-  margin-left: auto;
-  margin-right: auto;
-
-}
-
-.listTitle {
-
-  font-size: 18px;
-  font-weight: 700;
-
-  margin-bottom: 18px;
-
-  color: #1e293b;
-
-}
-
-.listWrapper {
-
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-
-}
-
-.videoCard {
-
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
-  padding: 10px 14px;
-
-  border-radius: 10px;
-
-  background: #f8fafc;
-
-  border: 1px solid #e2e8f0;
-
-  font-size: 14px;
-  font-weight: 500;
-
-  color: #334155;
-
-  transition: all 0.2s ease;
-
-}
-
-.videoCard:hover {
-
-  background: #f1f5f9;
-
-}
-
-.deleteButton {
-
-  border: none;
-  background: #ef4444;
-
-  color: white;
-
-  font-size: 12px;
-  font-weight: 600;
-
-  padding: 4px 8px;
-
-  border-radius: 6px;
-
-  cursor: pointer;
-
-  transition: all 0.2s ease;
-
-}
-
-.deleteButton:hover {
-
-  background: #dc2626;
-
-}
-
-.imageContainer {
-
-  width: 100%;
-  height: 150px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  overflow: hidden;
-
-  border-radius: 10px;
-
-  background: #000;
-
-}
-
-.thumbnail {
-
-  width: 100%;
-  height: 100%;
-
-  object-fit: contain;
-
-  background: #000;
-
 }
