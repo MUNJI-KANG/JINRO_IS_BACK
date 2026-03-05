@@ -167,7 +167,6 @@ def submit_survey(data: SurveySubmitRequest, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail=f"저장 중 오류 발생: {str(e)}")
 
-
 # 상담시작(내담자의 영상선택 완료)
 @router.post("/counselling")
 def create_counselling_and_reports(
@@ -240,8 +239,8 @@ def create_counselling_and_reports(
     
 @router.post("/pComplete")
 def complete_video_report(
-    payload: ReportCompleteRequest, 
     request: Request, 
+    payload: ReportCompleteRequest, 
     db: Session = Depends(get_db)
 ):
     client_id = request.session.get('client_id')
@@ -291,6 +290,7 @@ def complete_video_report(
             if not existing_con:
                 new_report_con = ReportCon(
                     counseling_id=payload.counseling_id,
+                    title='상담 제목 미정',
                     con_rep_comment='상담예정',
                     complete_yn='N'
                 )

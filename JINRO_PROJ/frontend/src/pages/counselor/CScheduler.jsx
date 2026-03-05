@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -15,7 +16,7 @@ function getLocalYYYYMMDD(date = new Date()) {
 function CScheduler() {
   const calendarRef = useRef(null);
   const dialogRef = useRef(null);
-
+  const navigate = useNavigate();
   const today = getLocalYYYYMMDD();
 
   const [selectedDate, setSelectedDate] = useState(today);
@@ -38,6 +39,7 @@ function CScheduler() {
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  
 
   const handleDateClick = async (info) => {
     const clickedDate = info.dateStr; // 예: "2026-03-04"
@@ -131,6 +133,12 @@ function CScheduler() {
 
   const timeSlots = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
 
+  const goToFinalReport = (counselingId) => {
+    navigate("/counselor/report/final", {
+      state: { counselingId: counselingId } // 전달할 데이터
+    });
+  };
+
   return (
     <div className="scheduler-container">
       <div className="calendar-section">
@@ -167,7 +175,7 @@ function CScheduler() {
         ) : (
           <div className="schedule-list">
             {dailySchedules.map((schedule) => (
-              <div key={schedule.id} className="schedule-card">
+              <div key={schedule.id} className="schedule-card" onClick={() => goToFinalReport(schedule.id)} style={{ cursor: "pointer" }}>
                 <div className="schedule-left">
                   <div className="schedule-time">
                     <span className="time-icon">🕒</span> {/* 아이콘 */}

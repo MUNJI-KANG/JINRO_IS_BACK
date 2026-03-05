@@ -3,9 +3,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-#분석 서비스 
-
-
 
 # DB 설정 및 모델, 스키마 가져오기
 from app.db.database import engine, Base

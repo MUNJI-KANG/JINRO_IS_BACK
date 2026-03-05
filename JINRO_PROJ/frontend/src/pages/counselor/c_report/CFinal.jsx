@@ -20,7 +20,10 @@ const CFinal = () => {
     const modalRef = useRef();
     const location = useLocation();
 
-    const counselingId = location.state?.counselingId || 1
+    const counselingId = location.state?.counselingId
+    
+    console.log("넘어온 상담 ID:", counselingId);
+
 
     const [studentId, setStudentId] = useState('');
 
