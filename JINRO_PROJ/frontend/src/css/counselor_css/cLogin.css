@@ -1,110 +1,185 @@
-/* base.css의 변수를 활용한 상담사 로그인 스타일 */
+/* ===============================
+   COUNSELOR LOGIN
+================================ */
 
 .c-login-wrap {
-    position: fixed;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    padding: 24px;
-    background-color: var(--bg); /* base.css의 배경색 적용 */
-    box-sizing: border-box;
-    font-family: "Noto Sans KR", sans-serif;
+  position: fixed;
+  inset: 0;
+
+  display: grid;
+  place-items: center;
+
+  padding: 24px;
+
+  background: var(--bg-main);
+
+  box-sizing: border-box;
 }
 
-/* 폼 컨테이너 */
+/* ===============================
+   FORM
+================================ */
+
 .c-login-form {
-    width: min(420px, 100%);
-    margin: 0;
-    background: #fff;
-    padding: 50px 40px;
-    border-radius: 16px;
-    /* base.css의 텍스트 컬러와 어울리는 부드러운 그림자 */
-    box-shadow: 0 15px 35px rgba(47, 47, 58, 0.1);
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-    border: 1px solid #eaeaea; /* 레이아웃 컨테이너와 동일한 선 적용 */
+
+  width: min(420px, 100%);
+  margin: 0;
+
+  background: var(--bg-card);
+
+  padding: 50px 40px;
+
+  border-radius: 16px;
+
+  box-shadow: var(--shadow);
+
+  display: flex;
+  flex-direction: column;
+
+  box-sizing: border-box;
+
+  border: 1px solid var(--border);
 }
 
-/* 제목 */
+/* ===============================
+   TITLE
+================================ */
+
 .c-login-form h2 {
-    margin: 0;
-    margin-bottom: 12px;
-    text-align: center;
-    font-weight: 700;
-    font-size: 26px;
-    color: var(--text);
+  margin: 0;
+  margin-bottom: 12px;
+
+  text-align: center;
+
+  font-weight: 700;
+  font-size: 26px;
+
+  color: var(--text-main);
 }
 
 .c-login-form p {
-    margin-bottom: 35px;
-    text-align: center;
-    color: #666;
-    font-size: 15px;
+
+  margin-bottom: 35px;
+
+  text-align: center;
+
+  color: var(--text-sub);
+
+  font-size: 15px;
 }
 
-/* 라벨: base.css 텍스트 스타일 적용 */
+/* ===============================
+   LABEL
+================================ */
+
 .c-login-form label {
-    font-size: 15px;
-    margin-bottom: 8px;
-    font-weight: bold;
-    color: var(--text);
-    text-align: left;
+
+  font-size: 15px;
+
+  margin-bottom: 8px;
+
+  font-weight: bold;
+
+  color: var(--text-main);
+
+  text-align: left;
 }
 
-/* 인풋창 디자인 */
+/* ===============================
+   INPUT
+================================ */
+
 .c-login-form input {
-    height: 48px;
-    padding: 0 15px;
-    border-radius: 10px;
-    border: 1px solid #ddd;
-    margin-bottom: 20px;
-    font-size: 15px;
-    transition: all 0.3s ease;
-    background-color: #fff;
+
+  height: 48px;
+
+  padding: 0 15px;
+
+  border-radius: 10px;
+
+  border: 1px solid var(--border);
+
+  margin-bottom: 20px;
+
+  font-size: 15px;
+
+  transition: all 0.25s ease;
+
+  background: var(--bg-card);
 }
 
-/* 포커스 시 base.css의 --primary 컬러 사용 */
 .c-login-form input:focus {
-    border-color: var(--primary);
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(91, 125, 177, 0.2);
+
+  border-color: var(--primary);
+
+  outline: none;
+
+  box-shadow: 0 0 0 3px rgba(217,119,87,0.2);
 }
 
-/* 에러메시지 */
+/* ===============================
+   ERROR
+================================ */
+
 .c-id-label,
 .c-pw-label {
-    color: #e74c3c;
-    font-size: 13px;
-    margin-top: -15px;
-    margin-bottom: 15px;
-    font-weight: 500;
-    text-align: left;
+
+  color: #e74c3c;
+
+  font-size: 13px;
+
+  margin-top: -15px;
+  margin-bottom: 15px;
+
+  font-weight: 500;
+
+  text-align: left;
 }
 
-/* 버튼: base.css의 --accent 컬러 적용 */
+/* ===============================
+   BUTTON
+================================ */
+
 .c-login-form button {
-    height: 52px;
-    margin-top: 10px;
-    border: none;
-    border-radius: 10px;
-    background-color: var(--accent); /* 포인트 컬러 활용 */
-    color: white;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
+
+  height: 52px;
+
+  margin-top: 10px;
+
+  border: none;
+
+  border-radius: 10px;
+
+  background: var(--primary);
+
+  color: #fff;
+
+  font-size: 16px;
+
+  font-weight: bold;
+
+  cursor: pointer;
+
+  transition: all 0.25s ease;
 }
 
 .c-login-form button:hover {
-    filter: brightness(0.9); /* 색감은 유지하되 살짝 어둡게 */
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(255, 180, 84, 0.3);
+
+  background: var(--primary-hover);
+
+  transform: translateY(-2px);
+
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 
-/* 모바일 대응 */
+/* ===============================
+   MOBILE
+================================ */
+
 @media (max-width: 480px) {
-    .c-login-form {
-        padding: 40px 25px;
-    }
+
+  .c-login-form {
+    padding: 40px 25px;
+  }
+
 }

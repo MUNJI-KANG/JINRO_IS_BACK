@@ -1,0 +1,123 @@
+/* ===============================
+   GLOBAL DESIGN SYSTEM
+   Color Palette : Warm Terracotta
+================================ */
+
+:root {
+
+/* Brand Colors */
+
+--primary: #D97757;
+--primary-hover: #C46042;
+
+--secondary: #F3C59C;
+--accent: #F7E7D8;
+
+/* Background */
+
+--bg-main: #FAF7F3;
+--bg-card: #FFFFFF;
+
+/* Text */
+
+--text-main: #2F2F2F;
+--text-sub: #757575;
+
+/* UI */
+
+--border: #E6DAD0;
+--shadow: 0 10px 30px rgba(0,0,0,0.08);
+
+}
+
+/* ===============================
+   RESET
+================================ */
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  line-height:1.5;
+}
+
+/* ===============================
+   BUTTON
+================================ */
+
+.btn-primary{
+  background: var(--primary);
+  color:#fff;
+  border:none;
+  padding:12px 22px;
+  border-radius:10px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .2s ease;
+}
+
+.btn-primary:hover{
+  background: var(--primary-hover);
+}
+
+/* ===============================
+   CARD
+================================ */
+
+.card{
+  background: var(--bg-card);
+  border-radius:14px;
+  padding:24px;
+  border:1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+/* ===============================
+   INPUT
+================================ */
+
+.input{
+  width:100%;
+  padding:12px 14px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  outline:none;
+  font-size:14px;
+}
+
+.input:focus{
+  border-color: var(--primary);
+}
+
+/* ===============================
+   CONTAINER
+================================ */
+
+.container{
+  width:1200px;
+  margin:0 auto;
+}
+
+/* ===============================
+   UTIL
+================================ */
+
+.text-center{
+  text-align:center;
+}
+
+.flex{
+  display:flex;
+}
+
+.flex-center{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}

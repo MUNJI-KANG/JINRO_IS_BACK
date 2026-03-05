@@ -1,294 +1,264 @@
+/* =============================== */
+/* PAGE */
+/* =============================== */
+
 .container {
-  max-width: 900px;
-  margin: 40px auto;
-  padding: 20px;
-  font-family: 'Pretendard', sans-serif;
+  padding: 40px;
+  width: 100%;
+  background: var(--bg-main);
   text-align: center;
+  font-family: 'Pretendard', sans-serif;
 }
 
+/* =============================== */
+/* TITLE */
+/* =============================== */
+
 .title {
-  font-size: 28px;
-  margin-bottom: 8px;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 10px;
 }
 
 .subtitle {
-  color: #666;
   font-size: 14px;
-  margin-bottom: 24px;
+  color: var(--text-sub);
+  margin-bottom: 25px;
 }
+
+/* =============================== */
+/* PROGRESS */
+/* =============================== */
 
 .progressBadge {
+
   display: inline-flex;
   align-items: center;
-  background: white;
-  border: 1px solid #eee;
+
   padding: 8px 16px;
+
   border-radius: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  font-weight: bold;
-  margin-bottom: 30px;
-}
 
-.alertBox {
-  background-color: #f0f7ff;
-  border: 1px solid #d0e7ff;
-  color: #0056b3;
-  padding: 12px 20px;
-  border-radius: 8px;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-  font-size: 13px;
-}
+  background: var(--bg-card);
 
-.headerRow {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 20px;
-}
-
-.backButton {
-  border: 1px solid #ddd;
-  background: white;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.categoryTitle {
-  font-size: 20px;
-  font-weight: bold;
-}
-
-.cardGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 40px;
-}
-
-.card {
-  background: white;
-  border: 1px solid #eee;
-  border-radius: 12px;
-  height: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-  transition: all 0.2s ease; /* 부드러운 전환 */
-}
-
-/* 클릭(선택) 되었을 때의 스타일 */
-.activeCard {
-  border: 2px solid #000; /* 검정색 테두리로 강조 */
-  background-color: #f8f8f8;
-  font-weight: bold;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-}
-
-.selectedListContainer {
-    width: 900px;
-    background-color: white;
-}
-
-.listWrapper {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-}
-
-.selectedList {
-  background: white;
-  border: 1px solid #eee;
-  border-radius: 12px;
-  padding: 24px;
-  text-align: left;
-}
-
-.listTitle {
-  font-size: 16px;
-  font-weight: bold;
-  margin-bottom: 16px;
-}
-
-.selectedItem {
-  display: flex;
-  align-items: center;
-  background: #fcfcfc;
-  border-radius: 8px;
-  padding: 12px;
-  gap: 12px;
-  position: relative;
-  max-width: 300px;
-}
-
-.thumbnail {
-  width: 50px;
-  height: 50px;
-  background-color: #000;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.itemInfo h4 {
-  font-size: 13px;
-  margin: 0;
-}
-
-.itemInfo p {
-  font-size: 11px;
-  color: #888;
-  margin: 2px 0 0 0;
-}
-
-.deleteBtn {
-  position: absolute;
-  right: 12px;
-  color: #ff4d4f;
-  background: none;
-  border: none;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.nextButton {
-  margin-top: 30px;
-  background-color: #888; /* 이미지와 유사한 회색 */
-  color: white;
-  border: none;
-  padding: 12px 60px;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.backButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  padding: 10px 18px;
-  border-radius: 10px;
-
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
+  border: 1px solid var(--border);
 
   font-size: 14px;
   font-weight: 600;
-  color: #334155;
+
+  margin-bottom: 25px;
+
+  box-shadow: var(--shadow);
+}
+
+/* =============================== */
+/* HEADER */
+/* =============================== */
+
+.headerRow {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 16px;
+
+  margin-bottom: 30px;
+}
+
+.categoryTitle {
+
+  font-size: 20px;
+
+  font-weight: 600;
+
+  color: var(--text-main);
+}
+
+/* =============================== */
+/* BACK BUTTON */
+/* =============================== */
+
+.backButton {
+
+  padding: 8px 16px;
+
+  border-radius: 8px;
+
+  border: 1px solid var(--border);
+
+  background: var(--bg-card);
+
+  font-size: 14px;
+
+  font-weight: 500;
+
+  color: var(--text-main);
 
   cursor: pointer;
 
-  transition: all 0.2s ease;
-
-  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  transition: .2s;
 }
 
 .backButton:hover {
-  background: #f1f5f9;
+
+  background: var(--accent);
+
   transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
 }
 
-.backButton:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+/* =============================== */
+/* CATEGORY GRID */
+/* =============================== */
+
+.cardGrid {
+
+  display: grid;
+
+  grid-template-columns: repeat(4, 1fr);
+
+  gap: 18px;
+
+  margin-bottom: 40px;
+  
 }
 
-.headerRow {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+.card {
 
-  margin-bottom: 24px;
+  background: var(--bg-card);
+
+  border: 1px solid var(--border);
+
+  border-radius: 10px;
+
+  padding: 20px;
+
+  font-size: 14px;
+
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition: .2s;
+
+  padding: 30px;
 }
+
+.card:hover {
+
+  background: var(--accent);
+
+  border-color: var(--primary);
+
+  transform: translateY(-2px);
+}
+
+/* 선택된 카드 */
+
+.activeCard {
+
+  border: 2px solid var(--primary);
+
+  background: var(--accent);
+
+  font-weight: 600;
+}
+
+/* =============================== */
+/* SELECTED VIDEO */
+/* =============================== */
 
 .selectedListContainer {
 
   margin-top: 40px;
+
   padding: 24px;
 
-  background: #ffffff;
+  background: var(--bg-card);
 
   border-radius: 16px;
 
-  box-shadow: 
-    0 10px 25px rgba(0,0,0,0.05),
-    0 2px 6px rgba(0,0,0,0.04);
+  border: 1px solid var(--border);
+
+  box-shadow: var(--shadow);
 
   max-width: 900px;
+
   margin-left: auto;
   margin-right: auto;
-
 }
 
 .listTitle {
 
   font-size: 18px;
+
   font-weight: 700;
 
   margin-bottom: 18px;
 
-  color: #1e293b;
-
+  color: var(--text-main);
 }
 
 .listWrapper {
 
   display: flex;
-  gap: 14px;
+
   flex-wrap: wrap;
 
+  gap: 12px;
 }
+
+/* =============================== */
+/* VIDEO CARD */
+/* =============================== */
 
 .videoCard {
 
   display: flex;
+
   align-items: center;
+
   gap: 10px;
 
   padding: 10px 14px;
 
   border-radius: 10px;
 
-  background: #f8fafc;
+  background: var(--accent);
 
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
 
   font-size: 14px;
+
   font-weight: 500;
 
-  color: #334155;
+  color: var(--text-main);
 
-  transition: all 0.2s ease;
-
+  transition: .2s;
 }
 
 .videoCard:hover {
 
-  background: #f1f5f9;
+  background: var(--bg-card);
 
+  border-color: var(--primary);
 }
+
+/* =============================== */
+/* DELETE BUTTON */
+/* =============================== */
 
 .deleteButton {
 
   border: none;
+
   background: #ef4444;
 
   color: white;
 
   font-size: 12px;
+
   font-weight: 600;
 
   padding: 4px 8px;
@@ -297,161 +267,40 @@
 
   cursor: pointer;
 
-  transition: all 0.2s ease;
-
+  transition: .2s;
 }
 
 .deleteButton:hover {
 
   background: #dc2626;
-
 }
 
 /* =============================== */
-/* 페이지 영역 */
+/* NEXT BUTTON */
 /* =============================== */
 
-.container {
-  padding: 40px;
-  width: 100%;
-  background: #f8fafc;
-}
+.nextButton {
 
-/* =============================== */
-/* 제목 */
-/* =============================== */
+  margin-top: 30px;
 
-.title {
-  font-size: 26px;
-  font-weight: 700;
-  color: #111827;
-  margin-bottom: 10px;
-}
+  background: var(--primary);
 
-.subtitle {
-  font-size: 14px;
-  color: #6b7280;
-  margin-bottom: 25px;
-}
+  color: white;
 
-/* =============================== */
-/* 선택 개수 */
-/* =============================== */
+  border: none;
 
-.progressBadge {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 25px;
-  color: #374151;
-}
+  padding: 12px 60px;
 
-/* =============================== */
-/* 상단 영역 */
-/* =============================== */
-
-.headerRow {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 30px;
-}
-
-.categoryTitle {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-/* =============================== */
-/* 뒤로가기 버튼 */
-/* =============================== */
-
-.backButton {
-  padding: 8px 16px;
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
-
-  background: white;
 
   font-size: 14px;
-  font-weight: 500;
 
   cursor: pointer;
 
-  transition: all 0.2s ease;
+  transition: .2s;
 }
 
-.backButton:hover {
-  background: #f1f5f9;
-  transform: translateY(-1px);
-}
+.nextButton:hover {
 
-/* =============================== */
-/* 중분류 카드 */
-/* =============================== */
-
-.cardGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
-}
-
-.card {
-  background: white;
-  border: 1px solid #e5e7eb;
-
-  border-radius: 10px;
-
-  padding: 20px;
-
-  text-align: center;
-
-  font-size: 14px;
-  font-weight: 500;
-
-  cursor: pointer;
-
-  transition: all 0.2s ease;
-}
-
-.card:hover {
-  background: #eef2ff;
-  border-color: #3b82f6;
-  transform: translateY(-2px);
-}
-
-/* =============================== */
-/* 선택된 영상 영역 */
-/* =============================== */
-
-.selectedListContainer {
-
-  margin-top: 40px;
-
-  padding: 24px;
-
-  background: white;
-
-  border-radius: 16px;
-
-  box-shadow:
-    0 10px 25px rgba(0,0,0,0.05),
-    0 3px 8px rgba(0,0,0,0.04);
-
-  max-width: 900px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.listTitle {
-  font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 18px;
-  color: #1e293b;
-}
-
-.listWrapper {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  background: var(--primary-hover);
 }
