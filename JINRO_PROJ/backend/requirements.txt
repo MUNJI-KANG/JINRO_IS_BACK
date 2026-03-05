@@ -26,3 +26,4 @@ tf_keras==2.16.0
 
 SQLAlchemy
 pymysql
+httpx

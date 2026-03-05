@@ -16,7 +16,7 @@ function CInfoEdit() {
 
       try {
         const response = await api.get(
-          `http://localhost:8000/counselor/${counselorId}`
+          `/counselor/${counselorId}`
         );
 
         const data = await response.data;

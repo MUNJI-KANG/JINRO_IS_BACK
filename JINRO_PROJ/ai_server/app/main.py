@@ -6,7 +6,6 @@ from app.api import ai
 
 
 # ai 분석 import
-from services.attention_analysis import analyze_attention
 
 app = FastAPI(
     titile='AI_SERVER'

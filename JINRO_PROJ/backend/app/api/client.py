@@ -10,6 +10,7 @@ import random
 import datetime
 import os
 import shutil
+import httpx
 
 
 
@@ -366,3 +367,28 @@ async def session_clear(request: Request):
     request.session.clear()
 
     return {}
+
+@router.post("/video/analyze")
+async def video_analyze():
+    current_file_path = os.path.abspath(__file__)
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(current_file_path)))
+    video_path = os.path.join(BASE_DIR, 'videos', '2c6745d1-ba0a-4547-9902-c4b52e984df5.webm')
+    data = None
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                'http://localhost:8001/ai/video/analyze',
+                json={"video_path": video_path},
+                timeout=120.0,  # 120초 대기 (필요에 따라 조절)
+                )
+            
+            data = response.text
+            print(data)
+        except Exception as e:
+            # 4. 진짜 에러 원인이 무엇인지 터미널에 출력
+            print(f'🚨 통신 오류 발생: {e}')
+            
+            # (선택) 프론트엔드/클라이언트에도 에러 상황 알리기
+            # raise HTTPException(status_code=500, detail=f"AI 분석 서버 통신 실패: {str(e)}")
+            
+    return data
