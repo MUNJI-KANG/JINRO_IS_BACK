@@ -2,7 +2,7 @@ from fastapi import Request, APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
 
-from app.schemas.counselor import CounselorLoginRequest,CategoryCreateRequest,CounselorModifyInfo,ScheduleDetailResponse,ScheduleListResponse
+from app.schemas.counselor import CounselorLoginRequest,CategoryCreateRequest,CounselorModifyInfo,ScheduleDetailResponse,ScheduleListResponse,ScheduleUpdateRequest
 from pydantic import BaseModel
 from app.models.schema_models import ReportAiV, AiVideoAnalyze, ReCommentEnum
 from sqlalchemy import func, or_, and_
@@ -11,7 +11,9 @@ from app.models.schema_models import ReportFinal
 
 from app.models.schema_models import (
     Counselor,
+    Client,
     Category,
+    Counseling,
     ReportAiV,
     AiVideoAnalyze,
     ReCommentEnum,
@@ -335,7 +337,9 @@ def get_final_report(counseling_id: int, db: Session = Depends(get_db)):
         "alerts": alerts
     }
 
-# 최종 리포트 조회 API
+# ===============================
+# 🔹 최종 리포트 조회 API
+# ===============================
 @router.get("/report/final/comment/{counseling_id}")
 def get_final_comment(counseling_id: int, db: Session = Depends(get_db)):
 
@@ -418,7 +422,7 @@ def complete_final_report(data: FinalReportSave, db: Session = Depends(get_db)):
         "message": "최종 리포트 작성 완료"
     }
 
-@router.get("/counselor/schedules", response_model=ScheduleListResponse)
+@router.get("/schedules", response_model=ScheduleListResponse)
 def get_daily_schedules(
     request: Request,
     date: str = Query(..., description="조회할 날짜 (YYYY-MM-DD)"),
@@ -431,7 +435,7 @@ def get_daily_schedules(
 
     try:
         records = db.query(Counseling, Client).join(
-            Client, Counseling.client_id == Client.c_id  
+            Client, Counseling.client_id == Client.client_id  
         ).filter(
             Counseling.counselor_id == counselor_id,
             Counseling.datetime == date
@@ -505,6 +509,42 @@ def get_pending_students(request: Request, db: Session = Depends(get_db)):
     except Exception as e:
         print(f"Error details: {str(e)}") # 서버 터미널에서 상세 에러 확인용
         raise HTTPException(status_code=500, detail=f"DB 조회 중 에러: {str(e)}")
+
+
+@router.put("/schedule/{counseling_id}")
+def update_counseling_schedule(
+    counseling_id: int, 
+    request_data: ScheduleUpdateRequest, 
+    db: Session = Depends(get_db)
+):
+    # 1. 대상 상담 기록 찾기
+    counseling = db.query(Counseling).filter(
+        Counseling.counseling_id == counseling_id
+    ).first()
+
+    if not counseling:
+        raise HTTPException(status_code=404, detail="상담 기록을 찾을 수 없습니다.")
+
+    try:
+        # 2. 문자열로 들어온 날짜와 시간을 DB용 DateTime 포맷으로 합치기
+        # "2026-03-05 14:00" 형태로 만든 후 변환
+        datetime_str = f"{request_data.date} {request_data.time}"
+        parsed_reservation_time = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M")
+
+        # 3. DB 데이터 업데이트
+        counseling.datetime = request_data.date           # Date 타입
+        counseling.reservation_time = parsed_reservation_time # DateTime 타입
+        counseling.complete_yn = 2                        # 상태를 2(예정)로 변경!
+
+        db.commit()
+
+        return {"success": True, "message": "일정 등록 완료"}
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"일정 등록 중 오류: {str(e)}")
+    
+
 
 # ===============================
 # 🔹 AI 시청영상 분석 리포트 조회
@@ -619,4 +659,25 @@ def get_students(db: Session = Depends(get_db)):
     return {
         "success": True,
         "data": result
+    }
+
+
+# 상담사 정보 수정
+@router.get("/{counselor_id}")
+def get_counselor(counselor_id: int, db: Session = Depends(get_db)):
+
+    counselor = db.query(Counselor).filter(
+        Counselor.counselor_id == counselor_id
+    ).first()
+
+    if not counselor:
+        return {"success": False, "message": "상담사 없음"}
+
+    return {
+        "success": True,
+        "data": {
+            "name": counselor.name,
+            "phone": counselor.phone_num,
+            "email": counselor.email
+        }
     }

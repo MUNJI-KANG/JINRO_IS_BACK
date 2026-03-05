@@ -34,3 +34,7 @@ class ScheduleListResponse(BaseModel):
     success: bool
     date: str
     schedules: List[ScheduleDetailResponse]
+
+class ScheduleUpdateRequest(BaseModel):
+    date: str  # 예: "2026-03-05"
+    time: str  # 예: "14:00"

@@ -158,8 +158,16 @@ export default function CStudentList() {
       <dialog
         ref={dialogRef}
         className="consult-dialog"
+
         onClick={(e) => {
           if (e.target === dialogRef.current) closeModal();
+        }}
+
+        onClose={() => {
+          setModal({
+            isOpen: false,
+            studentId: null,
+          });
         }}
       >
         {currentStudent && (

@@ -23,9 +23,9 @@ function CInfoEdit() {
 
         if (data.success) {
           setFormData({
-            name: data.name || "",
-            phone: data.phone || "",
-            email: data.email || "",
+            name: data.data.name,
+            phone: data.data.phone,
+            email: data.data.email,
           });
         }
       } catch (error) {
