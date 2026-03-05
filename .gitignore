@@ -12,6 +12,7 @@ __pycache__/
 activate_proj.bat
 ERD/
 jupyter_kclass.bat
+activate_ai.bat
 # ========================
 # Logs
 # ========================
@@ -45,3 +46,4 @@ dist-ssr/
 *.sln
 *.sw?
 videos
+data
