@@ -13,6 +13,7 @@ import {
 import '../../../css/common_css/base.css'
 import '../../../css/counselor_css/cFinal.css'
 import { Link, useLocation } from 'react-router-dom';
+import api from '../../../services/app'
 
 const CFinal = () => {
 
@@ -40,8 +41,8 @@ const CFinal = () => {
 
         if (!counselingId) return;
 
-        fetch(`http://localhost:8000/counselor/report/final/${counselingId}`)
-            .then(res => res.json())
+        api.get(`/counselor/report/final/${counselingId}`)
+            .then(res => res.data)
             .then(data => {
 
                 if (data.success) {
@@ -63,8 +64,8 @@ const CFinal = () => {
     // =========================
     useEffect(() => {
 
-        fetch(`http://localhost:8000/counselor/report/final/comment/${counselingId}`)
-            .then(res => res.json())
+        api.get(`/counselor/report/final/comment/${counselingId}`)
+            .then(res => res.data)
             .then(data => {
 
                 if (data.success) {
@@ -84,15 +85,9 @@ const CFinal = () => {
 
         e.preventDefault();
 
-        await fetch("http://localhost:8000/counselor/report/final/save", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                counseling_id: counselingId,
-                comment: report
-            })
+        await api.post("/counselor/report/final/save", {
+            counseling_id: counselingId,
+            comment: report
         });
 
         alert("수정 저장되었습니다.");
@@ -106,15 +101,9 @@ const CFinal = () => {
 
         e.preventDefault();
 
-        await fetch("http://localhost:8000/counselor/report/final/complete", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                counseling_id: counselingId,
-                comment: report
-            })
+        await api.post("/counselor/report/final/complete", {
+            counseling_id: counselingId,
+            comment: report
         });
 
         alert("작성 완료되었습니다.");
@@ -161,7 +150,7 @@ const CFinal = () => {
                                     <Bar
                                         dataKey="value"
                                         fill="var(--primary)"
-                                        radius={[6,6,0,0]}
+                                        radius={[6, 6, 0, 0]}
                                     />
 
                                 </BarChart>

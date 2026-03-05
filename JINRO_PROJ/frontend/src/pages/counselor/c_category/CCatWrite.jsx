@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../../css/counselor_css/CCatWrite.css";
+import api from '../../../services/app'
 
 export default function CCatWrite() {
   const location = useLocation();
@@ -86,30 +87,20 @@ export default function CCatWrite() {
       let response;
 
       if (editData?.c_id) {
-        response = await fetch(
+        response = await api.put(
           `http://127.0.0.1:8000/counselor/category/${editData.c_id}`,
-          {
-            method: "PUT",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          }
+          payload
         );
       } else {
-        response = await fetch(
+        response = await api.post(
           "http://127.0.0.1:8000/counselor/category",
-          {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          }
+          payload
         );
       }
 
-      const data = await response.json();
+      const data = await response.data;
 
-      if (response.ok && data.success) {
+      if (data.success) {
         alert(data.message);
         navigate(-1);
       } else {
