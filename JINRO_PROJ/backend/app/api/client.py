@@ -41,7 +41,7 @@ def login_or_create_client(client_data: ClientCreate, request: Request, db: Sess
         ).first()
         
         if existing_client:
-            request.session['client_id'] = existing_client.c_id
+            request.session['client_id'] = existing_client.client_id
             return {"message": "기존 회원 로그인 성공", "client_id": existing_client.client_id}
 
         # 신규 회원 생성 (데이터는 이미 검증된 숫자/형식임)
@@ -58,9 +58,9 @@ def login_or_create_client(client_data: ClientCreate, request: Request, db: Sess
         db.commit()
         db.refresh(new_client)
 
-        request.session['client_id'] = new_client.c_id
+        request.session['client_id'] = new_client.client_id
         print("LOGIN SESSION:", request.session)
-        return {"message": "신규 회원 등록 및 로그인 성공", "client_id": new_client.c_id}
+        return {"message": "신규 회원 등록 및 로그인 성공", "client_id": new_client.client_id}
 
     except Exception as e:
         db.rollback()
