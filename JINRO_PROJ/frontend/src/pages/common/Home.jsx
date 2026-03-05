@@ -1,9 +1,19 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../css/common_css/home.css";
+import api from '../../services/app'
 
 const Home = () => {
   const navigate = useNavigate();
+  const navType = useNavigationType();
+
+  useEffect(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+
+    api.get('client/sesstion/clear')
+
+  }, [])
 
   const handleCounselorClick = () => {
     navigate("/counselor/login");
