@@ -2,17 +2,20 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../css/common_css/home.css";
 import api from '../../services/app'
+import { useDispatch } from 'react-redux';
+import { clearVideos } from '../../redux/cVideos'
 
 const Home = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     sessionStorage.clear();
     localStorage.clear();
+    dispatch(clearVideos());
+    api.get('client/sesstion/clear');
 
-    api.get('client/sesstion/clear')
-
-  }, [])
+  }, []);
 
   const handleCounselorClick = () => {
     navigate("/counselor/login");

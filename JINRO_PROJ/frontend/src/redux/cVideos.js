@@ -35,9 +35,11 @@ const cVideosSlice = createSlice({
       return newState;
     },
 
-    clearVideos: () => {
+    clearVideos: (state, action) => {
 
       localStorage.removeItem("selectedVideos");
+      state = null;
+
 
       return [];
     }

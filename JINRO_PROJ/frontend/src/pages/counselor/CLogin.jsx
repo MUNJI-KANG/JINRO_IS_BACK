@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import '../../css/common_css/base.css';
 import '../../css/counselor_css/cLogin.css';
-import api from '../../services/app.js'
+import api from '../../services/app.js';
+import { useDispatch } from 'react-redux';
+import { clearVideos } from '../../redux/cVideos.js';
+
 const CLogin = () => {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const [id, setId] = useState('');
     const [password, setPassword] = useState('');
     const [idError, setIdError] = useState('');
@@ -54,6 +58,14 @@ const CLogin = () => {
             alert("서버와 통신하는 데 문제가 발생했습니다.");
         }
     };
+
+    useEffect(() => {
+        sessionStorage.clear();
+        localStorage.clear();
+        dispatch(clearVideos());
+        api.get('client/sesstion/clear');
+    }, []);
+
     return (
         <div className='c-login-wrap'>
             <form className='c-login-form' onSubmit={loginHandle}>

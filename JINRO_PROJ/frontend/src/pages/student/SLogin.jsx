@@ -1,9 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import style from '../../css/student_css/SLogin.module.css';
-import api from '../../services/app.js'
+import api from '../../services/app.js';
+import { useDispatch } from 'react-redux';
+import { clearVideos } from '../../redux/cVideos';
+
 const SLogin = () => {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     // 1. 상태 관리: 세분화된 입력값 대응
     const [formData, setFormData] = useState({
@@ -72,6 +76,13 @@ const SLogin = () => {
             alert(`오류: ${error.message}`);
         }
     };
+
+    useEffect(() => {
+        sessionStorage.clear();
+        localStorage.clear();
+        dispatch(clearVideos());
+        api.get('client/sesstion/clear');
+    }, []);
 
     return (
         <div className={style.container}>
