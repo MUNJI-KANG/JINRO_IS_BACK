@@ -5,7 +5,6 @@ const api = axios.create({
   baseURL: 'http://localhost:8000', // 여기에 한 번만 적어주면 됩니다!
   withCredentials: true,
   timeout: 5000,
-  withCredentials: true,
 });
 
 export default api;

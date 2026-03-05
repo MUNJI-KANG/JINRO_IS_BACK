@@ -27,9 +27,16 @@ function CScheduler() {
   const [dailySchedules, setDailySchedules] = useState([]);
 
   useEffect(() => {
-    const api = calendarRef.current?.getApi();
-    if (!api) return;
-    api.select(today);
+    const calendarApi = calendarRef.current?.getApi();
+    if (calendarApi) {
+      calendarApi.select(today);
+    }
+
+    // 🔥 화면 초기 진입 시 오늘 날짜의 데이터를 무조건 한 번 불러옵니다.
+    // FullCalendar가 클릭했을 때 주는 info 객체 모양({ dateStr: 날짜 })을 그대로 흉내내서 넘겨줍니다.
+    handleDateClick({ dateStr: today });
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDateClick = async (info) => {
@@ -79,6 +86,27 @@ function CScheduler() {
   };
 
 
+  const handleScheduleSubmit = async () => {
+    try {
+      // 선택된 학생의 PK(counseling_id), 선택된 날짜, 선택된 시간을 백엔드로 전송
+      const response = await api.put(`/counselor/schedule/${selectedStudent.counseling_id}`, {
+        date: selectedDate,
+        time: selectedTime,
+      });
+
+      if (response.data.success) {
+        alert("일정이 성공적으로 등록되었습니다.");
+        closeModal();
+
+        // 🔥 화면 새로고침 (선택했던 날짜의 일정을 다시 불러옴)
+        handleDateClick({ dateStr: selectedDate });
+      }
+    } catch (error) {
+      console.error("일정 등록 오류:", error);
+      alert("일정 등록에 실패했습니다.");
+    }
+  };
+
   const [pendingStudents, setPendingStudents] = useState([]);
 
   // const students = [
@@ -100,7 +128,7 @@ function CScheduler() {
       student.name.includes(search) ||
       student.studentNo.includes(search)
   );
-   
+
   const timeSlots = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
 
   return (
@@ -222,16 +250,24 @@ function CScheduler() {
             </div>
 
             <div className="time-grid">
-              {timeSlots.map((time) => (
-                <button
-                  key={time}
-                  className={`time-btn ${selectedTime === time ? "active" : ""
-                    }`}
-                  onClick={() => setSelectedTime(time)}
-                >
-                  {time}
-                </button>
-              ))}
+              {timeSlots.map((time) => {
+                // 🔥 핵심: 현재 선택된 날짜의 일정(dailySchedules) 중, 이 시간(time)과 겹치는 예약이 있는지 확인
+                const isBooked = dailySchedules.some(
+                  (schedule) => schedule.time === time
+                );
+
+                return (
+                  <button
+                    key={time}
+                    // 예약된 시간은 'booked' 클래스를 추가하고, 선택된 시간은 'active'로 표시
+                    className={`time-btn ${selectedTime === time ? "active" : ""} ${isBooked ? "booked" : ""}`}
+                    onClick={() => setSelectedTime(time)}
+                    disabled={isBooked} // 👈 예약된 시간이면 버튼 클릭 비활성화!
+                  >
+                    {time}
+                  </button>
+                );
+              })}
             </div>
 
             <div className="time-footer">
@@ -245,14 +281,7 @@ function CScheduler() {
               <button
                 className="submit-btn"
                 disabled={!selectedTime}
-                onClick={() => {
-                  console.log(
-                    "예약:",
-                    selectedStudent,
-                    selectedTime
-                  );
-                  closeModal();
-                }}
+                onClick={handleScheduleSubmit}
               >
                 등록
               </button>
