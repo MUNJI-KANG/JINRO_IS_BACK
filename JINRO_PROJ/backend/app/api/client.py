@@ -2,7 +2,7 @@ import uuid
 
 from fastapi import Request, APIRouter, Depends, HTTPException, UploadFile, File
 from app.db.database import SessionLocal, engine, Base
-from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV
+from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV,ReportCon,ReportFinal
 from app.schemas.client import ClientCreate,CounselingCreateRequest,ReportCompleteRequest
 
 from sqlalchemy.orm import Session
@@ -194,7 +194,7 @@ def create_counselling_and_reports(
             client_id=client_id,
             counselor_id=assigned_counselor.counselor_id,
             regdate=now,                # 생성 일시
-            complete_yn=1               # 1(영상), 2(예정), 3(완료) 중 초기상태인 1로 설정
+            complete_yn=0               # 0(준비), 1(영상), 2(예정), 3(완료) 중 초기상태인 1로 설정
         )
         db.add(new_counseling)
         db.flush() # 부모 PK(counseling_id) 발급
@@ -237,7 +237,7 @@ def create_counselling_and_reports(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"상담 데이터 생성 중 오류 발생: {str(e)}")
     
-@router.post("/client/pComplete")
+@router.post("/pComplete")
 def complete_video_report(
     payload: ReportCompleteRequest, 
     request: Request, 
@@ -248,31 +248,85 @@ def complete_video_report(
         raise HTTPException(status_code=401, detail="로그인이 만료되었거나 비정상적인 접근입니다.")
 
     try:
+        # 1. 대상 리포트 조회 (counseling_id와 report_id 조건을 모두 사용해 더 정확하게 찾습니다)
         target_report = db.query(ReportAiV).filter(
+            ReportAiV.counseling_id == payload.counseling_id,
             ReportAiV.ai_v_erp_id == payload.report_id
         ).first()
 
         if not target_report:
             raise HTTPException(status_code=404, detail="해당 리포트를 찾을 수 없습니다.")
 
+        # 2. 개별 영상 상태 업데이트 (기존 기능 유지)
         target_report.complete_yn = 'Y'
         target_report.answer = payload.answer  
-        
         target_report.re_comment = ReCommentEnum.SUCCESS 
 
+        # DB에 현재까지의 변경사항 임시 반영 (아래 3번 검사를 위해 필수!)
+        db.flush() 
+
+        # 3. 해당 상담(counseling_id)에 속한 '모든' 영상 리포트 조회
+        all_videos = db.query(ReportAiV).filter(
+            ReportAiV.counseling_id == payload.counseling_id
+        ).all()
+        
+        # 파이썬 all() 함수: 리스트 안의 모든 영상의 complete_yn이 'Y'인지 검사
+        is_all_completed = all(v.complete_yn == 'Y' for v in all_videos)
+
+        # 4. 🌟 모든 영상을 다 시청했다면 요구하신 후속 작업 진행
+        if is_all_completed:
+            
+            # (1) Counseling 테이블의 상태를 요청하신 대로 1로 업데이트
+            counseling_info = db.query(Counseling).filter(
+                Counseling.counseling_id == payload.counseling_id
+            ).first()
+            if counseling_info:
+                counseling_info.complete_yn = 1  
+            
+            # (2) ReportCon (상담 일지) 생성 (중복 생성 방지용 if문)
+            existing_con = db.query(ReportCon).filter(
+                ReportCon.counseling_id == payload.counseling_id
+            ).first()
+            if not existing_con:
+                new_report_con = ReportCon(
+                    counseling_id=payload.counseling_id,
+                    con_rep_comment='상담예정',
+                    complete_yn='N'
+                )
+                db.add(new_report_con)
+
+            # (3) ReportFinal (최종 리포트) 생성 (중복 생성 방지용 if문)
+            existing_final = db.query(ReportFinal).filter(
+                ReportFinal.counseling_id == payload.counseling_id
+            ).first()
+            if not existing_final:
+                new_report_final = ReportFinal(
+                    counseling_id=payload.counseling_id,
+                    final_comment='상담예정',
+                    complete_yn='N'
+                )
+                db.add(new_report_final)
+
+        # 5. 모든 변경사항 DB에 확정 저장
         db.commit()
+
+        # 프론트엔드에 띄워줄 알림 메시지도 상황에 맞게 분기 처리
+        msg = "모든 영상 시청이 완료되어 상담 대기 상태로 전환되었습니다." if is_all_completed else "영상 시청 및 설문 작성이 완료되었습니다."
 
         return {
             "success": True, 
-            "message": "영상 시청 및 설문 작성이 완료되었습니다.",
+            "message": msg,
             "report_id": target_report.ai_v_erp_id,
             "complete_yn": target_report.complete_yn,
             "re_comment": target_report.re_comment.value, 
-            "answer": target_report.answer
+            "answer": target_report.answer,
+            "is_all_completed": is_all_completed # 프론트엔드에서 화면 이동 시 참고용 플래그
         }
 
     except Exception as e:
         db.rollback()
+        import traceback
+        print("에러 발생:", traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"데이터 업데이트 중 오류 발생: {str(e)}")
     
        

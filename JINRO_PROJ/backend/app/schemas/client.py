@@ -37,5 +37,6 @@ class CounselingCreateRequest(BaseModel):
     videos: List[SelectedVideo]
 
 class ReportCompleteRequest(BaseModel):
+    counseling_id: int
     report_id: int
     answer: Dict[str, Any]
