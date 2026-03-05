@@ -4,8 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 #분석 서비스 
-from app.services.emotion_analysis import analyze_emotion
-from app.services.attention_analysis import analyze_attention
+
 
 
 # DB 설정 및 모델, 스키마 가져오기

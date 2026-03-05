@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useNavigationType  } from "react-router-dom";
 import "../../css/common_css/home.css";
 import api from '../../services/app'
 import { useDispatch } from 'react-redux';
@@ -7,7 +7,11 @@ import { clearVideos } from '../../redux/cVideos'
 
 const Home = () => {
   const navigate = useNavigate();
+<<<<<<< Updated upstream
   const dispatch = useDispatch();
+=======
+
+>>>>>>> Stashed changes
 
   useEffect(() => {
     sessionStorage.clear();
