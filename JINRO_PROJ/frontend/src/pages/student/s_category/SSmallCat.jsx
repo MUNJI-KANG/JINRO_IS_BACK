@@ -108,7 +108,7 @@ function SSmallCat() {
             videos: payload
         }
         try {
-            const response = await api.post(`${host}/client/client/counselling`, result);
+            const response = await api.post(`/client/counselling`, result);
 
             if (response.data.success) {
                 navigate("/student/category/checkout");

@@ -168,7 +168,7 @@ def submit_survey(data: SurveySubmitRequest, db: Session = Depends(get_db)):
 
 
 # 상담시작(내담자의 영상선택 완료)
-@router.post("/client/counselling")
+@router.post("/counselling")
 def create_counselling_and_reports(
     payload: CounselingCreateRequest, 
     request: Request, 
