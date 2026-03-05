@@ -94,9 +94,7 @@ function SSurvey() {
         }
     };
 
-    if (loading || !surveyInfo) {
-        return <div className={styles.surveyContainer}>로딩 중...</div>;
-    }
+
 
     const questions = React.useMemo(() => {
         if (!surveyInfo) return [];
@@ -104,6 +102,10 @@ function SSurvey() {
             ? JSON.parse(surveyInfo.survey)
             : surveyInfo.survey;
     }, [surveyInfo]);
+
+    if (loading || !surveyInfo) {
+        return <div className={styles.surveyContainer}>로딩 중...</div>;
+    }
 
     const isLastQuestion = currentStep === questions.length - 1;
 
