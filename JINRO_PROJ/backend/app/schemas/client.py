@@ -31,7 +31,7 @@ class SurveySubmitRequest(BaseModel):
     answer: Dict[str, Any]
 
 class SelectedVideo(BaseModel):
-    id: str             
+    id: int            
 
 class CounselingCreateRequest(BaseModel):
     videos: List[SelectedVideo]

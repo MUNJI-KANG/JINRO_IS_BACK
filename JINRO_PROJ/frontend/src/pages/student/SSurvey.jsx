@@ -5,6 +5,7 @@ import axios from 'axios';
 import styles from '../../css/student_css/SSurvey.module.css';
 import api from '../../services/app'
 
+
 function SSurvey() {
 
     const { categoryId } = useParams();
@@ -14,11 +15,13 @@ function SSurvey() {
     const selectedVideos = useSelector((state) => state.cVideos);
     const { currentIndex = 0 } = location.state || {};
 
-    const counselingId = useSelector((state) => state.counselingId);
+    
     const [surveyInfo, setSurveyInfo] = useState(null);
     const [currentStep, setCurrentStep] = useState(0);
     const [answers, setAnswers] = useState({});
     const [loading, setLoading] = useState(true);
+    const reduxCounselingId = useSelector((state) => state.counselingId);
+    const counselingId = reduxCounselingId || localStorage.getItem('counselingId');
 
     useEffect(() => {
 
@@ -57,35 +60,42 @@ function SSurvey() {
             return;
         }
 
+        if (!counselingId) {
+            console.error("상담 ID 없음");
+            alert("상담 정보가 없습니다.");
+            return;
+        }
+
         try {
 
-            const payload = {
-                counseling_id: counselingId,
-                category: surveyInfo.title,
-                url: surveyInfo.url || "",
-                answer: answers
-            };
+            // ✅ 수정: survey/submit 대신 pComplete 호출
+            const reportIds = JSON.parse(localStorage.getItem("reportIds") || "[]");
+            const currentReportId = reportIds[currentIndex];
+            console.log(currentReportId)
 
-            await api.post(
-                "/client/survey/submit",
-                payload
-            );
+            if (!currentReportId) {
+                console.error("report_id 없음");
+                alert("리포트 정보가 없습니다.");
+                return;
+            }
+
+            await api.post("/client/pComplete", {
+                counseling_id: Number(counselingId),
+                report_id: currentReportId,
+                answer: answers
+            });
 
             const nextIdx = currentIndex + 1;
 
             if (!selectedVideos || nextIdx >= selectedVideos.length) {
                 navigate("/student/complete");
+                localStorage.removeItem("videoStarted");
                 return;
             }
 
-            const nextVideo = selectedVideos[nextIdx];
+            const nextVideoId = Number(selectedVideos[nextIdx].id);
 
-            if (!nextVideo) {
-                navigate("/student/complete");
-                return;
-            }
-
-            navigate(`/student/video/${nextVideo.id}`, {
+            navigate(`/student/video/${nextVideoId}`, {
                 state: { currentIndex: nextIdx }
             });
 

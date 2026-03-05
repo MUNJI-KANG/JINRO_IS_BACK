@@ -22,6 +22,8 @@ function SVideo() {
   const [webcamReady, setWebcamReady] = useState(false);
   const [webcamError, setWebcamError] = useState(false);
   const [videoEnded, setVideoEnded] = useState(false);
+
+  // ✅ 수정: localStorage 제거, 항상 false로 시작
   const [started, setStarted] = useState(false);
 
   // 웹캠 초기화
@@ -33,7 +35,7 @@ function SVideo() {
 
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
-          audio: true
+          audio: false
         });
 
         if (webcamRef.current) {
@@ -65,6 +67,16 @@ function SVideo() {
 
   }, []);
 
+  // ✅ 추가: 두 번째 영상부터 webcamReady가 되면 자동 시작
+  useEffect(() => {
+
+    if (currentIndex > 0 && webcamReady) {
+      startRecording();
+      setStarted(true);
+    }
+
+  }, [webcamReady]);
+
   // 영상 가져오기
   const fetchVideo = async () => {
 
@@ -76,7 +88,7 @@ function SVideo() {
 
       if (res.data.success) {
         setCurrentVideo(res.data.data);
-        setVideoEnded(false); // 🔥 영상 바뀔 때 초기화
+        setVideoEnded(false);
       }
 
     } catch (err) {
@@ -86,6 +98,15 @@ function SVideo() {
     }
 
   };
+
+  useEffect(() => {
+
+    if (started) {
+      fetchVideo();
+    }
+
+  }, [started, categoryId]);
+
 
   const extractVideoId = (url) => {
 
@@ -115,21 +136,20 @@ function SVideo() {
 
   const startRecording = () => {
 
-    const stream = webcamRef.current.srcObject;
+    // ✅ null 체크 추가
+    if (!webcamRef.current || !webcamRef.current.srcObject) {
+      console.error("웹캠이 준비되지 않았습니다.");
+      return;
+    }
 
-    const mediaRecorder = new MediaRecorder(stream, {
-      mimeType: "video/webm"
-    });
+    const stream = webcamRef.current.srcObject;
+    const mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
 
     recorderRef.current = mediaRecorder;
     recordedChunks.current = [];
 
     mediaRecorder.ondataavailable = (e) => {
-
-      if (e.data.size > 0) {
-        recordedChunks.current.push(e.data);
-      }
-
+      if (e.data.size > 0) recordedChunks.current.push(e.data);
     };
 
     mediaRecorder.start();
@@ -140,14 +160,16 @@ function SVideo() {
 
     return new Promise((resolve) => {
 
+      // ✅ null 체크 추가
+      if (!recorderRef.current) {
+        console.warn("녹화기가 없습니다.");
+        resolve(new Blob([], { type: "video/webm" }));
+        return;
+      }
+
       recorderRef.current.onstop = () => {
-
-        const blob = new Blob(recordedChunks.current, {
-          type: "video/webm"
-        });
-
+        const blob = new Blob(recordedChunks.current, { type: "video/webm" });
         resolve(blob);
-
       };
 
       recorderRef.current.stop();
@@ -157,11 +179,25 @@ function SVideo() {
   };
 
   const handleStart = async () => {
+      try {
+          // ✅ 이어보기 코드 전부 제거, 항상 신규 생성
+          const videos = selectedVideos.map(v => ({ id: Number(v.id) }));
+          const res = await api.post("/client/counselling", { videos });
 
-    await fetchVideo();
-    setStarted(true);
-    startRecording();
+          localStorage.setItem("counselingId", res.data.counseling_id);
+          localStorage.setItem("reportIds", JSON.stringify(res.data.report_ids));
 
+          setStarted(true);
+
+          if (webcamReady && webcamRef.current?.srcObject) {
+              startRecording();
+          } else {
+              console.warn("웹캠 미준비 상태 - 녹화 생략");
+          }
+
+      } catch (err) {
+          console.error("상담 생성 실패:", err);
+      }
   };
 
   const handleGoSurvey = async () => {
@@ -172,7 +208,6 @@ function SVideo() {
 
       const formData = new FormData();
 
-      // 🔥 파일 이름을 example.webm으로 고정
       formData.append("file", blob, "example.webm");
 
       await api.post(
@@ -196,6 +231,7 @@ function SVideo() {
     }
 
   };
+
   const videoId = extractVideoId(currentVideo?.url);
 
   // YouTube Player 이벤트

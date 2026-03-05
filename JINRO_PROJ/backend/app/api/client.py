@@ -166,7 +166,6 @@ def submit_survey(data: SurveySubmitRequest, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail=f"저장 중 오류 발생: {str(e)}")
 
-
 # 상담시작(내담자의 영상선택 완료)
 @router.post("/counselling")
 def create_counselling_and_reports(
