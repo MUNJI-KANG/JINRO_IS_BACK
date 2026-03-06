@@ -239,6 +239,17 @@ function SMedCat() {
 
     )}
 
+    {selectedVideos.length === 3 && (
+
+      <button
+        className={styles.nextButton}
+        onClick={() => navigate("/student/category/checkout")}
+      >
+        영상보기
+      </button>
+
+    )}
+
     </div>
   );
 }
