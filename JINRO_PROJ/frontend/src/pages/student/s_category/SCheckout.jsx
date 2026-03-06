@@ -1,13 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../../../css/student_css/Checkout.css";
+import api from "../../../services/app.js";
 
 function Checkout() {
   const navigate = useNavigate();
   const location = useLocation();
-
   const selectedVideos = useSelector((state) => state.cVideos);
+  
+  // 🌟 2. 버튼 연속 클릭 방지용 상태 추가
+  const [isLoading, setIsLoading] = useState(false); 
 
   useEffect(() => {
     if (selectedVideos.length === 0) {
@@ -16,16 +19,38 @@ function Checkout() {
     }
   }, [selectedVideos, navigate]);
 
-  const handleStartVideo = () => {
-    if (selectedVideos.length === 0) return;
+  const handleStartVideo = async () => {
+    // 비디오가 없거나 이미 로딩 중이면 함수 종료
+    if (selectedVideos.length === 0 || isLoading) return;
 
-    const firstVideoId = selectedVideos[0].id;
-    navigate(`/student/video/${firstVideoId}`, { 
-      state: { 
-        selectedVideos: selectedVideos,
-        currentIndex: 0 
-      } 
-    });
+    try {
+      setIsLoading(true); // 로딩 시작 (버튼 비활성화)
+
+      const videos = selectedVideos.map(v => ({ id: Number(v.id) }));
+      const res = await api.post("/client/counselling", { videos });
+
+      // 성공적으로 세션이 생성되었을 때만 로컬 스토리지 저장 및 이동
+      if (res.data.success) {
+          localStorage.setItem("counselingId", res.data.counseling_id);
+          localStorage.setItem("reportIds", JSON.stringify(res.data.report_ids));
+          
+          const firstVideoId = selectedVideos[0].id;
+          
+          navigate(`/student/video/${firstVideoId}`, { 
+            state: { 
+              selectedVideos: selectedVideos,
+              currentIndex: 0 
+            } 
+          });
+      }
+
+    } catch (error) {
+        // 🌟 3. 에러 처리 (서버가 죽었거나 500/422 에러 났을 때)
+        console.error("상담 세션 생성 오류:", error);
+        alert("영상을 준비하는 중 문제가 발생했습니다. 다시 시도해주세요.");
+    } finally {
+        setIsLoading(false); // 로딩 끝
+    }
   };
 
   return (
