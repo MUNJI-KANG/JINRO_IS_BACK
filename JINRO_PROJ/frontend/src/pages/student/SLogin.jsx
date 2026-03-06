@@ -94,7 +94,21 @@ const SLogin = () => {
                     });
                     return; 
                 } else {
-                    console.log("기존 시청 기록을 무시하고 새로 시작합니다.");
+                    try {
+                        // 1. 백엔드에 기존 상담 세션(Counseling, ReportAiV) 삭제 요청
+                        await api.delete(`/client/counselling/${data.counseling_id}`);
+                        
+                        // 2. 혹시 남아있을지 모르는 로컬 데이터도 안전하게 초기화
+                        localStorage.removeItem("counseling_id");
+                        localStorage.removeItem("report_ids");
+                        dispatch(clearVideos()); // 리덕스 초기화
+                        
+                    } catch (err) {
+                        console.error("기존 기록 삭제 실패:", err);
+                        alert("기존 기록을 삭제하는 중 문제가 발생했습니다.");
+                        setIsLoading(false); // 에러 발생 시 로딩 풀어주기
+                        return; // 삭제에 실패하면 다음 페이지로 넘어가지 않도록 막음
+                    }
                 }
             }
 
