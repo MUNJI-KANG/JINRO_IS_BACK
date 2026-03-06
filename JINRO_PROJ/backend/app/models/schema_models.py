@@ -83,6 +83,7 @@ class ReportAiV(Base):
     reg_date = Column(DateTime, default=func.now(), nullable=False, comment='리포트 생성 날짜')
     update_date = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False, comment='리포트 수정 날짜')
     category = Column(String(20), nullable=False, comment='영상 카테고리')
+    category_id = Column(Integer, nullable=False, comment='카테고리 ID')
     url = Column(String(2000), nullable=False, comment='영상 URL')
     answer = Column(JSON, comment='내담자 설문지 답변')
     # 수정: counseling_id (소문자)

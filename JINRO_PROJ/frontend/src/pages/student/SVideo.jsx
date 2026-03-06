@@ -23,6 +23,9 @@ function SVideo() {
   const [webcamError, setWebcamError] = useState(false);
   const [videoEnded, setVideoEnded] = useState(false);
 
+
+ 
+
   // ✅ 수정: localStorage 제거, 항상 false로 시작
   const [started, setStarted] = useState(false);
 
@@ -178,25 +181,50 @@ function SVideo() {
 
   };
 
+  const isResume = location.state?.isResume || false;
+  const currentCounselingId = location.state?.counseling_id || null; // 🌟 SLogin에서 넘겨준 상담 ID 꺼내기
+  const currentReportIds = location.state?.report_ids || []
+
   const handleStart = async () => {
       try {
-          // ✅ 이어보기 코드 전부 제거, 항상 신규 생성
-          const videos = selectedVideos.map(v => ({ id: Number(v.id) }));
-          const res = await api.post("/client/counselling", { videos });
+          if (isResume) {
+              // [이어보기 모드] 
+              setStarted(true);
 
-          localStorage.setItem("counselingId", res.data.counseling_id);
-          localStorage.setItem("reportIds", JSON.stringify(res.data.report_ids));
+              // 🌟 추가: 설문 페이지 등에서 기존과 똑같이 쓸 수 있도록 로컬 스토리지에 복구해줌
+              if (currentCounselingId) {
+                  localStorage.setItem("counselingId", currentCounselingId);
+              }
+              
+              if (currentReportIds.length > 0) {
+                  localStorage.setItem("reportIds", JSON.stringify(currentReportIds));
+              }
 
-          setStarted(true);
-
-          if (webcamReady && webcamRef.current?.srcObject) {
-              startRecording();
+              if (webcamReady && webcamRef.current?.srcObject) {
+                  startRecording();
+              } else {
+                  console.warn("웹캠 미준비 상태 - 녹화 생략");
+              }
+              
           } else {
-              console.warn("웹캠 미준비 상태 - 녹화 생략");
-          }
+              // [신규 생성 모드] 
+              const videos = selectedVideos.map(v => ({ id: Number(v.id) }));
+              const res = await api.post("/client/counselling", { videos });
 
+              // 여기는 원래 있던 그대로!
+              localStorage.setItem("counselingId", res.data.counseling_id);
+              localStorage.setItem("reportIds", JSON.stringify(res.data.report_ids));
+
+              setStarted(true);
+
+              if (webcamReady && webcamRef.current?.srcObject) {
+                  startRecording();
+              } else {
+                  console.warn("웹캠 미준비 상태 - 녹화 생략");
+              }
+          }
       } catch (err) {
-          console.error("상담 생성 실패:", err);
+          console.error("상담 생성/시작 실패:", err);
       }
   };
 

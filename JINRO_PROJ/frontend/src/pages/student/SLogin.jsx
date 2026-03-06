@@ -3,11 +3,14 @@ import { useNavigate } from "react-router-dom";
 import style from '../../css/student_css/SLogin.module.css';
 import api from '../../services/app.js';
 import { useDispatch } from 'react-redux';
-import { clearVideos } from '../../redux/cVideos';
+import { clearVideos, addVideo } from '../../redux/cVideos';
 
 const SLogin = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
+
+    const [isLoading, setIsLoading] = useState(false); // 이어볼 영상이 있는지 확인
+
 
     // 1. 상태 관리: 세분화된 입력값 대응
     const [formData, setFormData] = useState({
@@ -37,6 +40,9 @@ const SLogin = () => {
 
     // 3. 진단 시작 및 데이터 검증
     const handleStartDiagnosis = async () => {
+
+        if (isLoading) return;
+
         const {
             name, ssn1, ssn2,
             phone1, phone2, phone3,
@@ -67,8 +73,31 @@ const SLogin = () => {
 
             });
 
-            const data = await response.data;
+            const data = response.data;
             localStorage.setItem("client_id", data.client_id);
+            
+            if (data.has_unfinished_video) {
+                const wantsToContinue = window.confirm('아직 완료하지 않은 영상이 있습니다. 이어보시겠습니까?');
+                if (wantsToContinue) {
+                    // 1. 리덕스에 남은 영상 목록 채워넣기
+                    if (data.video_list && data.video_list.length > 0) {
+                        dispatch(addVideo(data.video_list));
+                    }
+                    
+                    // 2. localStorage 대신 navigate의 state로 데이터를 숨겨서 전달!
+                    navigate(`/student/video/${data.category_id}`, { 
+                        state: { 
+                            isResume: true, 
+                            counseling_id: data.counseling_id,
+                            report_ids: data.report_ids
+                        } 
+                    });
+                    return; 
+                } else {
+                    console.log("기존 시청 기록을 무시하고 새로 시작합니다.");
+                }
+            }
+
             navigate("/student/category/big");
 
         } catch (error) {

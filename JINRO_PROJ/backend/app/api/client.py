@@ -43,7 +43,42 @@ def login_or_create_client(client_data: ClientCreate, request: Request, db: Sess
         
         if existing_client:
             request.session['client_id'] = existing_client.client_id
-            return {"message": "기존 회원 로그인 성공", "client_id": existing_client.client_id}
+
+            # 1. 해당 client의 진행 중인 상담(complete_yn == 0) 조회
+            active_counseling = db.query(Counseling).filter(
+                Counseling.client_id == existing_client.client_id,
+                Counseling.complete_yn == 0
+            ).first()
+
+            has_unfinished_video = False
+            resume_category_id = None
+            video_list = []
+
+            if active_counseling:
+                unfinished_reports = db.query(ReportAiV).filter(
+                    ReportAiV.counseling_id == active_counseling.counseling_id,
+                    ReportAiV.complete_yn == 'N'
+                ).order_by(ReportAiV.ai_v_erp_id.asc()).all()
+
+                report_ids = [] # 🌟 프론트로 보낼 리포트 ID 배열 추가
+
+                if unfinished_reports:
+                    has_unfinished_video = True
+                    resume_category_id = unfinished_reports[0].category_id 
+
+                    for report in unfinished_reports:
+                        video_list.append({"id": report.category_id})
+                        report_ids.append(report.ai_v_erp_id) # 🌟 리포트 ID도 차곡차곡 담기
+
+            return {
+                "message": "기존 회원 로그인 성공", 
+                "client_id": existing_client.client_id,
+                "has_unfinished_video": has_unfinished_video, 
+                "counseling_id": active_counseling.counseling_id if active_counseling else None,
+                "category_id": resume_category_id,
+                "video_list": video_list,
+                "report_ids": report_ids # 🌟 프론트로 넘겨주기!
+            }
 
 
 
@@ -68,7 +103,15 @@ def login_or_create_client(client_data: ClientCreate, request: Request, db: Sess
         request.session['client_id'] = new_client.client_id
 
         print("LOGIN SESSION:", request.session)
-        return {"message": "신규 회원 등록 및 로그인 성공", "client_id": new_client.client_id}
+        return {
+            "message": "신규 회원 등록 및 로그인 성공", 
+            "client_id": new_client.client_id,
+            "has_unfinished_video": False, # 키를 맞춰서 False로 전달
+            "counseling_id": None,          # 키를 맞춰서 None(null)으로 전달
+            "category_id": None,           # 빈 값으로 통일
+            "video_list": [],
+            "report_ids": None
+        }
 
     except Exception as e:
         db.rollback()
@@ -211,6 +254,7 @@ def create_counselling_and_reports(
 
             new_report = ReportAiV(
                 counseling_id=new_counseling.counseling_id, 
+                category_id = video.id,
                 category=category_info.title[:20],  # DB 제약조건 String(20)에 맞춤
                 url=category_info.url,               # Category 테이블에서 가져온 실제 URL
                 complete_yn='N'

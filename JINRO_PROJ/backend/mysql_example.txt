@@ -8,3 +8,8 @@ INSERT INTO COUNSELOR
 (login_id, pw, name, phone_num, email, active_yn)
 VALUES
 ('jinro02', '1234', '진로테스트2', '01056781234', 'jinro02@test.com', 'Y');
+
+
+ALTER TABLE report_ai_v
+ADD COLUMN category_id INT NOT NULL DEFAULT 0;
+

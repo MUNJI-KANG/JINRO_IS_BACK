@@ -98,26 +98,9 @@ function SSmallCat() {
 
     const handleBack = () => navigate(-1);
 
-    const handleNext = async () => {
-        const payload = [];
-
-        for (let d of select) {
-            payload.push({id: String(d.id)});
-        }
-        const result = {
-            videos: payload
-        }
-        try {
-            const response = await api.post(`/client/counselling`, result);
-
-            if (response.data.success) {
-                navigate("/student/category/checkout");
-            } else {
-                alert('전송 실패')
-            }
-        } catch (error) {
-            alert('전송 실패')
-        }
+    const handleNext = () => {
+        navigate("/student/category/checkout");
+       
     };
 
     const handleNextVideoSelect = () => {

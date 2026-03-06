@@ -73,10 +73,6 @@ def login(
         "counselor_id": counselor_obj.counselor_id
     }
 
-# ===============================
-# 🔹 카테고리 API
-# ===============================
-
 # 카테고리 저장
 @router.post("/category")
 def create_or_update_category(request: CategoryCreateRequest, db: Session = Depends(get_db)):
@@ -187,9 +183,7 @@ def update_category(
     return {"success": True, "message": "카테고리 수정 완료"}
 
 
-# ===============================
-# 🔹 상담사 API
-# ===============================
+
 @router.put("/{counselor_id}")
 def update_counselor(
         counselor_id: int,
