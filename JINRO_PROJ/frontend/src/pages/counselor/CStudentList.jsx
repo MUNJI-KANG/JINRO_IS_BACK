@@ -210,9 +210,19 @@ export default function CStudentList() {
               {currentStudent.consultations.map((c) => (
                 <div
                   key={c.id}
-                  className="consult-card"
-                  onClick={() => goToFinalReport(c)}
-                  style={{ cursor: "pointer" }}
+                  className={`consult-card ${c.final === 'N' ? 'disabled' : ''}`}
+                  onClick={() => {
+                    if (c.final === 'N') {
+                      alert("아직 최종 리포트가 생성되지 않아 열람할 수 없습니다.");
+                      return; // 함수 실행 종료 (페이지 이동 안 됨)
+                    }
+                    goToFinalReport(c);
+                  }}
+                  style={{ 
+                    cursor: c.final === 'N' ? "not-allowed" : "pointer",
+                    opacity: c.final === 'N' ? 0.5 : 1,
+                    backgroundColor: c.final === 'N' ? "#f9f9f9" : "#fff"
+                  }}
                 >
                   <div className="consult-card-left">
                     <div className="consult-card-title-row">

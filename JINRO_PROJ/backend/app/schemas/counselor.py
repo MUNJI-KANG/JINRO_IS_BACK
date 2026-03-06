@@ -51,3 +51,4 @@ class ReportConUpdateRequest(BaseModel):
 class FinalReportSave(BaseModel):
     counseling_id: int
     comment:       str
+

@@ -32,13 +32,12 @@ const CFinal = () => {
     const [activeAlert, setActiveAlert] = useState(null);
     const [isComplete, setIsComplete] = useState(false);
 
-    // 💡 [추가] 전달받은 ID가 있으면 세션스토리지에 백업 (뒤로가기 대비)
-    useEffect(() => {
-        if (location.state?.counselingId) {
-            sessionStorage.setItem('counselingId_backup', location.state.counselingId);
-            setCounselingId(location.state.counselingId);
-        }
-    }, [location.state]);
+    // useEffect(() => {
+    //     if (location.state?.counselingId) {
+    //         sessionStorage.setItem('counselingId_backup', location.state.counselingId);
+    //         setCounselingId(location.state.counselingId);
+    //     }
+    // }, [location.state]);
 
     // =========================
     // 그래프 데이터 조회

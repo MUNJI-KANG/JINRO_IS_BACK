@@ -209,10 +209,16 @@ def update_report_con(counseling_id: int, data: ReportConUpdateRequest, db: Sess
     if not report:
         raise HTTPException(status_code=404, detail="상담 일지를 찾을 수 없습니다.")
 
-
     report.title           = data.title
     report.con_rep_comment = data.con_rep_comment
     report.complete_yn     = data.complete_yn
+
+    counseling = db.query(Counseling).filter(
+        Counseling.counseling_id == counseling_id
+    ).first()
+
+    if counseling and counseling.complete_yn == 2:
+        counseling.complete_yn = 3
 
     db.commit()
 
@@ -507,7 +513,8 @@ def get_student_consultations(client_id: int, db: Session = Depends(get_db)):
                 "title":       display_title,
                 "description": final_report.final_comment if final_report else "상담 진행 중 입니다.",
                 "date":        display_date,
-                "unread":      unread_count
+                "unread":      unread_count,
+                "final" : 'Y' if final_report else 'N'
             })
 
         return {"success": True, "data": result}
