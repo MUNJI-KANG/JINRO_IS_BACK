@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { FaceMesh } from "@mediapipe/face_mesh";
+import { Camera } from "@mediapipe/camera_utils";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import "../../css/student_css/SVideo.css";
@@ -18,16 +20,20 @@ function SVideo() {
   const recorderRef = useRef(null);
   const recordedChunks = useRef([]);
 
+  const frontStartTimeRef = useRef(null);
+
   const [currentVideo, setCurrentVideo] = useState(null);
   const [webcamReady, setWebcamReady] = useState(false);
   const [webcamError, setWebcamError] = useState(false);
   const [videoEnded, setVideoEnded] = useState(false);
 
-
- 
-
-  // ✅ 수정: localStorage 제거, 항상 false로 시작
   const [started, setStarted] = useState(false);
+
+  // ⭐ 추가 state
+  const [faceDetected, setFaceDetected] = useState(false);
+  const [isFacingFront, setIsFacingFront] = useState(false);
+  const [frontTime, setFrontTime] = useState(0);
+  const [readyToStart, setReadyToStart] = useState(false);
 
   // 웹캠 초기화
   useEffect(() => {
@@ -70,7 +76,96 @@ function SVideo() {
 
   }, []);
 
-  // ✅ 추가: 두 번째 영상부터 webcamReady가 되면 자동 시작
+  // ⭐ FaceMesh 정면 인식 (추가)
+  useEffect(() => {
+
+    if (!webcamReady || !webcamRef.current) return;
+
+    const faceMesh = new FaceMesh({
+      locateFile: (file) =>
+        `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+    });
+
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
+
+    faceMesh.onResults((results) => {
+
+      if (!results.multiFaceLandmarks) {
+
+        setFaceDetected(false);
+        setIsFacingFront(false);
+        setFrontTime(0);
+        frontStartTimeRef.current = null;
+
+        return;
+      }
+
+      const landmarks = results.multiFaceLandmarks[0];
+
+      setFaceDetected(true);
+
+      const nose = landmarks[1];
+      const left = landmarks[234];
+      const right = landmarks[454];
+
+      const faceWidth = right.x - left.x;
+
+      if (faceWidth === 0) return;
+
+      const noseOffset = (nose.x - left.x) / faceWidth;
+
+      const front = noseOffset > 0.35 && noseOffset < 0.65;
+
+      setIsFacingFront(front);
+
+      if (front) {
+
+        if (!frontStartTimeRef.current) {
+          frontStartTimeRef.current = Date.now();
+        }
+
+        const duration = (Date.now() - frontStartTimeRef.current) / 1000;
+
+        setFrontTime(duration);
+
+        if (duration >= 3) {
+          setReadyToStart(true);
+        }
+
+      } else {
+
+        frontStartTimeRef.current = null;
+        setFrontTime(0);
+
+      }
+
+    });
+
+    const videoElement = webcamRef.current;
+
+    const camera = new Camera(videoElement, {
+      onFrame: async () => {
+        await faceMesh.send({ image: videoElement });
+      },
+      width: 640,
+      height: 480,
+    });
+
+    camera.start();
+
+    return () => {
+      camera.stop();
+      faceMesh.close();
+    };
+
+  }, [webcamReady]);
+
+  // 두 번째 영상 자동 시작
   useEffect(() => {
 
     if (currentIndex > 0 && webcamReady) {
@@ -85,9 +180,7 @@ function SVideo() {
 
     try {
 
-      const res = await api.get(
-        `/client/survey/${categoryId}`
-      );
+      const res = await api.get(`/client/survey/${categoryId}`);
 
       if (res.data.success) {
         setCurrentVideo(res.data.data);
@@ -109,7 +202,6 @@ function SVideo() {
     }
 
   }, [started, categoryId]);
-
 
   const extractVideoId = (url) => {
 
@@ -139,7 +231,6 @@ function SVideo() {
 
   const startRecording = () => {
 
-    // ✅ null 체크 추가
     if (!webcamRef.current || !webcamRef.current.srcObject) {
       console.error("웹캠이 준비되지 않았습니다.");
       return;
@@ -163,9 +254,7 @@ function SVideo() {
 
     return new Promise((resolve) => {
 
-      // ✅ null 체크 추가
       if (!recorderRef.current) {
-        console.warn("녹화기가 없습니다.");
         resolve(new Blob([], { type: "video/webm" }));
         return;
       }
@@ -182,36 +271,34 @@ function SVideo() {
   };
 
   const isResume = location.state?.isResume || false;
-  const currentCounselingId = location.state?.counseling_id || null; // 🌟 SLogin에서 넘겨준 상담 ID 꺼내기
+  const currentCounselingId = location.state?.counseling_id || null;
   const currentReportIds = location.state?.report_ids || []
 
   const handleStart = async () => {
+
       try {
+
           if (isResume) {
-              // [이어보기 모드] 
+
               setStarted(true);
 
-              // 🌟 추가: 설문 페이지 등에서 기존과 똑같이 쓸 수 있도록 로컬 스토리지에 복구해줌
               if (currentCounselingId) {
                   localStorage.setItem("counselingId", currentCounselingId);
               }
-              
+
               if (currentReportIds.length > 0) {
                   localStorage.setItem("reportIds", JSON.stringify(currentReportIds));
               }
 
               if (webcamReady && webcamRef.current?.srcObject) {
                   startRecording();
-              } else {
-                  console.warn("웹캠 미준비 상태 - 녹화 생략");
               }
-              
+
           } else {
-              // [신규 생성 모드] 
+
               const videos = selectedVideos.map(v => ({ id: Number(v.id) }));
               const res = await api.post("/client/counselling", { videos });
 
-              // 여기는 원래 있던 그대로!
               localStorage.setItem("counselingId", res.data.counseling_id);
               localStorage.setItem("reportIds", JSON.stringify(res.data.report_ids));
 
@@ -219,13 +306,16 @@ function SVideo() {
 
               if (webcamReady && webcamRef.current?.srcObject) {
                   startRecording();
-              } else {
-                  console.warn("웹캠 미준비 상태 - 녹화 생략");
               }
+
           }
+
       } catch (err) {
+
           console.error("상담 생성/시작 실패:", err);
+
       }
+
   };
 
   const handleGoSurvey = async () => {
@@ -262,7 +352,6 @@ function SVideo() {
 
   const videoId = extractVideoId(currentVideo?.url);
 
-  // YouTube Player 이벤트
   useEffect(() => {
 
     if (!started || !videoId) return;
@@ -334,9 +423,29 @@ function SVideo() {
             <video ref={webcamRef} autoPlay playsInline muted />
           </div>
 
+          {/* ⭐ 추가 안내 */}
+          {!readyToStart && (
+            <div className="analysis-status">
+
+              {!faceDetected && "얼굴을 화면에 맞춰 주세요"}
+
+              {faceDetected && !isFacingFront && "정면을 바라봐 주세요"}
+
+              {isFacingFront &&
+                `정면 유지 중... ${frontTime.toFixed(1)} / 3초`}
+
+            </div>
+          )}
+
+          {readyToStart && (
+            <div className="analysis-status">
+              분석 준비 완료 ✔
+            </div>
+          )}
+
           <button
             className="start-btn"
-            disabled={!webcamReady || webcamError}
+            disabled={!webcamReady || webcamError || !readyToStart}
             onClick={handleStart}
           >
             시작하기
