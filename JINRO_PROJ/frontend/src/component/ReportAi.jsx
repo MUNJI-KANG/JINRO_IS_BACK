@@ -269,7 +269,7 @@ const ReportAi = ({ pageTitle, studentName, apiUrl }) => {
 
                     <Link
                         to="/counselor/report/final"
-                        state={{ counselingId }}
+                        state={{ counselingId, studentName }}
                         className={styles['btn-link']}
                     >
 

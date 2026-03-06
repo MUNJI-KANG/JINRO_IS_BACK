@@ -124,7 +124,10 @@ export default function CStudentList() {
 
     // navigate("/counselor/report/final");
     navigate("/counselor/report/final", {
-      state: { counselingId: consultation.id } // 전달할 데이터
+      state: {
+        counselingId: consultation.id,
+        studentName: currentStudent.name
+      }
     });
   };
 

@@ -5,8 +5,11 @@
 .c-counseling-container{
 
   display:flex;
-  padding:40px;
+
+  padding:40px 0;   /* 좌우 padding 제거 */
+
   max-width:1400px;
+
   margin:0 auto;
 
 }
@@ -221,6 +224,45 @@
 
   color:var(--text-main);
 
+}
+
+.report-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-top: 30px;
+    padding-top: 20px;
+}
+
+.left-btn-area {
+    display: flex;
+}
+
+.right-btn-area {
+    display: flex;
+    gap: 15px;
+}
+
+.btn-action-sub,
+.btn-action-main {
+    border: 1px solid var(--primary);
+    padding: 16px 20px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    min-width: 150px;
+}
+
+.btn-action-sub {
+    background: var(--bg-card);
+    color: var(--primary);
+}
+
+.btn-action-main {
+    background: var(--primary);
+    color: white;
 }
 
 /* ===============================

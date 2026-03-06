@@ -1,7 +1,9 @@
 import { useState, useRef } from 'react';
+import { Link, useNavigate, useLocation } from "react-router-dom";
+
 import '../../../css/common_css/base.css';
 import '../../../css/counselor_css/CCounseling.css';
-import { useNavigate } from "react-router-dom";
+import styles from "../../../css/component_css/ReportAi.module.css";
 
 const CCounseling = () => {
 
@@ -17,6 +19,10 @@ const CCounseling = () => {
 
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
+
+    const location = useLocation();
+    const counselingId = location.state?.counselingId;
+    const studentName = location.state?.studentName || "학생";
 
     /* ===============================
        시간 포맷 (mm:ss)
@@ -190,7 +196,7 @@ const CCounseling = () => {
                 <div className="title-row">
 
                     <h2 className="student-title">
-                        김민준의 상담 일지
+                        {studentName}의 상담 일지
                     </h2>
 
                     <div className="record-control">
@@ -300,15 +306,38 @@ const CCounseling = () => {
 
                     </div>
 
-                    <div className="form-footer">
+                </form>
 
-                        <button type="submit" className="btn-submit">
+                {/* 버튼 영역 */}
+
+                <div className={styles["report-buttons"]}>
+
+                    <div className={styles["left-btn-area"]}>
+
+                        <Link
+                            to="/counselor/report/final"
+                            state={{ counselingId, studentName }}
+                            className={styles["btn-link"]}
+                        >
+                            <button className={styles["btn-action-sub"]}>
+                                뒤로가기
+                            </button>
+                        </Link>
+
+                    </div>
+
+                    <div className={styles["right-btn-area"]}>
+
+                        <button
+                            onClick={submitHandle}
+                            className={styles["btn-action-main"]}
+                        >
                             작성 완료
                         </button>
 
                     </div>
 
-                </form>
+                </div>
 
             </div>
 

@@ -21,6 +21,7 @@ const CFinal = () => {
     const location = useLocation();
 
     const counselingId = location.state?.counselingId
+    const studentName = location.state?.studentName || "학생";
     
     console.log("넘어온 상담 ID:", counselingId);
 
@@ -132,7 +133,7 @@ const CFinal = () => {
 
     return (
         <>
-            <h2 className="student-info-title">진로 상담 최종 리포트</h2>
+            <h2 className="student-info-title">{studentName}의 진로 상담 최종 리포트</h2>
 
             <div className="report-top-grid">
 
@@ -281,7 +282,10 @@ const CFinal = () => {
 
             <div className="analysis-button-group">
 
-                <Link to='/counselor/report/counseling'>
+                <Link
+                    to="/counselor/report/counseling"
+                    state={{ counselingId, studentName }}
+                >
                     <button className="btn-analysis">
                         상담일지 작성
                     </button>
@@ -289,7 +293,7 @@ const CFinal = () => {
 
                 <Link
                     to="/counselor/report/video"
-                    state={{ id: studentId }}
+                    state={{ counselingId, studentName }}
                     className="btn-link"
                 >
                     <button className="btn-analysis">
@@ -298,12 +302,12 @@ const CFinal = () => {
                 </Link>
 
                 <Link
-                    to="/counselor/report/ai"
-                    state={{ id: studentId }}
+                    to="/counselor/report/voice"
+                    state={{ counselingId, studentName }}
                     className="btn-link"
                 >
                     <button className="btn-analysis">
-                        상담영상 분석
+                        상담 대화 요약
                     </button>
                 </Link>
 
