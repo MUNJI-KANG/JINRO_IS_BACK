@@ -53,14 +53,15 @@ def login_or_create_client(client_data: ClientCreate, request: Request, db: Sess
             has_unfinished_video = False
             resume_category_id = None
             video_list = []
-
+            report_ids = [] 
+            
             if active_counseling:
                 unfinished_reports = db.query(ReportAiV).filter(
                     ReportAiV.counseling_id == active_counseling.counseling_id,
                     ReportAiV.complete_yn == 'N'
                 ).order_by(ReportAiV.ai_v_erp_id.asc()).all()
 
-                report_ids = [] # 🌟 프론트로 보낼 리포트 ID 배열 추가
+                
 
                 if unfinished_reports:
                     has_unfinished_video = True
