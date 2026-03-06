@@ -38,3 +38,16 @@ class ScheduleListResponse(BaseModel):
 class ScheduleUpdateRequest(BaseModel):
     date: str  # 예: "2026-03-05"
     time: str  # 예: "14:00"
+
+
+# 상담일지 저장 
+class ReportConUpdateRequest(BaseModel):
+    title:           str
+    con_rep_comment: str
+    complete_yn:     str = 'N'  # 'N': 임시저장, 'Y': 작성완료
+
+
+# 최종 리포트 저장
+class FinalReportSave(BaseModel):
+    counseling_id: int
+    comment:       str

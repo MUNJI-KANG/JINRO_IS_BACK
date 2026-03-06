@@ -266,6 +266,62 @@
 }
 
 /* ===============================
+   FOOTER (BUTTONS)
+================================ */
+
+.form-footer {
+  display: flex;
+  justify-content: space-between; /* 좌우 끝으로 배치 */
+  align-items: center;
+  margin-top: 30px;
+  width: 100%;
+}
+
+.left-btn-area, .right-btn-area {
+  display: flex;
+  gap: 15px;
+}
+
+/* 뒤로가기 버튼 (보조 버튼 스타일) */
+.btn-back {
+  background: #fff;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  
+  padding: 12px 35px;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-back:hover {
+  background: var(--primary);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+/* 작성 완료 버튼 (기존 btn-submit 유지 및 수정) */
+.btn-submit {
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  color: #fff;
+
+  padding: 12px 45px;
+  border-radius: 12px;
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-submit:hover {
+  background: var(--primary-hover); /* 변수가 없다면 살짝 어두운 색상 */
+  transform: translateY(-2px);
+}
+
+/* ===============================
    ANIMATION
 ================================ */
 

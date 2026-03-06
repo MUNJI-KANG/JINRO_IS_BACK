@@ -1,28 +1,54 @@
-import { useState, useRef } from 'react';
-import { Link, useNavigate, useLocation } from "react-router-dom";
-
+import { useState, useRef, useEffect } from 'react';
 import '../../../css/common_css/base.css';
 import '../../../css/counselor_css/CCounseling.css';
-import styles from "../../../css/component_css/ReportAi.module.css";
+import { useNavigate, useLocation } from "react-router-dom";
+import api from '../../../services/app';
+
+
 
 const CCounseling = () => {
 
     const navigate = useNavigate();
+    const location  = useLocation();
 
     const [title, setTitle] = useState('');
     const [contents, setContents] = useState('');
     const [recordState, setRecordState] = useState("idle");
+    const counselingId = location.state?.counselingId;
+    
+    
 
     const [recordTime, setRecordTime] = useState(0);
+
+    const [clientName, setClientName] = useState('');
 
     const timerRef = useRef(null);
 
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
+   
+    // =========================
+    // 학생 이름 + 기존 일지 조회
+    // =========================
+    useEffect(() => {
 
-    const location = useLocation();
-    const counselingId = location.state?.counselingId;
-    const studentName = location.state?.studentName || "학생";
+        if (!counselingId) return;
+
+        api.get(`/counselor/report/con/${counselingId}`)
+            .then(res => res.data)
+            .then(data => {
+
+                if (data.success) {
+                    setClientName(data.data.client_name || '');
+                    if (data.data.title !== '상담 제목 미정') setTitle(data.data.title);
+                    if (data.data.con_rep_comment !== '상담예정') setContents(data.data.con_rep_comment);
+                }
+
+            })
+            .catch(err => console.error('상담 일지 조회 오류:', err));
+
+    }, [counselingId]);
+
 
     /* ===============================
        시간 포맷 (mm:ss)
@@ -59,26 +85,22 @@ const CCounseling = () => {
 
             };
 
+           // 녹음 완료 시 서버로 업로드
             mediaRecorderRef.current.onstop = () => {
 
                 const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
 
-                const url = URL.createObjectURL(audioBlob);
+                const formData = new FormData();
+                formData.append('file', audioBlob, `recording_${counselingId}_${Date.now()}.webm`);
 
-                const a = document.createElement('a');
-
-                a.href = url;
-                a.download = `recording_${new Date().getTime()}.webm`;
-
-                document.body.appendChild(a);
-                a.click();
-
-                setTimeout(() => {
-
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
-
-                }, 100);
+                api.post(`/counselor/report/con/${counselingId}/audio`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                })
+                .then(res => {
+                    if (res.data.success) console.log('녹음 파일 저장 완료:', res.data.path);
+                    else console.warn('녹음 파일 저장 실패');
+                })
+                .catch(err => console.error('녹음 업로드 오류:', err));
 
                 audioChunksRef.current = [];
 
@@ -167,8 +189,8 @@ const CCounseling = () => {
 
     };
 
-    /* ===============================
-       상담 일지 제출
+   /* ===============================
+       상담 일지 제출 → DB 저장
     =============================== */
 
     const submitHandle = (e) => {
@@ -179,7 +201,25 @@ const CCounseling = () => {
 
         if (recordState !== "idle") stopRecording();
 
-        alert("상담 일지가 저장되었으며 녹음이 종료되었습니다.");
+        api.put(`/counselor/report/con/${counselingId}`, {
+            title: title,
+            con_rep_comment: contents,
+            complete_yn: 'Y',
+        })
+        .then(res => {
+
+            if (res.data.success) {
+                alert("상담 일지가 저장되었으며 녹음이 종료되었습니다.");
+                navigate(-1);
+            } else {
+                alert("저장 실패: " + (res.data.detail || "오류가 발생했습니다."));
+            }
+
+        })
+        .catch(err => {
+            console.error('저장 오류:', err);
+            alert("저장 중 오류가 발생했습니다.");
+        });
 
     };
 
@@ -195,8 +235,9 @@ const CCounseling = () => {
 
                 <div className="title-row">
 
+                    
                     <h2 className="student-title">
-                        {studentName}의 상담 일지
+                        {clientName ? `${clientName}의 상담일지` : '상담일지'}
                     </h2>
 
                     <div className="record-control">
@@ -282,9 +323,7 @@ const CCounseling = () => {
                 =============================== */}
 
                 <form className="log-form" onSubmit={submitHandle}>
-
                     <div className="input-group">
-
                         <input
                             type='text'
                             placeholder='제목'
@@ -292,52 +331,40 @@ const CCounseling = () => {
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                         />
-
                     </div>
-
                     <div className="input-group">
-
                         <textarea
                             className="content-textarea"
                             value={contents}
                             onChange={(e) => setContents(e.target.value)}
                             placeholder="상담 내용을 입력하세요."
                         />
-
                     </div>
 
-                </form>
-
-                {/* 버튼 영역 */}
-
-                <div className={styles["report-buttons"]}>
-
-                    <div className={styles["left-btn-area"]}>
-
-                        <Link
-                            to="/counselor/report/final"
-                            state={{ counselingId, studentName }}
-                            className={styles["btn-link"]}
-                        >
-                            <button className={styles["btn-action-sub"]}>
+                    {/* 하단 버튼 영역: styles를 제거하고 정의된 클래스명을 직접 사용합니다 */}
+                    <div className="form-footer">
+                        {/* 1. 왼쪽: 뒤로가기 */}
+                        <div className="left-btn-area">
+                            <button 
+                                type="button" 
+                                className="btn-back" 
+                                onClick={() => navigate(-1)}
+                            >
                                 뒤로가기
                             </button>
-                        </Link>
+                        </div>
 
+                        {/* 2. 오른쪽: 작성 완료 */}
+                        <div className="right-btn-area">
+                            <button 
+                                type="submit" 
+                                className="btn-submit"
+                            >
+                                작성 완료
+                            </button>
+                        </div>
                     </div>
-
-                    <div className={styles["right-btn-area"]}>
-
-                        <button
-                            onClick={submitHandle}
-                            className={styles["btn-action-main"]}
-                        >
-                            작성 완료
-                        </button>
-
-                    </div>
-
-                </div>
+                </form>
 
             </div>
 
