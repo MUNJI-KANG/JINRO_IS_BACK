@@ -118,6 +118,17 @@ function SBigCat() {
 
       )}
 
+      {selectedVideos.length === 3 && (
+
+        <button
+          className="next-button"
+          onClick={() => navigate("/student/category/checkout")}
+        >
+          영상보기
+        </button>
+
+      )}
+
     </div>
   );
 }
