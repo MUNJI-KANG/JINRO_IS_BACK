@@ -21,6 +21,7 @@ function SVideo() {
   const recordedChunks = useRef([]);
 
   const frontStartTimeRef = useRef(null);
+  const frontFrameCountRef = useRef(0);
 
   const [currentVideo, setCurrentVideo] = useState(null);
   const [webcamReady, setWebcamReady] = useState(false);
@@ -100,7 +101,10 @@ function SVideo() {
         setFaceDetected(false);
         setIsFacingFront(false);
         setFrontTime(0);
+        setReadyToStart(false);
+
         frontStartTimeRef.current = null;
+        frontFrameCountRef.current = 0;
 
         return;
       }
@@ -119,7 +123,7 @@ function SVideo() {
 
       const noseOffset = (nose.x - left.x) / faceWidth;
 
-      const front = noseOffset > 0.35 && noseOffset < 0.65;
+      const front = noseOffset > 0.32 && noseOffset < 0.68;
 
       setIsFacingFront(front);
 
@@ -141,6 +145,7 @@ function SVideo() {
 
         frontStartTimeRef.current = null;
         setFrontTime(0);
+        setReadyToStart(false);
 
       }
 
