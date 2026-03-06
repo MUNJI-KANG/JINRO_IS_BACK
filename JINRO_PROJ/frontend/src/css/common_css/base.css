@@ -72,7 +72,7 @@
 
   padding-top: 20px;
 
-  text-align: left;
+  text-align: center;
 
   background: var(--bg-card);
 }
@@ -81,8 +81,18 @@
   list-style: none;
 }
 
+/* 링크 스타일 제거 */
+
+.sidebar-menu a {
+  text-decoration: none;   /* ✅ 밑줄 제거 */
+  color: inherit;          /* 부모 색상 사용 */
+  display: block;
+  width: 100%;
+}
+
 .sidebar-menu li {
-  padding: 15px 20px;
+  padding: 22px 20px;
+
   cursor: pointer;
 
   color: var(--text-main);
@@ -94,6 +104,11 @@
 
 .sidebar-menu li:hover {
   background: var(--accent);
+}
+
+.sidebar-menu li.active {
+  background: var(--accent);
+  font-weight: 600;
 }
 
 /* ===============================
