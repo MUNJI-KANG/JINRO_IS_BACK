@@ -437,3 +437,32 @@ async def video_analyze():
             # raise HTTPException(status_code=500, detail=f"AI 분석 서버 통신 실패: {str(e)}")
             
     return data
+
+
+@router.delete("/counselling/{counseling_id}")
+def delete_unfinished_counseling(counseling_id: int, db: Session = Depends(get_db)):
+    try:
+        # 1. 삭제할 상담 내역이 존재하는지 확인
+        target_counseling = db.query(Counseling).filter(
+            Counseling.counseling_id == counseling_id
+        ).first()
+
+        if not target_counseling:
+            raise HTTPException(status_code=404, detail="해당 상담 내역을 찾을 수 없습니다.")
+
+        # 2. 자식 테이블 (ReportAiV) 데이터 먼저 삭제
+        db.query(ReportAiV).filter(
+            ReportAiV.counseling_id == counseling_id
+        ).delete(synchronize_session=False)
+
+        # 3. 부모 테이블 (Counseling) 데이터 삭제
+        db.delete(target_counseling)
+        
+        # 4. DB에 완벽히 반영
+        db.commit()
+
+        return {"success": True, "message": "기존 상담 기록이 성공적으로 삭제되었습니다."}
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"상담 데이터 삭제 중 오류 발생: {str(e)}")
