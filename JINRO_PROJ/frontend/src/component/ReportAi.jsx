@@ -11,13 +11,14 @@ import {
   Bar
 } from 'recharts';
 
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate  } from 'react-router-dom';
 import api from '../services/app';
 import styles from '../css/component_css/ReportAi.module.css';
 
 const ReportAi = ({ pageTitle, studentName, apiUrl }) => {
 
   const { clientId, counselingId } = useParams();
+  const navigate = useNavigate();
 
   const [videoList, setVideoList] = useState([]);
   const [showVideoModal, setShowVideoModal] = useState(false);
@@ -142,6 +143,13 @@ useEffect(() => {
     <div className={styles['analysis-page-container']}>
 
       <div className={styles['analysis-header']}>
+
+        <button
+          className={styles['btn-back']}
+          onClick={() => navigate(-1)}
+        >
+          뒤로가기
+        </button>
 
         <h2 className={styles['student-info-title']}>
           {studentName}의 {pageTitle}

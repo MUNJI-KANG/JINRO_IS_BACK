@@ -42,9 +42,9 @@ function SVideo() {
   // 웹캠 초기화
   useEffect(() => {
 
-    const initWebcam = async () => {
+  const initWebcam = async () => {
 
-      try {
+    try {
 
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
@@ -72,8 +72,13 @@ function SVideo() {
     return () => {
 
       if (webcamRef.current && webcamRef.current.srcObject) {
+
         const tracks = webcamRef.current.srcObject.getTracks();
+
         tracks.forEach(track => track.stop());
+
+        webcamRef.current.srcObject = null;
+
       }
 
     };
@@ -209,12 +214,22 @@ function SVideo() {
     camera.start();
 
     return () => {
-      // camera.stop();
-      // faceMesh.close();
-      try {
-        faceMesh.close();
-      } catch (e) { }
-    };
+
+    try {
+      faceMesh.close();
+    } catch (e) {}
+
+    if (webcamRef.current && webcamRef.current.srcObject) {
+
+      const tracks = webcamRef.current.srcObject.getTracks();
+
+      tracks.forEach(track => track.stop());
+
+      webcamRef.current.srcObject = null;
+
+    }
+
+  };
 
   }, [webcamReady, started]);
 
@@ -421,19 +436,36 @@ function SVideo() {
     }
 
   };
-
   const handleGoSurvey = async () => {
 
     try {
 
       const blob = await stopRecording();
 
+      // ⭐ 카메라 완전 종료
+      if (webcamRef.current && webcamRef.current.srcObject) {
+
+        const tracks = webcamRef.current.srcObject.getTracks();
+
+        tracks.forEach(track => track.stop());
+
+        webcamRef.current.srcObject = null;
+
+      }
+
       const formData = new FormData();
 
       formData.append("file", blob, "example.webm");
 
+      const counselingId = localStorage.getItem("counselingId");
+
+      if (!counselingId) {
+        console.error("counselingId 없음");
+        return;
+      }
+
       await api.post(
-        "/client/video/upload",
+        `/client/video/upload/${counselingId}`,
         formData,
         {
           headers: {
@@ -453,7 +485,6 @@ function SVideo() {
     }
 
   };
-
   const videoId = extractVideoId(currentVideo?.url);
 
   useEffect(() => {

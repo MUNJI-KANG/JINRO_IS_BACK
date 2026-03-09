@@ -397,16 +397,16 @@ def complete_video_report(
         raise HTTPException(status_code=500, detail=f"데이터 업데이트 중 오류 발생: {str(e)}")
     
        
-# 🔥 나중에 저장 경로 지정할 곳
-# 예: UPLOAD_DIR = "D:/ai_project/videos"
-# 예: UPLOAD_DIR = "/home/server/videos"
-UPLOAD_DIR = "videos"   # 지금은 로컬 프로젝트 폴더에 저장
 
-# 폴더 없으면 생성
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+UPLOAD_DIR = os.path.join(BASE_DIR, "..", "ai_server", "videos")
+
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-@router.post("/video/upload")
+@router.post("/video/upload/{counseling_id}")
 async def upload_video(
+    counseling_id: int,
     request: Request,
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
@@ -420,16 +420,23 @@ async def upload_video(
 
         client = db.query(Client).filter(Client.client_id == client_id).first()
 
+        if not client:
+            raise HTTPException(status_code=404, detail="학생 없음")
+
         c_id = client.c_id
 
-        files = os.listdir(UPLOAD_DIR)
+        # 🔥 counseling_id 폴더 생성
+        counseling_folder = os.path.join(UPLOAD_DIR, str(counseling_id))
+        os.makedirs(counseling_folder, exist_ok=True)
+
+        files = os.listdir(counseling_folder)
 
         numbers = []
 
         for f in files:
             if f.startswith(f"{c_id}_") and f.endswith(".webm"):
                 try:
-                    num = int(f.split("_")[1].replace(".webm",""))
+                    num = int(f.split("_")[1].replace(".webm", ""))
                     numbers.append(num)
                 except:
                     pass
@@ -438,7 +445,7 @@ async def upload_video(
 
         filename = f"{c_id}_{next_number}.webm"
 
-        file_path = os.path.join(UPLOAD_DIR, filename)
+        file_path = os.path.join(counseling_folder, filename)
 
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
@@ -446,7 +453,7 @@ async def upload_video(
         return {
             "success": True,
             "message": "영상 저장 성공",
-            "url": f"http://localhost:8000/videos/{filename}"
+            "url": f"http://localhost:8000/videos/{counseling_id}/{filename}"
         }
 
     except Exception as e:

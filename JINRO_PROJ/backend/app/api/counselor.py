@@ -568,11 +568,13 @@ def get_ai_video_report(ai_v_erp_id: int, db: Session = Depends(get_db)):
         Client.client_id == counseling.client_id
     ).first()
 
-    
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    VIDEO_DIR = os.path.join(BASE_DIR, "..", "..", "videos")
+    counseling_id = counseling.counseling_id
 
-    pattern = os.path.join(VIDEO_DIR, f"{client.c_id}_*.webm")
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+    VIDEO_DIR = os.path.join(BASE_DIR, "..", "..", "..", "ai_server", "videos")
+
+    pattern = os.path.join(VIDEO_DIR, str(counseling_id), "*.webm")
 
     files = sorted(glob.glob(pattern))
 
@@ -580,7 +582,7 @@ def get_ai_video_report(ai_v_erp_id: int, db: Session = Depends(get_db)):
 
     if files:
         filename = os.path.basename(files[0])
-        video_url = f"http://localhost:8000/videos/{filename}"
+        video_url = f"http://localhost:8000/videos/{counseling_id}/{filename}"
 
     analyze = db.query(AiVideoAnalyze).filter(
         AiVideoAnalyze.ai_v_erp_id == ai_v_erp_id
@@ -638,17 +640,11 @@ def get_video_files(counseling_id: int, db: Session = Depends(get_db)):
     if not counseling:
         raise HTTPException(status_code=404, detail="상담 없음")
 
-    client = db.query(Client).filter(
-        Client.client_id == counseling.client_id
-    ).first()
-
-    if not client:
-        raise HTTPException(status_code=404, detail="학생 없음")
-
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    VIDEO_DIR = os.path.join(BASE_DIR, "..", "..", "videos")
 
-    pattern = os.path.join(VIDEO_DIR, f"{client.c_id}_*.webm")
+    VIDEO_DIR = os.path.join(BASE_DIR, "..", "..", "..", "ai_server", "videos")
+
+    pattern = os.path.join(VIDEO_DIR, str(counseling_id), "*.webm")
 
     files = sorted(glob.glob(pattern))
 
@@ -661,7 +657,7 @@ def get_video_files(counseling_id: int, db: Session = Depends(get_db)):
         result.append({
             "id": i + 1,
             "name": filename,
-            "url": f"/videos/{filename}"
+            "url": f"/videos/{counseling_id}/{filename}"
         })
 
     return result
