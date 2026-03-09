@@ -74,6 +74,10 @@ const SLogin = () => {
             });
 
             const data = response.data;
+            if (!data.success) {
+                alert(data.message);  // "입력하신 정보가 일치하지 않습니다. 생년월일/성별을 확인해주세요."
+                return;
+            }
             localStorage.setItem("client_id", data.client_id);
             
             if (data.has_unfinished_video) {

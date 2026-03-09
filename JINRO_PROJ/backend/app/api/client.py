@@ -35,87 +35,108 @@ def get_client_detail(client_id: int):
 @router.post("/login")
 def login_or_create_client(client_data: ClientCreate, request: Request, db: Session = Depends(get_db)):
     try:
-        # 기존 회원 확인 (이름과 핸드폰 번호 기준)
+        # ── STEP 1: 이름 + 전화번호 + 주민번호 3가지로 조회 ──
         existing_client = db.query(Client).filter(
-            Client.phone_num == client_data.phone_num, 
-            Client.name == client_data.name
+            Client.phone_num == client_data.phone_num,
+            Client.name      == client_data.name.strip(),
+            Client.birthdate == client_data.birthdate
         ).first()
-        
+
         if existing_client:
+
+            # ── STEP 2: 이메일이 달라졌으면 UPDATE ──
+            if existing_client.email != client_data.email:
+                existing_client.email = client_data.email
+                db.commit()
+                db.refresh(existing_client)
+
+            # ── STEP 3: 세션 저장 ──
             request.session['client_id'] = existing_client.client_id
 
-            # 1. 해당 client의 진행 중인 상담(complete_yn == 0) 조회
+            # ── STEP 4: 진행 중인 상담(complete_yn == 0) 조회 ──
             active_counseling = db.query(Counseling).filter(
-                Counseling.client_id == existing_client.client_id,
+                Counseling.client_id   == existing_client.client_id,
                 Counseling.complete_yn == 0
             ).first()
 
             has_unfinished_video = False
-            resume_category_id = None
-            video_list = []
-            report_ids = [] 
-            
+            resume_category_id   = None
+            video_list           = []
+            report_ids           = []
+
             if active_counseling:
                 unfinished_reports = db.query(ReportAiV).filter(
                     ReportAiV.counseling_id == active_counseling.counseling_id,
-                    ReportAiV.complete_yn == 'N'
+                    ReportAiV.complete_yn   == 'N'
                 ).order_by(ReportAiV.ai_v_erp_id.asc()).all()
-
-                
 
                 if unfinished_reports:
                     has_unfinished_video = True
-                    resume_category_id = unfinished_reports[0].category_id 
+                    resume_category_id   = unfinished_reports[0].category_id
 
                     for report in unfinished_reports:
                         video_list.append({"id": report.category_id})
-                        report_ids.append(report.ai_v_erp_id) # 🌟 리포트 ID도 차곡차곡 담기
+                        report_ids.append(report.ai_v_erp_id)
 
             return {
-                "message": "기존 회원 로그인 성공", 
-                "client_id": existing_client.client_id,
-                "has_unfinished_video": has_unfinished_video, 
-                "counseling_id": active_counseling.counseling_id if active_counseling else None,
-                "category_id": resume_category_id,
-                "video_list": video_list,
-                "report_ids": report_ids # 🌟 프론트로 넘겨주기!
+                "success":              True,
+                "message":              "기존 회원 로그인 성공",
+                "client_id":            existing_client.client_id,
+                "has_unfinished_video": has_unfinished_video,
+                "counseling_id":        active_counseling.counseling_id if active_counseling else None,
+                "category_id":          resume_category_id,
+                "video_list":           video_list,
+                "report_ids":           report_ids
             }
 
+        # ── STEP 5: 3가지 중 불일치 → 전화번호로 재조회해서 기존 회원인지 확인 ──
+        phone_exists = db.query(Client).filter(
+            Client.phone_num == client_data.phone_num
+        ).first()
 
+        if phone_exists:
+            # 전화번호는 있는데 이름 or 주민번호가 틀린 경우
+            return {
+                "success": False,
+                "message": "입력하신 정보가 일치하지 않습니다. 이름, 전화번호, 생년월일/성별을 확인해주세요."
+            }
 
-        # 신규 회원 생성 (데이터는 이미 검증된 숫자/형식임)
-        current_year = datetime.datetime.now().strftime("%Y")
-        random_num = f"{random.randint(1, 999):03d}"
+        # ── STEP 6: 완전 신규 회원 가입 ──
+        current_year   = datetime.datetime.now().strftime("%Y")
+        random_num     = f"{random.randint(1, 999):03d}"
         generated_c_id = f"S{current_year}{random_num}"
 
         new_client = Client(
-            c_id=generated_c_id, 
-            name=client_data.name,
-            phone_num=client_data.phone_num, # 예: 01012345678
-            email=client_data.email,         # 예: user@naver.com
-            birthdate=client_data.birthdate, # 예: 0001011
-            agree='Y'
+            c_id      = generated_c_id,
+            name      = client_data.name.strip(),
+            phone_num = client_data.phone_num,
+            email     = client_data.email,
+            birthdate = client_data.birthdate,
+            agree     = 'Y'
         )
-        
+
         db.add(new_client)
         db.commit()
         db.refresh(new_client)
 
         request.session['client_id'] = new_client.client_id
 
-        print("LOGIN SESSION:", request.session)
         return {
-            "message": "신규 회원 등록 및 로그인 성공", 
-            "client_id": new_client.client_id,
-            "has_unfinished_video": False, # 키를 맞춰서 False로 전달
-            "counseling_id": None,          # 키를 맞춰서 None(null)으로 전달
-            "category_id": None,           # 빈 값으로 통일
-            "video_list": [],
-            "report_ids": None
+            "success":              True,
+            "message":              "신규 회원 등록 및 로그인 성공",
+            "client_id":            new_client.client_id,
+            "has_unfinished_video": False,
+            "counseling_id":        None,
+            "category_id":          None,
+            "video_list":           [],
+            "report_ids":           None
         }
 
     except Exception as e:
         db.rollback()
+        import traceback
+        print("=== 로그인 에러 ===")
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
     
     
