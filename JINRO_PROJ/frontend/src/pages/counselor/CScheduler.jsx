@@ -134,7 +134,7 @@ function CScheduler() {
   const timeSlots = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
 
   const goToFinalReport = (counselingId) => {
-    navigate("/counselor/report/final", {
+    navigate("/counselor/report/final/:clientId/:counselingId", {
       state: { counselingId: counselingId } // 전달할 데이터
     });
   };
