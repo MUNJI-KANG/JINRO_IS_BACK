@@ -482,39 +482,49 @@ def get_students(db: Session = Depends(get_db)):
         ]
     }
 
-
+# 3월 6일 현재 complete_yn이 0과 1이 아니면 final을 Y로 했음 의도대로 안됨 확인해야함
 @router.get("/consultations/{client_id}")
 def get_student_consultations(client_id: int, db: Session = Depends(get_db)):
     try:
+        # 1. 상담 기록 조회 (Counseling 테이블)
         records = db.query(Counseling).filter(
             Counseling.client_id == client_id
         ).order_by(Counseling.datetime.desc()).all()
 
         result = []
         for c in records:
+            # 연관된 데이터들 조회
             final_report = db.query(ReportFinal).filter(ReportFinal.counseling_id == c.counseling_id).first()
             report_con   = db.query(ReportCon).filter(ReportCon.counseling_id == c.counseling_id).first()
             ai_videos    = db.query(ReportAiV).filter(ReportAiV.counseling_id == c.counseling_id).all()
 
+            # 타이틀 설정
             display_title = report_con.title if (report_con and report_con.title) else "영상시청중"
-            unread_count  = sum(
+            
+            # 읽지 않은 알림(분석 실패 등) 개수
+            unread_count = sum(
                 1 for v in ai_videos
                 if v.re_comment and v.re_comment != ReCommentEnum.SUCCESS
             )
 
+            # 날짜 표시 로직
             display_date = "날짜 미정"
             if final_report:
                 display_date = "작성중..."
                 if final_report.complete_yn == 'Y' and final_report.update_date:
                     display_date = final_report.update_date.strftime("%Y-%m-%d")
 
+            # 🌟 핵심 수정 부분: Counseling(변수 c)의 complete_yn 값을 기준으로 판단
+            # 의도: 0 혹은 1이 아니면 'Y' (즉, 2:예정, 3:완료 상태일 때 'Y')
+            is_final = 'Y' if c.complete_yn not in (0, 1) else 'N'
+
             result.append({
-                "id":          c.counseling_id,
-                "title":       display_title,
-                "description": final_report.final_comment if final_report else "상담 진행 중 입니다.",
-                "date":        display_date,
-                "unread":      unread_count,
-                "final" : 'Y' if final_report else 'N'
+                "id":           c.counseling_id,
+                "title":        display_title,
+                "description":  final_report.final_comment if final_report else "상담 진행 중 입니다.",
+                "date":         display_date,
+                "unread":       unread_count,
+                "final":        is_final  # Counseling 기준값 대입
             })
 
         return {"success": True, "data": result}

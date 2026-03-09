@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../../../css/student_css/Checkout.css";
 import api from "../../../services/app.js";
-
+ 
 function Checkout() {
   const navigate = useNavigate();
   const location = useLocation();
