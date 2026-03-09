@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import api from "../../../services/app";
 
 import styles from "../../../css/component_css/ReportAi.module.css";
@@ -7,8 +7,9 @@ import styles from "../../../css/component_css/ReportAi.module.css";
 const CReportAiSimple = ({ pageTitle, apiUrl }) => {
 
   const location = useLocation();
+  const { clientId, counselingId } = useParams();
   const studentName = location.state?.studentName;
-  const counselingId = location.state?.counselingId;
+  // const counselingId = location.state?.counselingId;
 
   const [summary, setSummary] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -25,7 +26,7 @@ const CReportAiSimple = ({ pageTitle, apiUrl }) => {
     if (!counselingId) return;
 
     api
-      .get(`/counselor/video/list/${counselingId}`)
+      .get(`/counselor/recording/dates/${clientId}`)
       .then((res) => res.data)
       .then((res) => {
 
@@ -34,8 +35,8 @@ const CReportAiSimple = ({ pageTitle, apiUrl }) => {
           setDates(res.data);
 
           if (res.data.length > 0) {
-            loadReport(res.data[0].ai_v_erp_id);
-            setSelectedDate(res.data[0].ai_v_erp_id);
+            // loadReport(res.data[0].ai_v_erp_id);
+            // setSelectedDate(res.data[0].ai_v_erp_id);
           }
 
         }
@@ -119,12 +120,9 @@ const CReportAiSimple = ({ pageTitle, apiUrl }) => {
           value={selectedDate}
           onChange={handleDateChange}
         >
-
-          <option value="">날짜 선택</option>
-
           {dates.map((d) => (
-            <option key={d.ai_v_erp_id} value={d.ai_v_erp_id}>
-              {d.date}
+            <option key={d.counseling_id} value={d.counseling_id}>
+              {d.regdate}
             </option>
           ))}
 
@@ -194,7 +192,7 @@ const CReportAiSimple = ({ pageTitle, apiUrl }) => {
         <div className={styles["left-btn-area"]}>
 
           <Link
-            to="/counselor/report/final"
+            to={`/counselor/report/final/${clientId}/${counselingId}`}
             state={{ counselingId, studentName }}
             className={styles["btn-link"]}
           >
