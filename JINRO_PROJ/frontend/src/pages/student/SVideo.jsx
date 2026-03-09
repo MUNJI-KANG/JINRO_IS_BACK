@@ -24,6 +24,7 @@ function SVideo() {
   const frontFrameCountRef = useRef(0); // 프레임 누적 필요
   const lostFaceCountRef = useRef(0); // 프레임 누적 필요
   const nonFrontCountRef = useRef(0);
+  const isTriggeredRef = useRef(false); // 녹화중복 방지
 
   const [currentVideo, setCurrentVideo] = useState(null);
   const [webcamReady, setWebcamReady] = useState(false);
@@ -166,7 +167,8 @@ function SVideo() {
             return;
           }
 
-          if (duration >= 3 && !started && !readyToStart) {
+          if (duration >= 3 && !isTriggeredRef.current) {
+            isTriggeredRef.current = true; // 플래그를 올려서 다음 프레임부터는 무시됨
             setReadyToStart(true);
 
             setTimeout(() => {
@@ -178,20 +180,20 @@ function SVideo() {
 
       } else {
 
-          frontFrameCountRef.current = 0;
+        frontFrameCountRef.current = 0;
 
-          // front가 아닌 상태가 계속 유지되면 강제 초기화
-          nonFrontCountRef.current++;
+        // front가 아닌 상태가 계속 유지되면 강제 초기화
+        nonFrontCountRef.current++;
 
-          if (nonFrontCountRef.current > 20) {
+        if (nonFrontCountRef.current > 20) {
 
-            frontStartTimeRef.current = null;
-            setFrontTime(0);
+          frontStartTimeRef.current = null;
+          setFrontTime(0);
 
-            nonFrontCountRef.current = 0;
-          }
-
+          nonFrontCountRef.current = 0;
         }
+
+      }
     });
 
     const videoElement = webcamRef.current;
@@ -207,8 +209,11 @@ function SVideo() {
     camera.start();
 
     return () => {
-      camera.stop();
-      faceMesh.close();
+      // camera.stop();
+      // faceMesh.close();
+      try {
+        faceMesh.close();
+      } catch (e) { }
     };
 
   }, [webcamReady, started]);
@@ -307,12 +312,24 @@ function SVideo() {
         return;
       }
 
+      if (recorderRef.current.state === "inactive") {
+        const blob = new Blob(recordedChunks.current, { type: "video/webm" });
+        resolve(blob);
+        return;
+      }
+
       recorderRef.current.onstop = () => {
         const blob = new Blob(recordedChunks.current, { type: "video/webm" });
         resolve(blob);
       };
 
-      recorderRef.current.stop();
+      try {
+        recorderRef.current.stop();
+      } catch (e) {
+        console.error("녹화 중지 중 에러 (무시 가능):", e);
+        const blob = new Blob(recordedChunks.current, { type: "video/webm" });
+        resolve(blob);
+      }
 
     });
 
@@ -365,43 +382,43 @@ function SVideo() {
   //     }
 
   // };
-   const handleStart = async () => {
+  const handleStart = async () => {
 
-      try {
+    try {
 
-          if (isResume) {
+      if (isResume) {
 
-              setStarted(true);
+        setStarted(true);
 
-              if (currentCounselingId) {
-                  localStorage.setItem("counselingId", currentCounselingId);
-              }
+        if (currentCounselingId) {
+          localStorage.setItem("counselingId", currentCounselingId);
+        }
 
-              if (currentReportIds.length > 0) {
-                  localStorage.setItem("reportIds", JSON.stringify(currentReportIds));
-              }
+        if (currentReportIds.length > 0) {
+          localStorage.setItem("reportIds", JSON.stringify(currentReportIds));
+        }
 
-              if (webcamReady && webcamRef.current?.srcObject) {
-                  startRecording();
-              }
+        if (webcamReady && webcamRef.current?.srcObject) {
+          startRecording();
+        }
 
-          } else {
+      } else {
 
-              
 
-              setStarted(true);
 
-              if (webcamReady && webcamRef.current?.srcObject) {
-                  startRecording();
-              }
+        setStarted(true);
 
-          }
-
-      } catch (err) {
-
-          console.error("상담 생성/시작 실패:", err);
+        if (webcamReady && webcamRef.current?.srcObject) {
+          startRecording();
+        }
 
       }
+
+    } catch (err) {
+
+      console.error("상담 생성/시작 실패:", err);
+
+    }
 
   };
 
