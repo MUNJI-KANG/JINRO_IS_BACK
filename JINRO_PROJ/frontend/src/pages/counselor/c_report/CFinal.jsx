@@ -230,13 +230,17 @@ const CFinal = () => {
                 <Link
                     to="/counselor/report/counseling"
                     state={{ counselingId, studentName }}
+                    className="btn-link"
                 >
-                    <button className="btn-analysis" onClick={handleCounselingLog}>
+                    <button
+                        className="btn-analysis"
+                        onClick={handleCounselingLog}
+                    >
                         상담일지 작성
                     </button>
-                </div>
+                </Link>
 
-                {/* 수정된 부분 */}
+
                 <Link
                     to={`/counselor/report/video/${clientId}/${counselingId}`}
                     state={{ studentName }}
@@ -247,7 +251,7 @@ const CFinal = () => {
                     </button>
                 </Link>
 
-                {/* 수정된 부분 */}
+
                 <Link
                     to={`/counselor/report/voice/${clientId}/${counselingId}`}
                     state={{ studentName }}
