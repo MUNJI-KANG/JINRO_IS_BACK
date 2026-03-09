@@ -11,21 +11,21 @@ import {
 
 import '../../../css/common_css/base.css'
 import '../../../css/counselor_css/cFinal.css'
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useParams, useNavigate } from 'react-router-dom';
 import api from '../../../services/app'
 
 const CFinal = () => {
     const modalRef = useRef();
+    const { clientId, counselingId } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
 
-    const counselingId = location.state?.counselingId
     const studentName = location.state?.studentName || "학생";
 
     console.log("넘어온 상담 ID:", counselingId);
 
 
-    const [studentId, setStudentId] = useState('');
+
     const [focusData, setFocusData] = useState([]);
     const [interestData, setInterestData] = useState([]);
     const [alerts, setAlerts] = useState([]);
@@ -33,18 +33,7 @@ const CFinal = () => {
     const [activeAlert, setActiveAlert] = useState(null);
     const [isComplete, setIsComplete] = useState(false);
 
-    // useEffect(() => {
-    //     if (location.state?.counselingId) {
-    //         sessionStorage.setItem('counselingId_backup', location.state.counselingId);
-    //         setCounselingId(location.state.counselingId);
-    //     }
-    // }, [location.state]);
-
-    // =========================
-    // 그래프 데이터 조회
-    // =========================
     useEffect(() => {
-        // 💡 [방어 코드] ID가 없으면 API 호출 차단 (422 에러 방지)
         if (!counselingId || counselingId === 'undefined') return;
 
         api.get(`/counselor/report/final/${counselingId}`)
@@ -61,11 +50,7 @@ const CFinal = () => {
             });
     }, [counselingId]);
 
-    // =========================
-    // 🔥 최종 리포트 조회
-    // =========================
     useEffect(() => {
-        // 💡 [방어 코드] ID가 없으면 API 호출 차단
         if (!counselingId || counselingId === 'undefined') return;
 
         api.get(`/counselor/report/final/comment/${counselingId}`)
@@ -81,9 +66,6 @@ const CFinal = () => {
             });
     }, [counselingId]);
 
-    // =========================
-    // 🔥 수정 저장
-    // =========================
     const handleSave = async (e) => {
         e.preventDefault();
         if (!counselingId) return alert("ID가 없습니다.");
@@ -96,9 +78,6 @@ const CFinal = () => {
         alert("수정 저장되었습니다.");
     };
 
-    // =========================
-    // 🔥 작성 완료
-    // =========================
     const handleComplete = async (e) => {
         e.preventDefault();
         if (!counselingId) return alert("ID가 없습니다.");
@@ -152,7 +131,6 @@ const CFinal = () => {
             <h2 className="student-info-title">{studentName}의 진로 상담 최종 리포트</h2>
 
             <div className="report-top-grid">
-                {/* 영상별 집중도 */}
                 <section className="report-card">
                     <h3>❶ 영상별 집중도 비교</h3>
                     <p className="sub-text">영상 3개 평균 집중도</p>
@@ -179,7 +157,6 @@ const CFinal = () => {
                     )}
                 </section>
 
-                {/* 관심도 그래프 */}
                 <section className="report-card">
                     <h3>❷ 분야별 관심 비교 그래프</h3>
                     <p className="sub-text">관심도, 자신감, 실제 수행도 비교</p>
@@ -202,7 +179,6 @@ const CFinal = () => {
                     )}
                 </section>
 
-                {/* 분석 실패 알림 */}
                 <section className="report-card">
                     <h3>❸ 분석 대기/실패 알림</h3>
                     <p className="sub-text">AI 분석 실패 항목을 클릭하여 재요청하세요.</p>
@@ -251,7 +227,8 @@ const CFinal = () => {
 
             <div className="analysis-button-group">
 
-                <div
+                <Link
+                    to="/counselor/report/counseling"
                     state={{ counselingId, studentName }}
                 >
                     <button className="btn-analysis" onClick={handleCounselingLog}>
@@ -259,9 +236,10 @@ const CFinal = () => {
                     </button>
                 </div>
 
+                {/* 수정된 부분 */}
                 <Link
-                    to="/counselor/report/video"
-                    state={{ counselingId, studentName }}
+                    to={`/counselor/report/video/${clientId}/${counselingId}`}
+                    state={{ studentName }}
                     className="btn-link"
                 >
                     <button className="btn-analysis">
@@ -269,18 +247,19 @@ const CFinal = () => {
                     </button>
                 </Link>
 
+                {/* 수정된 부분 */}
                 <Link
-                    to="/counselor/report/voice"
-                    state={{ counselingId, studentName }}
+                    to={`/counselor/report/voice/${clientId}/${counselingId}`}
+                    state={{ studentName }}
                     className="btn-link"
                 >
                     <button className="btn-analysis">
                         상담 대화 요약
                     </button>
                 </Link>
+
             </div>
 
-            {/* 모달 등 생략된 UI 구성 요소 */}
             <dialog ref={modalRef} className="modal">
                 {activeAlert && (
                     <div>

@@ -2,6 +2,7 @@
 # uvicorn main:app --reload 실행코드
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 
 # DB 설정 및 모델, 스키마 가져오기
@@ -45,6 +46,16 @@ app.add_middleware(
     session_cookie="session",
     same_site="lax",   # 로컬 개발 환경(Lax) 설정
     https_only=False   # HTTP 환경이므로 False 설정
+)
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+VIDEO_PATH = os.path.join(BASE_DIR, "..", "videos")
+
+app.mount(
+    "/videos",
+    StaticFiles(directory=VIDEO_PATH),
+    name="videos"
 )
 
 app.include_router(client.router)
