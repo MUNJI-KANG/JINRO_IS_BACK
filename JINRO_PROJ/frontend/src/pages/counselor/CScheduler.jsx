@@ -133,10 +133,8 @@ function CScheduler() {
 
   const timeSlots = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
 
-  const goToFinalReport = (counselingId) => {
-    navigate("/counselor/report/final/:clientId/:counselingId", {
-      state: { counselingId: counselingId } // 전달할 데이터
-    });
+  const goToFinalReport = (clientId, counselingId) => {
+    navigate(`/counselor/report/final/${clientId}/${counselingId}`);
   };
 
   return (
@@ -175,7 +173,7 @@ function CScheduler() {
         ) : (
           <div className="schedule-list">
             {dailySchedules.map((schedule) => (
-              <div key={schedule.id} className="schedule-card" onClick={() => goToFinalReport(schedule.id)} style={{ cursor: "pointer" }}>
+              <div key={schedule.id} className="schedule-card" onClick={() => goToFinalReport(schedule.client_id, schedule.id)} style={{ cursor: "pointer" }}>
                 <div className="schedule-left">
                   <div className="schedule-time">
                     <span className="time-icon">🕒</span> {/* 아이콘 */}

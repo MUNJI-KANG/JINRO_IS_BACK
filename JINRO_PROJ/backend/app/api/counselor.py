@@ -372,10 +372,13 @@ def get_daily_schedules(
             time_str   = counseling.reservation_time.strftime("%H:%M") if counseling.reservation_time else "미정"
             status_str = "완료" if counseling.complete_yn == 3 else "예정"
             schedules.append({
-                "id": counseling.counseling_id, "time": time_str,
-                "name": client.name, "type": "진로 상담", "status": status_str
+                "id": counseling.counseling_id,
+                "client_id": client.client_id,
+                "name": client.name,
+                "time": time_str,
+                "type": "진로 상담",
+                "status": status_str
             })
-
         return {"success": True, "date": date, "schedules": schedules}
 
     except Exception as e:
