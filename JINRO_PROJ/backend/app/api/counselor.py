@@ -16,7 +16,7 @@ from app.models.schema_models import (
 )
 
 from datetime import datetime
-import os, shutil, uuid
+import os, shutil, uuid, glob
 
 router = APIRouter(prefix="/counselor", tags=["Counselor (상담사)"])
 
@@ -345,34 +345,6 @@ def get_ai_report(counseling_id: int, ai_v_erp_id: int, db: Session = Depends(ge
     }
 
 
-@router.get("/report/ai/{counseling_id}/{con_rep_id}")
-def get_counseling_ai_report(counseling_id: int, con_rep_id: int, db: Session = Depends(get_db)):
-    con_report = db.query(ReportCon).filter(
-        ReportCon.counseling_id == counseling_id,
-        ReportCon.con_rep_id    == con_rep_id
-    ).first()
-    if not con_report:
-        raise HTTPException(status_code=404, detail="상담 리포트 없음")
-
-    ai_report = db.query(ReportAiM).filter(ReportAiM.con_rep_id == con_rep_id).first()
-    if not ai_report:
-        raise HTTPException(status_code=404, detail="AI 분석 데이터 없음")
-
-    scores        = ai_report.emotion_m_score or []
-    focus_data    = [{"time": str(i), "value": s.get("value", 0)} for i, s in enumerate(scores)]
-    interest_data = [{"subject": s.get("subject", "기타"), "관심도": s.get("interest", 0),
-                      "자신감": s.get("confidence", 0)} for s in scores]
-
-    return {
-        "success": True,
-        "data": {
-            "focus":    focus_data,
-            "interest": interest_data,
-            "summary":  ai_report.ai_m_comment,
-            "prompt":   ai_report.prompt
-        }
-    }
-
 
 # ===============================
 # 🔹 일정 관련 API
@@ -538,15 +510,7 @@ def get_student_consultations(client_id: int, db: Session = Depends(get_db)):
 # ===============================
 # 🔹 상담사 정보 조회 / 수정
 # ===============================
-@router.get("/{counselor_id}")
-def get_counselor(counselor_id: int, db: Session = Depends(get_db)):
-    counselor = db.query(Counselor).filter(Counselor.counselor_id == counselor_id).first()
-    if not counselor:
-        return {"success": False, "message": "상담사 없음"}
-    return {
-        "success": True,
-        "data": {"name": counselor.name, "phone": counselor.phone_num, "email": counselor.email}
-    }
+
 
 
 @router.put("/{counselor_id}")
@@ -559,3 +523,153 @@ def update_counselor(counselor_id: int, request: CounselorModifyInfo, db: Sessio
     counselor_obj.email     = request.email
     db.commit()
     return {"success": True}
+
+@router.get("/report/ai/dates/{counseling_id}")
+def get_ai_video_dates(counseling_id: int, db: Session = Depends(get_db)):
+
+    videos = db.query(ReportAiV).filter(
+        ReportAiV.counseling_id == counseling_id
+    ).all()
+
+    result = []
+
+    for v in videos:
+        result.append({
+            "ai_v_erp_id": v.ai_v_erp_id,
+            "date": v.reg_date.strftime("%Y-%m-%d")
+        })
+
+    return {
+        "success": True,
+        "data": result
+    }
+
+
+import glob
+
+@router.get("/report/ai/video/{ai_v_erp_id}")
+def get_ai_video_report(ai_v_erp_id: int, db: Session = Depends(get_db)):
+
+    video = db.query(ReportAiV).filter(
+        ReportAiV.ai_v_erp_id == ai_v_erp_id
+    ).first()
+
+    if not video:
+        raise HTTPException(status_code=404, detail="영상 없음")
+
+    counseling = db.query(Counseling).filter(
+        Counseling.counseling_id == video.counseling_id
+    ).first()
+
+    client = db.query(Client).filter(
+        Client.client_id == counseling.client_id
+    ).first()
+
+    
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    VIDEO_DIR = os.path.join(BASE_DIR, "..", "..", "videos")
+
+    pattern = os.path.join(VIDEO_DIR, f"{client.c_id}_*.webm")
+
+    files = sorted(glob.glob(pattern))
+
+    video_url = ""
+
+    if files:
+        filename = os.path.basename(files[0])
+        video_url = f"http://localhost:8000/videos/{filename}"
+
+    analyze = db.query(AiVideoAnalyze).filter(
+        AiVideoAnalyze.ai_v_erp_id == ai_v_erp_id
+    ).first()
+
+    answer_data = video.answer or {}
+
+    return {
+        "success": True,
+        "data": {
+            "focus": answer_data.get("focus", []),
+            "interest": answer_data.get("interest", []),
+            "summary": analyze.ai_v_comment if analyze else "",
+            "prompt": analyze.prompt if analyze else "",
+            "url": video_url
+        }
+    }
+
+
+@router.get("/report/ai/{counseling_id}/{con_rep_id}")
+def get_counseling_ai_report(counseling_id: int, con_rep_id: int, db: Session = Depends(get_db)):
+    con_report = db.query(ReportCon).filter(
+        ReportCon.counseling_id == counseling_id,
+        ReportCon.con_rep_id    == con_rep_id
+    ).first()
+    if not con_report:
+        raise HTTPException(status_code=404, detail="상담 리포트 없음")
+
+    ai_report = db.query(ReportAiM).filter(ReportAiM.con_rep_id == con_rep_id).first()
+    if not ai_report:
+        raise HTTPException(status_code=404, detail="AI 분석 데이터 없음")
+
+    scores        = ai_report.emotion_m_score or []
+    focus_data    = [{"time": str(i), "value": s.get("value", 0)} for i, s in enumerate(scores)]
+    interest_data = [{"subject": s.get("subject", "기타"), "관심도": s.get("interest", 0),
+                      "자신감": s.get("confidence", 0)} for s in scores]
+
+    return {
+        "success": True,
+        "data": {
+            "focus":    focus_data,
+            "interest": interest_data,
+            "summary":  ai_report.ai_m_comment,
+            "prompt":   ai_report.prompt
+        }
+    }
+
+@router.get("/videos/{counseling_id}")
+def get_video_files(counseling_id: int, db: Session = Depends(get_db)):
+
+    counseling = db.query(Counseling).filter(
+        Counseling.counseling_id == counseling_id
+    ).first()
+
+    if not counseling:
+        raise HTTPException(status_code=404, detail="상담 없음")
+
+    client = db.query(Client).filter(
+        Client.client_id == counseling.client_id
+    ).first()
+
+    if not client:
+        raise HTTPException(status_code=404, detail="학생 없음")
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    VIDEO_DIR = os.path.join(BASE_DIR, "..", "..", "videos")
+
+    pattern = os.path.join(VIDEO_DIR, f"{client.c_id}_*.webm")
+
+    files = sorted(glob.glob(pattern))
+
+    result = []
+
+    for i, file in enumerate(files):
+
+        filename = os.path.basename(file)
+
+        result.append({
+            "id": i + 1,
+            "name": filename,
+            "url": f"/videos/{filename}"
+        })
+
+    return result
+
+
+@router.get("/{counselor_id}")
+def get_counselor(counselor_id: int, db: Session = Depends(get_db)):
+    counselor = db.query(Counselor).filter(Counselor.counselor_id == counselor_id).first()
+    if not counselor:
+        return {"success": False, "message": "상담사 없음"}
+    return {
+        "success": True,
+        "data": {"name": counselor.name, "phone": counselor.phone_num, "email": counselor.email}
+    }

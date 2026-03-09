@@ -57,10 +57,10 @@ function App() {
           <Route path="counselor/category/list" element={<CCatList />} />
           <Route path="counselor/category/write" element={<CCatWrite />} />
 
-          <Route path="counselor/report/counseling" element={<CCounseling />} />
-          <Route path="counselor/report/video" element={<CCounselingAI />} />
-          <Route path="counselor/report/final" element={<CFinal />} />
-          <Route path="counselor/report/voice" element={<CReportVoice />} />
+          <Route path="counselor/report/counseling/:clientId/:counselingId" element={<CCounseling />} />
+          <Route path="counselor/report/video/:clientId/:counselingId" element={<CCounselingAI />} />
+          <Route path="/counselor/report/final/:clientId/:counselingId" element={<CFinal />} />
+          <Route path="counselor/report/voice/:clientId/:counselingId" element={<CReportVoice />} />
         </Route>
 
         {/* <Route index element={<Home />} /> */}

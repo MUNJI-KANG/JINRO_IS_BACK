@@ -123,9 +123,8 @@ export default function CStudentList() {
     closeModal();
 
     // navigate("/counselor/report/final");
-    navigate("/counselor/report/final", {
+    navigate(`/counselor/report/final/${modal.studentId}/${consultation.id}`, {
       state: {
-        counselingId: consultation.id,
         studentName: currentStudent.name
       }
     });

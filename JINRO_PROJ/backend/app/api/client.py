@@ -406,12 +406,37 @@ UPLOAD_DIR = "videos"   # 지금은 로컬 프로젝트 폴더에 저장
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/video/upload")
-async def upload_video(file: UploadFile = File(...)):
+async def upload_video(
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
 
     try:
-        # 🔥 나중에 파일 경로 바꾸려면 여기 수정
-        # 예: file_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}.webm")
-        filename = f"{uuid.uuid4()}.webm"
+
+        client_id = request.session.get("client_id")
+        if not client_id:
+            raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+
+        client = db.query(Client).filter(Client.client_id == client_id).first()
+
+        c_id = client.c_id
+
+        files = os.listdir(UPLOAD_DIR)
+
+        numbers = []
+
+        for f in files:
+            if f.startswith(f"{c_id}_") and f.endswith(".webm"):
+                try:
+                    num = int(f.split("_")[1].replace(".webm",""))
+                    numbers.append(num)
+                except:
+                    pass
+
+        next_number = max(numbers, default=0) + 1
+
+        filename = f"{c_id}_{next_number}.webm"
 
         file_path = os.path.join(UPLOAD_DIR, filename)
 
@@ -421,13 +446,14 @@ async def upload_video(file: UploadFile = File(...)):
         return {
             "success": True,
             "message": "영상 저장 성공",
-            "path": file_path
+            "url": f"http://localhost:8000/videos/{filename}"
         }
 
     except Exception as e:
         print("영상 저장 오류:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
-
+    
+    
 @router.get('/sesstion/clear')
 async def session_clear(request: Request):
     request.session.clear()
