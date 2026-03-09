@@ -126,13 +126,30 @@ def update_category(c_id: int, request: CategoryCreateRequest, db: Session = Dep
 # ===============================
 # 🔹 영상 리스트 / 영상 URL
 # ===============================
-@router.get("/video/list/{counseling_id}")  
-def get_video_list(counseling_id: int, db: Session = Depends(get_db)):
-    videos = db.query(ReportAiV).filter(ReportAiV.counseling_id == counseling_id).all()
-    return {
-        "success": True,
-        "data": [{"id": v.ai_v_erp_id, "category": v.category, "date": v.reg_date.strftime("%Y-%m-%d")} for v in videos]
-    }
+@router.get("/recording/dates/{client_id}")  
+def get_video_list(client_id: int, db: Session = Depends(get_db)):
+    try:
+        counseling_by_client = db.query(Counseling).filter(
+            Counseling.client_id == client_id,
+            Counseling.datetime != None,
+            ).order_by(Counseling.datetime.desc()).all()
+        
+        data = []
+        if (len(counseling_by_client) > 0):
+            for d in counseling_by_client:
+                data.append({
+                    "counseling_id": d.client_id,
+                    "datetime": d.datetime,
+                    "complete_yn": d.complete_yn,
+                    "regdate": d.regdate.strftime("%Y-%m-%d"),
+                })
+        
+        return {
+            "success": True,
+            "data": data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"날짜 불러오기 오류: {str(e)}")
 
 
 @router.get("/video/{ai_v_erp_id}")
