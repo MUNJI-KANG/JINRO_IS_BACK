@@ -21,7 +21,9 @@ function SVideo() {
   const recordedChunks = useRef([]);
 
   const frontStartTimeRef = useRef(null);
-  const frontFrameCountRef = useRef(0);
+  const frontFrameCountRef = useRef(0); // 프레임 누적 필요
+  const lostFaceCountRef = useRef(0); // 프레임 누적 필요
+  const nonFrontCountRef = useRef(0);
 
   const [currentVideo, setCurrentVideo] = useState(null);
   const [webcamReady, setWebcamReady] = useState(false);
@@ -80,7 +82,7 @@ function SVideo() {
   // ⭐ FaceMesh 정면 인식 (추가)
   useEffect(() => {
 
-    if (!webcamReady || !webcamRef.current) return;
+    if (!webcamReady || !webcamRef.current || started) return;
 
     const faceMesh = new FaceMesh({
       locateFile: (file) =>
@@ -91,7 +93,7 @@ function SVideo() {
       maxNumFaces: 1,
       refineLandmarks: true,
       minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5,
+      minTrackingConfidence: 0.7,
     });
 
     faceMesh.onResults((results) => {
@@ -99,15 +101,22 @@ function SVideo() {
       if (!results.multiFaceLandmarks) {
 
         setFaceDetected(false);
-        setIsFacingFront(false);
-        setFrontTime(0);
-        setReadyToStart(false);
 
-        frontStartTimeRef.current = null;
-        frontFrameCountRef.current = 0;
+        // 얼굴 잠깐 놓친 경우 바로 초기화하지 않음
+        lostFaceCountRef.current++;
+
+        if (lostFaceCountRef.current > 10) { // 10 frame ≈ 약 0.3~0.4초
+          setIsFacingFront(false);
+          setFrontTime(0);
+          frontStartTimeRef.current = null;
+          frontFrameCountRef.current = 0;
+          lostFaceCountRef.current = 0;   // ⭐ 추가
+        }
 
         return;
       }
+
+      lostFaceCountRef.current = 0;
 
       const landmarks = results.multiFaceLandmarks[0];
 
@@ -123,32 +132,66 @@ function SVideo() {
 
       const noseOffset = (nose.x - left.x) / faceWidth;
 
-      const front = noseOffset > 0.32 && noseOffset < 0.68;
+      // 좌우 판정
+      const yawFront = noseOffset > 0.15 && noseOffset < 0.85;
+
+      // 상하 판정
+      const noseY = nose.y;
+      const pitchFront = noseY > 0.35 && noseY < 0.65;
+
+      // 최종 정면 판정
+      const front = yawFront && pitchFront;
 
       setIsFacingFront(front);
 
       if (front) {
 
-        if (!frontStartTimeRef.current) {
-          frontStartTimeRef.current = Date.now();
-        }
+        nonFrontCountRef.current = 0;
+        frontFrameCountRef.current++;
 
-        const duration = (Date.now() - frontStartTimeRef.current) / 1000;
+        if (frontFrameCountRef.current >= 3) {
 
-        setFrontTime(duration);
+          if (!frontStartTimeRef.current) {
+            frontStartTimeRef.current = Date.now();
+          }
 
-        if (duration >= 3) {
-          setReadyToStart(true);
+          const duration = (Date.now() - frontStartTimeRef.current) / 1000;
+
+          setFrontTime(duration);
+
+          // ⭐ stuck 방지 코드
+          if (duration > 8) {
+            frontStartTimeRef.current = null;
+            setFrontTime(0);
+            return;
+          }
+
+          if (duration >= 3 && !started && !readyToStart) {
+            setReadyToStart(true);
+
+            setTimeout(() => {
+              handleStart();
+            }, 500);
+          }
+
         }
 
       } else {
 
-        frontStartTimeRef.current = null;
-        setFrontTime(0);
-        setReadyToStart(false);
+          frontFrameCountRef.current = 0;
 
-      }
+          // front가 아닌 상태가 계속 유지되면 강제 초기화
+          nonFrontCountRef.current++;
 
+          if (nonFrontCountRef.current > 20) {
+
+            frontStartTimeRef.current = null;
+            setFrontTime(0);
+
+            nonFrontCountRef.current = 0;
+          }
+
+        }
     });
 
     const videoElement = webcamRef.current;
@@ -168,7 +211,7 @@ function SVideo() {
       faceMesh.close();
     };
 
-  }, [webcamReady]);
+  }, [webcamReady, started]);
 
   // 두 번째 영상 자동 시작
   useEffect(() => {
@@ -487,13 +530,13 @@ function SVideo() {
             </div>
           )}
 
-          <button
+          {/* <button
             className="start-btn"
             disabled={!webcamReady || webcamError || !readyToStart}
             onClick={handleStart}
           >
             시작하기
-          </button>
+          </button> */}
 
         </div>
 
