@@ -559,3 +559,19 @@ def update_counselor(counselor_id: int, request: CounselorModifyInfo, db: Sessio
     counselor_obj.email     = request.email
     db.commit()
     return {"success": True}
+
+# ===============================
+# 🔹 상담 예약 date정보 가져오기
+# ===============================
+@router.get("/counseling/date/{counseling_id}")
+def counseling_date(counseling_id: int, db: Session = Depends(get_db)):
+    counseling = db.query(Counseling).filter(Counseling.counseling_id == counseling_id).first()
+    if not counseling:
+        return {
+            "success": False,
+            "date": None
+        }
+    return {
+        "success": True,
+        "date":  counseling.reservation_time.strftime("%Y-%m-%d")
+    }

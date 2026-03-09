@@ -11,16 +11,17 @@ import {
 
 import '../../../css/common_css/base.css'
 import '../../../css/counselor_css/cFinal.css'
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import api from '../../../services/app'
 
 const CFinal = () => {
     const modalRef = useRef();
     const location = useLocation();
+    const navigate = useNavigate();
 
     const counselingId = location.state?.counselingId
     const studentName = location.state?.studentName || "학생";
-    
+
     console.log("넘어온 상담 ID:", counselingId);
 
 
@@ -122,6 +123,29 @@ const CFinal = () => {
         modalRef.current.close();
         setActiveAlert(null);
     };
+
+    const handleCounselingLog = async (e) => {
+        e.preventDefault();
+        if (!counselingId) return alert("ID가 없습니다.");
+
+        const res = await api.get(`/counselor/counseling/date/${counselingId}`);
+
+        const data = res.data;
+
+        if (data.success) {
+            let nowDate = new Date();
+            const reserveDate = new Date(data.date);
+
+            if (reserveDate <= nowDate) {
+                navigate('/counselor/report/counseling');
+            } else {
+                alert("상담 예약 날짜가 아닙니다.");
+            }
+
+        } else {
+            alert("api 요청 오류");
+        }
+    }
 
     return (
         <>
@@ -227,14 +251,13 @@ const CFinal = () => {
 
             <div className="analysis-button-group">
 
-                <Link
-                    to="/counselor/report/counseling"
+                <div
                     state={{ counselingId, studentName }}
                 >
-                    <button className="btn-analysis">
+                    <button className="btn-analysis" onClick={handleCounselingLog}>
                         상담일지 작성
                     </button>
-                </Link>
+                </div>
 
                 <Link
                     to="/counselor/report/video"
