@@ -1,6 +1,8 @@
 from fastapi import Request, APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from app.db.database import SessionLocal
+from fastapi.responses import StreamingResponse
+from starlette.background import BackgroundTask
 
 from app.schemas.counselor import (
     CounselorLoginRequest, CategoryCreateRequest,
@@ -18,6 +20,7 @@ from app.models.schema_models import (
 
 from datetime import datetime
 import requests, threading , tempfile, os
+import httpx
 
 router = APIRouter(prefix="/counselor", tags=["Counselor (상담사)"])
 
@@ -136,10 +139,11 @@ def get_video_list(client_id: int, db: Session = Depends(get_db)):
         if (len(counseling_by_client) > 0):
             for d in counseling_by_client:
                 data.append({
-                    "counseling_id": d.client_id,
+                    "counseling_id": d.counseling_id,
                     "datetime": d.datetime,
                     "complete_yn": d.complete_yn,
                     "regdate": d.regdate.strftime("%Y-%m-%d"),
+                    "client_id": d.client_id
                 })
         
         return {
@@ -150,26 +154,36 @@ def get_video_list(client_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"날짜 불러오기 오류: {str(e)}")
 
 @router.post("/recording/analyze")
-def set_recording_analyze(record_analyze: RecordingAnalyze,  db: Session = Depends(get_db)):
+async def set_recording_analyze(record_analyze: RecordingAnalyze,  db: Session = Depends(get_db)):
     
     try:
         report_con = db.query(ReportCon).filter(ReportCon.counseling_id == record_analyze.counseling_id).first()
-        report_ai_m = db.query(ReportAiM).filter(ReportAiM.con_rep_id == report_con.con_rep_id)
+        report_ai_m = db.query(ReportAiM).filter(ReportAiM.con_rep_id == report_con.con_rep_id).first()
 
-        if report_ai_m:
-            ...
-        else:
-            now = datetime.now()
-            # db.add(ReportAiM(
-            #     ai_m_comment='', 
-            #     emotion_m_score={}, 
-            #     reg_date=now, 
-            #     prompt=record_analyze.prompt, 
-            #     con_rep_id=report_con.con_rep_id
-            #     ))
+        data = {}
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                'http://localhost:8001/ai/api/summarize',
+                json={
+                    "text": report_ai_m.stt_text,
+                    record_analyze.prompt and "system_prompt": record_analyze.prompt,
+                    },
+                timeout=120.0,  # 120초 대기 (필요에 따라 조절)
+                )
+            data = response.json()
+
+            print(data)
+        
+        if data["success"]:
+            report_ai_m.prompt = record_analyze.prompt
+            report_ai_m.ai_m_comment = data["summary"]
+
+        db.commit()
+
+        return {"success": True, "data": report_ai_m}       
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"대화 분석 오류: {str(e)}")
-    return {}
 
 
 @router.get("/video/{ai_v_erp_id}")
@@ -415,32 +429,55 @@ def complete_final_report(data: FinalReportSave, db: Session = Depends(get_db)):
     return {"success": True, "message": "최종 리포트 작성 완료"}
 
 
+@router.get("/ai_report/voice/file/{counseling_id}")
+async def get_ai_report_voice_file(counseling_id: int, request: Request):
+    try:
+        # 1. 브라우저가 보낸 헤더에서 'Range' 추출 (탐색 바를 움직일 때 필요)
+        req_headers = {}
+        if "range" in request.headers:
+            req_headers["range"] = request.headers["range"]
+
+        client = httpx.AsyncClient()
+        
+        # 2. Server A로 Range 헤더를 포함하여 요청
+        req = client.build_request(
+            "GET", 
+            f"http://localhost:8001/ai/audio/load/{counseling_id}", 
+            headers=req_headers,
+            )
+        r = await client.send(req, stream=True)
+        
+        # 3. Server A의 응답 헤더 중 필요한 것만 추려서 브라우저로 전달
+        # (Content-Type, Content-Length, Content-Range, Accept-Ranges 등)
+        resp_headers = {
+            k: v for k, v in r.headers.items()
+            if k.lower() not in ("content-encoding", "transfer-encoding", "connection")
+        }
+
+        # 4. 상태 코드(200 또는 206)와 함께 스트리밍 응답 반환
+        return StreamingResponse(
+            r.aiter_raw(),
+            status_code=r.status_code,
+            headers=resp_headers,
+            background=BackgroundTask(r.aclose)
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"상담내용 음성파일오류: {str(e)}")
+
 # ===============================
 # 🔹 AI 리포트 조회
 # ===============================
-@router.get("/ai-report/{counseling_id}/{ai_v_erp_id}")
-def get_ai_report(counseling_id: int, ai_v_erp_id: int, db: Session = Depends(get_db)):
-    video = db.query(ReportAiV).filter(
-        ReportAiV.counseling_id == counseling_id,
-        ReportAiV.ai_v_erp_id  == ai_v_erp_id
-    ).first()
-    if not video:
-        raise HTTPException(status_code=404, detail="영상 데이터 없음")
+@router.get("/ai-report/{counseling_id}")
+def get_ai_report(counseling_id: int, db: Session = Depends(get_db)):
+    try:
+        report_con = db.query(ReportCon).filter(ReportCon.counseling_id == counseling_id).first()
+        report_ai_m = db.query(ReportAiM).filter(ReportAiM.con_rep_id == report_con.con_rep_id).first()
 
-    analyze = db.query(AiVideoAnalyze).filter(AiVideoAnalyze.ai_v_erp_id == ai_v_erp_id).first()
-    if not analyze:
-        raise HTTPException(status_code=404, detail="AI 분석 데이터 없음")
+        return { "success": True, "data": report_ai_m }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"상담내용 조회 오류: {str(e)}")
 
-    answer_data = video.answer or {}
-    return {
-        "success": True,
-        "data": {
-            "focus":    answer_data.get("focus", []),
-            "interest": answer_data.get("interest", []),
-            "summary":  analyze.ai_v_comment,
-            "prompt":   analyze.prompt
-        }
-    }
+
 
 
 

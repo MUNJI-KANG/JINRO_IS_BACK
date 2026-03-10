@@ -11,3 +11,4 @@ deepface==0.0.93
 tf_keras==2.16.0
 
 openai-whisper
+ollama

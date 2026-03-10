@@ -1,13 +1,17 @@
 
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi.responses import FileResponse
 from app.services.attention_analysis import analyze_attention
 from app.services.emotion_analysis import analyze_emotion
-from app.schemas.ai import VideoAnalyze
+from app.schemas.ai import (
+    VideoAnalyze, SummaryRequest
+    )
 from app.services.stt_service import speech_to_text
 from datetime import datetime
 import shutil
 import os
 import requests
+import ollama
 
 BACKEND_URL = "http://localhost:8000"
 
@@ -115,3 +119,39 @@ async def upload_audio(counseling_id: int, file: UploadFile = File(...)):
         "success": True,
         "stt_text": stt_text
     }
+
+# ---------------------------------------------------------
+# 3. 텍스트 요약 전용 API 엔드포인트
+# ---------------------------------------------------------
+@router.post("/api/summarize", summary="긴 글 구조화 요약")
+async def summarize_text(summaryRequest: SummaryRequest):
+    try:
+        client = ollama.AsyncClient()
+        response = await client.chat(
+            model=summaryRequest.model,
+            messages=[
+                {'role': 'system', 'content': summaryRequest.system_prompt}, # 시스템 역할(규칙) 부여
+                {'role': 'user', 'content': summaryRequest.text}     # 사용자가 보낸 텍스트
+            ]
+        )
+
+        print(response)
+        
+        return {
+            "success": True,
+            "model": summaryRequest.model,
+            "summary": response.message['content']
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.get("/audio/load/{counseling_id}", summary="음성파일 가져오기")
+async def audio_load(counseling_id: int):
+    counseling_dir = os.path.join(UPLOAD_DIR, str(counseling_id), f"counseling_{counseling_id}.webm")
+    
+    if not os.path.exists(counseling_dir):
+        raise HTTPException(status_code=404, detail="File not found")
+        
+    # media_type은 파일 확장자에 맞게 설정 (mp3: audio/mpeg, wav: audio/wav)
+    return FileResponse(path=counseling_dir, media_type="audio/mpeg")

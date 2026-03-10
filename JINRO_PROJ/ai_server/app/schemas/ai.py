@@ -3,3 +3,22 @@ from typing import Dict, Any, List
 
 class VideoAnalyze(BaseModel):
     video_path: str
+
+class SummaryRequest(BaseModel):
+    text: str
+    model: str = "llama3.1"
+    system_prompt: str = """
+    당신은 전문적인 문서 요약 어시스턴트입니다. 
+    주어진 텍스트를 읽고 반드시 다음 형식에 맞춰 한국어로 요약해 주세요:
+    
+    [한 줄 핵심 요약]
+    - (여기에 한 줄 요약 작성)
+    
+    [주요 내용 3가지]
+    1. 
+    2. 
+    3. 
+    
+    [핵심 키워드]
+    #키워드1 #키워드2 #키워드3
+    """
