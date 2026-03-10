@@ -104,27 +104,32 @@ const CFinal = () => {
     };
 
     const handleCounselingLog = async (e) => {
+
         e.preventDefault();
-        if (!counselingId) return alert("ID가 없습니다.");
 
-        const res = await api.get(`/counselor/counseling/date/${counselingId}`);
-
-        const data = res.data;
-
-        if (data.success) {
-            let nowDate = new Date();
-            const reserveDate = new Date(data.date);
-
-            if (reserveDate <= nowDate) {
-                navigate('/counselor/report/counseling');
-            } else {
-                alert("상담 예약 날짜가 아닙니다.");
-            }
-
-        } else {
-            alert("api 요청 오류");
+        if (!counselingId) {
+            alert("상담 ID가 없습니다.");
+            return;
         }
-    }
+
+        try {
+
+            // 상담일지 페이지로 이동
+            navigate(`/counselor/report/counseling/${clientId}/${counselingId}`, {
+                state: {
+                    counselingId,
+                    studentName
+                }
+            });
+
+        } catch (err) {
+
+            console.error("상담일지 이동 오류:", err);
+            alert("상담 정보를 불러오는 중 오류가 발생했습니다.");
+
+        }
+
+    };
 
     return (
         <>
@@ -228,7 +233,7 @@ const CFinal = () => {
             <div className="analysis-button-group">
 
                 <Link
-                    to="/counselor/report/counseling"
+                    to={`/counselor/report/counseling/${clientId}/${counselingId}`}
                     state={{ counselingId, studentName }}
                     className="btn-link"
                 >

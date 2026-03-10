@@ -314,7 +314,7 @@ function SVideo() {
       if (e.data.size > 0) recordedChunks.current.push(e.data);
     };
 
-    mediaRecorder.start();
+    mediaRecorder.start(1000);
 
   };
 

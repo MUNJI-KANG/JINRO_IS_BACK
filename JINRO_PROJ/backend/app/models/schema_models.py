@@ -69,11 +69,10 @@ class ReportAiM(Base):
     __tablename__ = 'REPORT_AI_M'
     
     ai_m_rep_id = Column(Integer, primary_key=True, autoincrement=True, comment='PK')
-    ai_m_comment = Column(Text, nullable=False, comment='행동 요약')
-    emotion_m_score = Column(JSON, nullable=False, comment='감정 점수')
+    ai_m_comment = Column(Text, nullable=False, comment='AI 요약')
+    stt_text = Column(Text, nullable=False, comment='STT 원문')
     reg_date = Column(DateTime, default=func.now(), nullable=False, comment='리포트 생성 날짜')
-    prompt = Column(String(300), comment='프롬프트')
-    # 수정: con_rep_id (소문자)
+    prompt = Column(Text, comment='요약 프롬프트')
     con_rep_id = Column(Integer, ForeignKey('REPOR_CON.con_rep_id'), nullable=False)
 
 class ReportAiV(Base):

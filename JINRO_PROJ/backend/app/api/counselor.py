@@ -16,12 +16,9 @@ from app.models.schema_models import (
 )
 
 from datetime import datetime
-import os, shutil, uuid, glob
+import requests, threading , tempfile, os
 
 router = APIRouter(prefix="/counselor", tags=["Counselor (상담사)"])
-
-AUDIO_UPLOAD_DIR = "audio_records"
-os.makedirs(AUDIO_UPLOAD_DIR, exist_ok=True)
 
 
 def get_db():
@@ -248,29 +245,90 @@ def update_report_con(counseling_id: int, data: ReportConUpdateRequest, db: Sess
         }
     }
 
+# ===============================
+# 🔹 AI 서버 비동기 전송
+# ===============================
+def send_audio_to_ai(counseling_id, files):
+
+    try:
+
+        res = requests.post(
+            f"http://localhost:8001/ai/audio/upload/{counseling_id}",
+            files=files,
+            timeout=120
+        )
+
+        if res.status_code != 200:
+            print("AI 서버 처리 실패:", res.text)
+
+    except Exception as e:
+        print("AI 서버 요청 실패:", str(e))
+        
 
 # ===============================
 # 🔹 녹음 파일 업로드
 # ===============================
 @router.post("/report/con/{counseling_id}/audio")
 async def upload_audio(counseling_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+
     try:
+
         report = db.query(ReportCon).filter(
             ReportCon.counseling_id == counseling_id
         ).first()
+
         if not report:
             raise HTTPException(status_code=404, detail="상담 일지를 찾을 수 없습니다.")
 
-        filename  = f"counseling_{counseling_id}_{uuid.uuid4()}.webm"
-        file_path = os.path.join(AUDIO_UPLOAD_DIR, filename)
+        # =========================
+        # 파일 임시 저장
+        # =========================
+        temp_path = os.path.join("temp_audio", file.filename)
 
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        os.makedirs("temp_audio", exist_ok=True)
 
-        return {"success": True, "message": "녹음 파일 저장 성공", "path": file_path}
+        with open(temp_path, "wb") as buffer:
+            buffer.write(await file.read())
+
+        # =========================
+        # AI 서버 전송용 함수
+        # =========================
+        def send_audio():
+
+            try:
+
+                with open(temp_path, "rb") as f:
+
+                    files = {
+                        "file": (file.filename, f, file.content_type)
+                    }
+
+                    res = requests.post(
+                        f"http://localhost:8001/ai/audio/upload/{counseling_id}",
+                        files=files,
+                        timeout=120
+                    )
+
+                    if res.status_code != 200:
+                        print("AI 서버 처리 실패:", res.text)
+
+            except Exception as e:
+                print("AI 서버 요청 실패:", str(e))
+
+        # =========================
+        # 비동기 실행
+        # =========================
+        threading.Thread(target=send_audio).start()
+
+        return {
+            "success": True,
+            "message": "AI 분석 요청 완료"
+        }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"녹음 파일 저장 오류: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ===============================
@@ -544,166 +602,44 @@ def update_counselor(counselor_id: int, request: CounselorModifyInfo, db: Sessio
     db.commit()
     return {"success": True}
 
-@router.get("/report/ai/dates/{counseling_id}")
-def get_ai_video_dates(counseling_id: int, db: Session = Depends(get_db)):
-
-    videos = db.query(ReportAiV).filter(
-        ReportAiV.counseling_id == counseling_id
-    ).all()
-
-    result = []
-
-    for v in videos:
-        result.append({
-            "ai_v_erp_id": v.ai_v_erp_id,
-            "date": v.reg_date.strftime("%Y-%m-%d")
-        })
-
-    return {
-        "success": True,
-        "data": result
-    }
-
-
-import glob
-
-@router.get("/report/ai/video/{ai_v_erp_id}")
-def get_ai_video_report(ai_v_erp_id: int, db: Session = Depends(get_db)):
-
-    video = db.query(ReportAiV).filter(
-        ReportAiV.ai_v_erp_id == ai_v_erp_id
-    ).first()
-
-    if not video:
-        raise HTTPException(status_code=404, detail="영상 없음")
-
-    counseling = db.query(Counseling).filter(
-        Counseling.counseling_id == video.counseling_id
-    ).first()
-
-    client = db.query(Client).filter(
-        Client.client_id == counseling.client_id
-    ).first()
-
-    counseling_id = counseling.counseling_id
-
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-    VIDEO_DIR = os.path.join(BASE_DIR, "..", "..", "..", "ai_server", "videos")
-
-    pattern = os.path.join(VIDEO_DIR, str(counseling_id), "*.webm")
-
-    files = sorted(glob.glob(pattern))
-
-    video_url = ""
-
-    if files:
-        filename = os.path.basename(files[0])
-        video_url = f"http://localhost:8000/videos/{counseling_id}/{filename}"
-
-    analyze = db.query(AiVideoAnalyze).filter(
-        AiVideoAnalyze.ai_v_erp_id == ai_v_erp_id
-    ).first()
-
-    answer_data = video.answer or {}
-
-    return {
-        "success": True,
-        "data": {
-            "focus": answer_data.get("focus", []),
-            "interest": answer_data.get("interest", []),
-            "summary": analyze.ai_v_comment if analyze else "",
-            "prompt": analyze.prompt if analyze else "",
-            "url": video_url
-        }
-    }
-
-
-@router.get("/report/ai/{counseling_id}/{con_rep_id}")
-def get_counseling_ai_report(counseling_id: int, con_rep_id: int, db: Session = Depends(get_db)):
-    con_report = db.query(ReportCon).filter(
-        ReportCon.counseling_id == counseling_id,
-        ReportCon.con_rep_id    == con_rep_id
-    ).first()
-    if not con_report:
-        raise HTTPException(status_code=404, detail="상담 리포트 없음")
-
-    ai_report = db.query(ReportAiM).filter(ReportAiM.con_rep_id == con_rep_id).first()
-    if not ai_report:
-        raise HTTPException(status_code=404, detail="AI 분석 데이터 없음")
-
-    scores        = ai_report.emotion_m_score or []
-    focus_data    = [{"time": str(i), "value": s.get("value", 0)} for i, s in enumerate(scores)]
-    interest_data = [{"subject": s.get("subject", "기타"), "관심도": s.get("interest", 0),
-                      "자신감": s.get("confidence", 0)} for s in scores]
-
-    return {
-        "success": True,
-        "data": {
-            "focus":    focus_data,
-            "interest": interest_data,
-            "summary":  ai_report.ai_m_comment,
-            "prompt":   ai_report.prompt
-        }
-    }
-
-@router.get("/videos/{counseling_id}")
-def get_video_files(counseling_id: int, db: Session = Depends(get_db)):
-
-    counseling = db.query(Counseling).filter(
-        Counseling.counseling_id == counseling_id
-    ).first()
-
-    if not counseling:
-        raise HTTPException(status_code=404, detail="상담 없음")
-
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-    VIDEO_DIR = os.path.join(BASE_DIR, "..", "..", "..", "ai_server", "videos")
-
-    pattern = os.path.join(VIDEO_DIR, str(counseling_id), "*.webm")
-
-    files = sorted(glob.glob(pattern))
-
-    result = []
-
-    for i, file in enumerate(files):
-
-        filename = os.path.basename(file)
-
-        result.append({
-            "id": i + 1,
-            "name": filename,
-            "url": f"/videos/{counseling_id}/{filename}"
-        })
-
-    return result
-
-
-
-
 # ===============================
-# 🔹 상담 예약 date정보 가져오기
+# 🔹 STT 결과값 받기
 # ===============================
-@router.get("/counseling/date/{counseling_id}")
-def counseling_date(counseling_id: int, db: Session = Depends(get_db)):
-    counseling = db.query(Counseling).filter(Counseling.counseling_id == counseling_id).first()
-    if not counseling:
-        return {
-            "success": False,
-            "date": None
-        }
-    return {
-        "success": True,
-        "date":  counseling.reservation_time.strftime("%Y-%m-%d")
-    }
+@router.post("/report/con/{counseling_id}/stt-result")
+def receive_stt_result(counseling_id: int, data: dict, db: Session = Depends(get_db)):
 
-@router.get("/{counselor_id}")
-def get_counselor(counselor_id: int, db: Session = Depends(get_db)):
-    counselor = db.query(Counselor).filter(Counselor.counselor_id == counselor_id).first()
-    if not counselor:
-        return {"success": False, "message": "상담사 없음"}
+    report = db.query(ReportCon).filter(
+        ReportCon.counseling_id == counseling_id
+    ).first()
+
+    if not report:
+        raise HTTPException(status_code=404, detail="상담 일지 없음")
+
+    stt_text = data["stt_text"]
+
+    existing = db.query(ReportAiM).filter(
+        ReportAiM.con_rep_id == report.con_rep_id
+    ).first()
+
+    # STT 중복 저장 방지
+    if existing:
+
+        existing.stt_text = stt_text
+        existing.ai_m_comment = "STT 결과"
+
+    else:
+
+        ai_report = ReportAiM(
+            ai_m_comment="STT 결과",
+            stt_text=stt_text,
+            prompt="STT_ONLY",
+            con_rep_id=report.con_rep_id
+        )
+
+        db.add(ai_report)
+
+    db.commit()
+
     return {
-        "success": True,
-        "data": {"name": counselor.name, "phone": counselor.phone_num, "email": counselor.email}
+        "success": True
     }
