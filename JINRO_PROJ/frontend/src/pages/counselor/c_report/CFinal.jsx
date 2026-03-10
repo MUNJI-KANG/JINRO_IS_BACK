@@ -104,8 +104,13 @@ const CFinal = () => {
     };
 
     const handleCounselingLog = async (e) => {
+
         e.preventDefault();
-        if (!counselingId) return alert("ID가 없습니다.");
+
+        if (!counselingId) {
+            alert("상담 ID가 없습니다.");
+            return;
+        }
 
         const res = await api.get(`/counselor/counseling/date/${counselingId}`);
 
@@ -124,7 +129,8 @@ const CFinal = () => {
         } else {
             alert("api 요청 오류");
         }
-    }
+
+    };
 
     return (
         <>
