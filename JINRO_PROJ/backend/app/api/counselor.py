@@ -6,7 +6,8 @@ from app.schemas.counselor import (
     CounselorLoginRequest, CategoryCreateRequest,
     CounselorModifyInfo, ScheduleDetailResponse,
     ScheduleListResponse, ScheduleUpdateRequest,
-    ReportConUpdateRequest, FinalReportSave
+    ReportConUpdateRequest, FinalReportSave,
+    RecordingAnalyze
 )
 from sqlalchemy import func, or_, and_
 from app.models.schema_models import (
@@ -150,6 +151,28 @@ def get_video_list(client_id: int, db: Session = Depends(get_db)):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"날짜 불러오기 오류: {str(e)}")
+
+@router.post("/recording/analyze")
+def set_recording_analyze(record_analyze: RecordingAnalyze,  db: Session = Depends(get_db)):
+    
+    try:
+        report_con = db.query(ReportCon).filter(ReportCon.counseling_id == record_analyze.counseling_id).first()
+        report_ai_m = db.query(ReportAiM).filter(ReportAiM.con_rep_id == report_con.con_rep_id)
+
+        if report_ai_m:
+            ...
+        else:
+            now = datetime.now()
+            # db.add(ReportAiM(
+            #     ai_m_comment='', 
+            #     emotion_m_score={}, 
+            #     reg_date=now, 
+            #     prompt=record_analyze.prompt, 
+            #     con_rep_id=report_con.con_rep_id
+            #     ))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"대화 분석 오류: {str(e)}")
+    return {}
 
 
 @router.get("/video/{ai_v_erp_id}")

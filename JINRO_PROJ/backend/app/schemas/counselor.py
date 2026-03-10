@@ -52,3 +52,9 @@ class FinalReportSave(BaseModel):
     counseling_id: int
     comment:       str
 
+# 상담대화분석
+class RecordingAnalyze(BaseModel):
+    client_id: int
+    counseling_id: int
+    prompt: str
+

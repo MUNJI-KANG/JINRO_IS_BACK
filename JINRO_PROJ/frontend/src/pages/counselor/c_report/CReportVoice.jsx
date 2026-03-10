@@ -103,6 +103,16 @@ const CReportAiSimple = ({ pageTitle, apiUrl }) => {
 
   };
 
+  const handleAnalyze = async (e) => {
+        e.preventDefault();
+
+        const response = await api.post("/counselor/recording/analyze", {
+          client_id: clientId,
+          counseling_id: counselingId,
+          prompt: prompt,
+        })
+    }
+
 
   return (
     <div className={styles["analysis-page-container"]}>

@@ -116,7 +116,7 @@ const CFinal = () => {
             const reserveDate = new Date(data.date);
 
             if (reserveDate <= nowDate) {
-                navigate('/counselor/report/counseling');
+                navigate(`/counselor/report/counseling/${clientId}/${counselingId}`);
             } else {
                 alert("상담 예약 날짜가 아닙니다.");
             }
@@ -228,7 +228,6 @@ const CFinal = () => {
             <div className="analysis-button-group">
 
                 <Link
-                    to="/counselor/report/counseling"
                     state={{ counselingId, studentName }}
                     className="btn-link"
                 >
