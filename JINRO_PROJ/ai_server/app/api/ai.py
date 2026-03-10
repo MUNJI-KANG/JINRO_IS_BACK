@@ -90,11 +90,8 @@ async def upload_audio(counseling_id: int, file: UploadFile = File(...)):
     # 확장자 추출
     ext = os.path.splitext(file.filename)[1]
 
-    # timestamp 생성
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-
     # 파일 이름 생성
-    filename = f"counseling_{counseling_id}_{timestamp}.{ext}"
+    filename = f"counseling_{counseling_id}.{ext}"
 
     file_path = os.path.join(counseling_dir, filename)
 

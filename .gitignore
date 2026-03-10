@@ -48,3 +48,5 @@ dist-ssr/
 videos
 data
 audio_records
+temp_audio
+audio_uploads
