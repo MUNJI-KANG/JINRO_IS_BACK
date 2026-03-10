@@ -19,7 +19,8 @@ from app.models.schema_models import (
 )
 
 from datetime import datetime
-import requests, threading , tempfile, os
+from fastapi import BackgroundTasks # FastAPI가 제공하는 비동기 작업 실행
+import requests, os
 import httpx
 
 router = APIRouter(prefix="/counselor", tags=["Counselor (상담사)"])
@@ -285,9 +286,13 @@ def update_report_con(counseling_id: int, data: ReportConUpdateRequest, db: Sess
 # ===============================
 # 🔹 AI 서버 비동기 전송
 # ===============================
-def send_audio_to_ai(counseling_id, files):
+def send_audio_to_ai(counseling_id, file_bytes, filename, content_type):
 
     try:
+
+        files = {
+            "file": (filename, file_bytes, content_type)
+        }
 
         res = requests.post(
             f"http://localhost:8001/ai/audio/upload/{counseling_id}",
@@ -303,10 +308,15 @@ def send_audio_to_ai(counseling_id, files):
         
 
 # ===============================
-# 🔹 녹음 파일 업로드
+# 🔹 녹음 파일 업로드 React → Backend
 # ===============================
 @router.post("/report/con/{counseling_id}/audio")
-async def upload_audio(counseling_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_audio(
+    counseling_id: int,
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
 
     try:
 
@@ -317,49 +327,21 @@ async def upload_audio(counseling_id: int, file: UploadFile = File(...), db: Ses
         if not report:
             raise HTTPException(status_code=404, detail="상담 일지를 찾을 수 없습니다.")
 
-        # =========================
-        # 파일 임시 저장
-        # =========================
-        temp_path = os.path.join("temp_audio", file.filename)
+        
+        file_bytes = await file.read() # Backend → file 읽기
 
-        os.makedirs("temp_audio", exist_ok=True)
-
-        with open(temp_path, "wb") as buffer:
-            buffer.write(await file.read())
-
-        # =========================
-        # AI 서버 전송용 함수
-        # =========================
-        def send_audio():
-
-            try:
-
-                with open(temp_path, "rb") as f:
-
-                    files = {
-                        "file": (file.filename, f, file.content_type)
-                    }
-
-                    res = requests.post(
-                        f"http://localhost:8001/ai/audio/upload/{counseling_id}",
-                        files=files,
-                        timeout=120
-                    )
-
-                    if res.status_code != 200:
-                        print("AI 서버 처리 실패:", res.text)
-
-            except Exception as e:
-                print("AI 서버 요청 실패:", str(e))
-
-        # =========================
-        # 비동기 실행
-        # =========================
-        threading.Thread(target=send_audio).start()
-
+        # BackgroundTasks 등록
+        background_tasks.add_task(
+            send_audio_to_ai,
+            counseling_id,
+            file_bytes,
+            file.filename,
+            file.content_type
+        )
+        
         return {
             "success": True,
-            "message": "AI 분석 요청 완료"
+            "message": "AI 서버 전송 시작"
         }
 
     except Exception as e:
