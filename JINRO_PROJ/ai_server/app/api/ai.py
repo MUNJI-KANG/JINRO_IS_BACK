@@ -20,15 +20,40 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 router = APIRouter(prefix="/ai", tags=["Client (내담자)"])
 
+VIDEO_BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "videos")
+
+
+def analyze_single_video(path: str) -> dict:
+    attention_score = analyze_attention(path)
+    emotion_score = analyze_emotion(path)
+    final_focus_score = calculate_final_score(attention_score, emotion_score)
+
+    return {
+        "video_path": path,
+        "attention_score": attention_score,
+        "emotion_score": emotion_score,
+        "final_focus_score": final_focus_score,
+    }
+
+
 @router.get("/")
 def get_client_list():
     return {"message": "AI 부분 입니다."}
 
-@router.post("/video/analyze")
-def get_video_analyze(data: VideoAnalyze):
-    attention_score = analyze_attention(data.video_path)
-    emotion_score = analyze_emotion(data.video_path)
 
+@router.post("/video/analyze", response_model=VideoAnalyzeResponse)
+def get_video_analyze(data: VideoAnalyze):
+
+    target_dir = os.path.join(VIDEO_BASE_DIR, str(data.counseling_id))
+
+    video_paths = [
+        os.path.join(target_dir, f)
+        for f in os.listdir(target_dir)
+        if f.endswith((".mp4", ".webm", ".avi"))
+    ]
+
+    with ProcessPoolExecutor(max_workers=min(3, len(video_paths))) as executor:
+        results = list(executor.map(analyze_single_video, video_paths))
 
     return {
         "success": True,

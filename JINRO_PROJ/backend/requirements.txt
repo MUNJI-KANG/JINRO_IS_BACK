@@ -3,10 +3,6 @@ opencv-python==4.9.0.80
 mediapipe==0.10.14
 numpy==1.26.4
 
-# AI / Deep Learning
-tensorflow==2.16.1
-deepface==0.0.93
-
 # Data
 pandas==2.2.2
 scikit-learn==1.4.2
@@ -22,9 +18,7 @@ pydantic==2.7.1
 typing_extensions>=4.10.0
 
 protobuf==4.25.3
-tf_keras==2.16.0
 
 SQLAlchemy
 pymysql
 httpx
-ollama

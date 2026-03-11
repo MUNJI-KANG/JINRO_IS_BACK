@@ -1,7 +1,13 @@
-from pydantic import BaseModel, EmailStr, field_validator
-from typing import Dict, Any, List
+
+from pydantic import BaseModel
+from typing import List
+
 
 class VideoAnalyze(BaseModel):
+    counseling_id: int
+
+
+class SingleVideoResult(BaseModel):
     video_path: str
 
 class SummaryRequest(BaseModel):

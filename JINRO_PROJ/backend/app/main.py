@@ -24,6 +24,7 @@ app = FastAPI(title="JINRO_IS_BACK API")
 origins = [
     "http://localhost:5173",  # Vite 기본 포트
     "http://127.0.0.1:5173",
+    "http://3.26.222.34", # 프론트 엔드 배포서버 IP
 ]
 
 
@@ -31,15 +32,16 @@ origins = [
 def read_root():
     return {"message": "테이블 생성이 완료되었습니다!"}
 
-
+# CORS 설정 업데이트
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173","http://127.0.0.1:5173"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+#Session 설정 보완 
 app.add_middleware(
     SessionMiddleware, 
     secret_key=os.getenv("SESSION_SECRET_KEY", "fallback-secret-key"),
