@@ -20,8 +20,10 @@ from app.models.schema_models import (
 
 from datetime import datetime
 from fastapi import BackgroundTasks # FastAPI가 제공하는 비동기 작업 실행
-import requests, os
+
+import requests, os, json
 import httpx
+
 
 router = APIRouter(prefix="/counselor", tags=["Counselor (상담사)"])
 
@@ -657,7 +659,9 @@ def receive_stt_result(counseling_id: int, data: dict, db: Session = Depends(get
     if not report:
         raise HTTPException(status_code=404, detail="상담 일지 없음")
 
-    stt_text = data["stt_text"]
+    stt_text = data.get("stt_text", "")
+    summary = data.get("summary", "")
+    analysis = data.get("analysis", {})
 
     existing = db.query(ReportAiM).filter(
         ReportAiM.con_rep_id == report.con_rep_id
@@ -667,16 +671,16 @@ def receive_stt_result(counseling_id: int, data: dict, db: Session = Depends(get
     if existing:
 
         existing.stt_text = stt_text
-        existing.ai_m_comment = "STT 결과"
+        existing.ai_m_comment = json.dumps(analysis, ensure_ascii=False)
 
     else:
 
         ai_report = ReportAiM(
-            ai_m_comment="STT 결과",
+            ai_m_comment=json.dumps(analysis, ensure_ascii=False),
             stt_text=stt_text,
-            prompt="STT_ONLY",
+            prompt="GPT_SUMMARY",
             con_rep_id=report.con_rep_id
-        )
+    )
 
         db.add(ai_report)
 

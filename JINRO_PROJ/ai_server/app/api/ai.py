@@ -7,6 +7,7 @@ from app.schemas.ai import (
     VideoAnalyze, SummaryRequest
     )
 from app.services.stt_service import speech_to_text
+from app.services.summary_service import summarize_text
 from datetime import datetime
 import shutil
 import os
@@ -95,7 +96,7 @@ async def upload_audio(counseling_id: int, file: UploadFile = File(...)):
     ext = os.path.splitext(file.filename)[1]
 
     # 파일 이름 생성
-    filename = f"counseling_{counseling_id}.{ext}"
+    filename = f"counseling_{counseling_id}{ext}"
 
     file_path = os.path.join(counseling_dir, filename)
 
@@ -104,16 +105,31 @@ async def upload_audio(counseling_id: int, file: UploadFile = File(...)):
         shutil.copyfileobj(file.file, buffer)
 
     # STT 실행
-    stt_text = speech_to_text(file_path)
+    stt_result = speech_to_text(file_path)
 
-    # Backend 호출 실패 체크 추가
-    res = requests.post(
-        f"{BACKEND_URL}/counselor/report/con/{counseling_id}/stt-result",
-        json={"stt_text": stt_text}
-    )
+    # LLM 요약 생성
+    summary = summarize_text(stt_result)
 
-    if res.status_code != 200:
-        print("Backend STT 저장 실패:", res.text)
+    stt_text = stt_result["text"]
+
+    # Backend 호출 실패 방지
+    try:
+
+        res = requests.post(
+            f"{BACKEND_URL}/counselor/report/con/{counseling_id}/stt-result",
+            json={
+                "stt_text": stt_text,
+                "summary": summary["summary"],
+                "analysis": summary
+            },
+            timeout=30
+        )
+
+        if res.status_code != 200:
+            print("Backend STT 저장 실패:", res.text)
+
+    except Exception as e:
+        print("Backend API 호출 실패:", str(e))
 
     return {
         "success": True,

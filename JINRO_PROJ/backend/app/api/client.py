@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import Request, APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import Request, APIRouter, Depends, HTTPException, UploadFile, File, Form
 from app.db.database import SessionLocal, engine, Base
 from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV,ReportCon,ReportFinal
 from app.schemas.client import ClientCreate,CounselingCreateRequest,ReportCompleteRequest
@@ -409,6 +409,7 @@ async def upload_video(
     counseling_id: int,
     request: Request,
     file: UploadFile = File(...),
+    report_id: int = Form(...),
     db: Session = Depends(get_db)
 ):
 
@@ -425,27 +426,21 @@ async def upload_video(
 
         c_id = client.c_id
 
-        # 🔥 counseling_id 폴더 생성
         counseling_folder = os.path.join(UPLOAD_DIR, str(counseling_id))
         os.makedirs(counseling_folder, exist_ok=True)
 
-        files = os.listdir(counseling_folder)
-
-        numbers = []
-
-        for f in files:
-            if f.startswith(f"{c_id}_") and f.endswith(".webm"):
-                try:
-                    num = int(f.split("_")[1].replace(".webm", ""))
-                    numbers.append(num)
-                except:
-                    pass
-
-        next_number = max(numbers, default=0) + 1
-
-        filename = f"{c_id}_{next_number}.webm"
+        # ⭐ report_id 기반 파일명
+        filename = f"{c_id}_{report_id}.webm"
 
         file_path = os.path.join(counseling_folder, filename)
+
+        # ⭐ 동일 영상 중복 업로드 방지
+        if os.path.exists(file_path):
+            return {
+                "success": True,
+                "message": "이미 업로드된 영상입니다.",
+                "url": f"http://localhost:8000/videos/{counseling_id}/{filename}"
+            }
 
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)

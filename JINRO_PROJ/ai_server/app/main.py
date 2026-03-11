@@ -1,11 +1,13 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 import shutil
 import os
 from app.api import ai, focus_binary_ai, data_ai
 
 import uvicorn
 
+load_dotenv()
 
 # ai 분석 import
 
