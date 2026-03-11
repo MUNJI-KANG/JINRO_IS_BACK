@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, field_validator
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 class VideoAnalyze(BaseModel):
     video_path: str
@@ -22,3 +22,11 @@ class SummaryRequest(BaseModel):
     [핵심 키워드]
     #키워드1 #키워드2 #키워드3
     """
+
+
+class AnalysisResult(BaseModel):
+    user_id: str
+    session_id: str
+    emotion: str          
+    attention_score: float 
+    status: str = "success"

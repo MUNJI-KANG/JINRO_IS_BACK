@@ -705,3 +705,110 @@ def counseling_date(counseling_id: int, db: Session = Depends(get_db)):
         "success": True,
         "date":  counseling.reservation_time.strftime("%Y-%m-%d")
     }
+
+
+@router.get("/videos/{counseling_id}")
+def get_videos_by_counseling(counseling_id: int, db: Session = Depends(get_db)):
+
+    videos = db.query(ReportAiV).filter(
+        ReportAiV.counseling_id == counseling_id
+    ).all()
+
+    return {
+        "success": True,
+        "data": [
+            {
+                "id": v.ai_v_erp_id,
+                "name": v.category,
+                "url": v.url
+            }
+            for v in videos
+        ]
+    }
+
+@router.get("/ai-report/dates/{counseling_id}")
+def get_ai_report_dates(counseling_id:int, db:Session=Depends(get_db)):
+
+    videos = db.query(ReportAiV).filter(
+        ReportAiV.counseling_id == counseling_id
+    ).all()
+
+    return {
+        "success": True,
+        "data":[
+            {
+                "ai_v_erp_id": v.ai_v_erp_id,
+                "date": v.reg_date.strftime("%Y-%m-%d") if v.reg_date else "-"
+            }
+            for v in videos
+        ]
+    }
+
+
+@router.get("/ai-report/{counseling_id}/{video_id}")
+def get_ai_video_report(
+    counseling_id: int,
+    video_id: int,
+    db: Session = Depends(get_db)
+):
+
+    video = db.query(ReportAiV).filter(
+        ReportAiV.ai_v_erp_id == video_id,
+        ReportAiV.counseling_id == counseling_id
+    ).first()
+
+    if not video:
+        raise HTTPException(status_code=404, detail="영상 없음")
+
+    analyze = db.query(AiVideoAnalyze).filter(
+        AiVideoAnalyze.ai_v_erp_id == video_id
+    ).first()
+
+    focus_data = []
+    interest_data = []
+
+    if analyze and analyze.emotion_v_score:
+        focus_data = analyze.emotion_v_score
+
+    interest_data = [
+        {
+            "subject": video.category,
+            "관심도": 70,
+            "자신감": 65
+        }
+    ]
+
+    return {
+        "success": True,
+        "data": {
+            "focus": focus_data,
+            "interest": interest_data,
+            "summary": video.ai_comment if hasattr(video, "ai_comment") else ""
+        }
+    }
+
+from pathlib import Path
+
+@router.get("/local-videos/{counseling_id}")
+def get_local_videos(counseling_id: int):
+
+    video_dir = Path(
+        "F:/JINRO_IS_BACK_PROJ/JINRO_PROJ/ai_server/videos"
+    ) / str(counseling_id)
+
+    if not video_dir.exists():
+        return {"success": True, "data": []}
+
+    files = []
+
+    for f in video_dir.glob("*.webm"):
+
+        files.append({
+            "name": f.name,
+            "url": f"{counseling_id}/{f.name}"
+        })
+
+    return {
+        "success": True,
+        "data": files
+    }

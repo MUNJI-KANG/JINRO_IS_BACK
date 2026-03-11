@@ -1,27 +1,35 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, field_validator, EmailStr
 from typing import Dict, Any, List
 import re
 
 class ClientCreate(BaseModel):
     name: str
-    birthdate: str  # 주민번호 7자리 (숫자만)
-    phone_num: str  # 핸드폰 11자리 (숫자만)
-    email: str      # 전체 이메일 주소
+    birthdate: str
+    phone_num: str
+    email: EmailStr
 
-    @field_validator('birthdate')
-    def validate_ssn(cls, v):
-        # 숫자만 추출하고 7자리인지 확인
-        clean_v = re.sub(r'[^0-9]', '', v)
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str):
+        v = v.strip()
+        if not v:
+            raise ValueError("이름은 필수입니다.")
+        return v
+
+    @field_validator("birthdate")
+    @classmethod
+    def validate_birthdate(cls, v: str):
+        clean_v = re.sub(r"[^0-9]", "", v)
         if len(clean_v) != 7:
-            raise ValueError('주민등록번호는 숫자 7자리여야 합니다.')
+            raise ValueError("주민등록번호는 숫자 7자리여야 합니다.")
         return clean_v
 
-    @field_validator('phone_num')
-    def validate_phone(cls, v):
-        # 숫자만 추출하고 11자리인지 확인
-        clean_v = re.sub(r'[^0-9]', '', v)
+    @field_validator("phone_num")
+    @classmethod
+    def validate_phone_num(cls, v: str):
+        clean_v = re.sub(r"[^0-9]", "", v)
         if len(clean_v) != 11:
-            raise ValueError('핸드폰 번호는 숫자 11자리여야 합니다.')
+            raise ValueError("핸드폰 번호는 숫자 11자리여야 합니다.")
         return clean_v
 
 class SurveySubmitRequest(BaseModel):
@@ -40,3 +48,10 @@ class ReportCompleteRequest(BaseModel):
     counseling_id: int
     report_id: int
     answer: Dict[str, Any]
+
+
+class AIAnalysisRequest(BaseModel):
+    user_id: str
+    session_id: str
+    emotion_score: float   # FER 결과 (0~100)
+    attention_score: float # DAiSEE 결과 (0~100)
