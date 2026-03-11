@@ -39,6 +39,8 @@ function SVideo() {
   const [frontTime, setFrontTime] = useState(0);
   const [readyToStart, setReadyToStart] = useState(false);
 
+  const [uploading, setUploading] = useState(false); // 파일 저장 중복 방지
+
   // 웹캠 초기화
   useEffect(() => {
 
@@ -438,24 +440,27 @@ function SVideo() {
   };
   const handleGoSurvey = async () => {
 
+    if (uploading) return;   // ⭐ 중복 실행 방지
+    setUploading(true);
+
     try {
 
       const blob = await stopRecording();
 
-      // ⭐ 카메라 완전 종료
       if (webcamRef.current && webcamRef.current.srcObject) {
 
         const tracks = webcamRef.current.srcObject.getTracks();
-
         tracks.forEach(track => track.stop());
-
         webcamRef.current.srcObject = null;
 
       }
 
-      const formData = new FormData();
+      const reportIds = JSON.parse(localStorage.getItem("reportIds") || "[]");
+      const currentReportId = reportIds[currentIndex];
 
+      const formData = new FormData();
       formData.append("file", blob, "example.webm");
+      formData.append("report_id", currentReportId);
 
       const counselingId = localStorage.getItem("counselingId");
 
@@ -468,9 +473,7 @@ function SVideo() {
         `/client/video/upload/${counselingId}`,
         formData,
         {
-          headers: {
-            "Content-Type": "multipart/form-data"
-          }
+          headers: { "Content-Type": "multipart/form-data" }
         }
       );
 
@@ -481,10 +484,12 @@ function SVideo() {
     } catch (err) {
 
       console.error("영상 업로드 실패:", err);
+      setUploading(false);
 
     }
 
   };
+
   const videoId = extractVideoId(currentVideo?.url);
 
   useEffect(() => {
@@ -626,9 +631,9 @@ function SVideo() {
             <button
               className={`survey-btn ${videoEnded ? "enabled" : ""}`}
               onClick={handleGoSurvey}
-              disabled={!videoEnded}
+              disabled={!videoEnded || uploading}
             >
-              설문하러 가기
+              {uploading ? "업로드 중..." : "설문하러 가기"}
             </button>
 
           </div>

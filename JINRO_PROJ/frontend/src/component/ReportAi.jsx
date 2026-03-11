@@ -45,7 +45,7 @@ useEffect(() => {
 
     try {
 
-        const res = await api.get(`${apiUrl}/dates/${counselingId}`);
+        const res = await api.get(`/counselor/recording/dates/${clientId}`);
 
         if (!res.data.success) return;
 
@@ -74,7 +74,7 @@ useEffect(() => {
 
   const loadReport = (videoId) => {
 
-    api.get(`${apiUrl}/video/${videoId}`)
+    api.get(`/counselor/ai-report/${counselingId}/${videoId}`)
       .then(res => res.data)
       .then(res => {
 

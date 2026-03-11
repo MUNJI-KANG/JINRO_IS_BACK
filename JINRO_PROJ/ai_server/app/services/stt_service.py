@@ -6,21 +6,28 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-import whisper
+from faster_whisper import WhisperModel
 
 
 # Whisper 모델 로드
-# 속도를 우선하면 "turbo", 안정적으로 가려면 "base"
-MODEL_NAME = "base"
+MODEL_NAME = "small"
 model = None
-
 
 def get_model():
     global model
+
     if model is None:
-        print(f"[STT] Whisper 모델 로딩 시작: {MODEL_NAME}")
-        model = whisper.load_model(MODEL_NAME)
-        print(f"[STT] Whisper 모델 로딩 완료: {MODEL_NAME}")
+
+        print(f"[STT] faster-whisper 모델 로딩 시작: {MODEL_NAME}")
+
+        model = WhisperModel(
+            MODEL_NAME,
+            device="cpu",
+            compute_type="int8"  # 속도 최적화
+        )
+
+        print(f"[STT] faster-whisper 모델 로딩 완료: {MODEL_NAME}")
+
     return model
 
 
@@ -53,11 +60,17 @@ def convert_webm_to_wav(input_path: str | Path, output_dir: str | Path) -> Path:
     _run_ffmpeg(cmd)
     return output_path
 
-def speech_to_text(audio_path: str | Path) -> str:
+def speech_to_text(audio_path: str | Path) -> dict:
     """
     전체 파이프라인
     webm → wav 변환 → whisper STT
+    반환값:
+    {
+        "text": 전체 텍스트,
+        "segments": whisper segments
+    }
     """
+
     audio_path = Path(audio_path)
 
     if not audio_path.exists():
@@ -72,15 +85,30 @@ def speech_to_text(audio_path: str | Path) -> str:
 
         loaded_model = get_model()
 
-        result = loaded_model.transcribe(
+        segments, info = loaded_model.transcribe(
             str(wav_path),
             language="ko",
-            fp16=False
+            beam_size=1,
+            vad_filter=True # 무음 구간 제거
         )
 
-        text = (result.get("text") or "").strip()
+        segments_list = []
+        text_all = ""
 
-        return text
+        for segment in segments:
+
+            text_all += segment.text + " "
+
+            segments_list.append({
+                "start": segment.start,
+                "end": segment.end,
+                "text": segment.text
+            })
+
+        return {
+            "text": text_all.strip(),
+            "segments": segments_list
+        }
 
     finally:
         shutil.rmtree(temp_root, ignore_errors=True)
