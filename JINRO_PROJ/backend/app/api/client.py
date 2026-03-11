@@ -456,7 +456,7 @@ async def upload_video(
         raise HTTPException(status_code=500, detail=str(e))
     
     
-@router.get('/sesstion/clear')
+@router.get('/session/clear')
 async def session_clear(request: Request):
     request.session.clear()
 
