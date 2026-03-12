@@ -453,7 +453,7 @@ async def upload_video(
         for f in files:
             if f.startswith(f"{c_id}_") and f.endswith(".webm"):
                 try:
-                    num = int(f.split("_").replace(".webm", ""))
+                    num = int(f.replace(".webm", "").split("_")[1])
                     numbers.append(num)
                 except: pass
 
