@@ -241,8 +241,15 @@ export default function CStudentList() {
                     </div>
                   </div>
 
-                  <div className="consult-card-date">
-                    {c.date}
+                  <div className="consult-card-right">
+                    {c.final_report_yn == 'Y' && (
+                      <div className="consult-card-date" style={{ color: "blue", fontWeight: "bold" }}>
+                        상담완료
+                      </div>
+                    )}
+                    <div className="consult-card-date">
+                      {c.date}
+                    </div>
                   </div>
                 </div>
               ))}
