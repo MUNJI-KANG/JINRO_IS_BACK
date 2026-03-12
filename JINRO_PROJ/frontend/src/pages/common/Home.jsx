@@ -15,7 +15,7 @@ const Home = () => {
     sessionStorage.clear();
     localStorage.clear();
     dispatch(clearVideos());
-    api.get('client/sesstion/clear');
+    api.get('client/session/clear');
 
   }, []);
 

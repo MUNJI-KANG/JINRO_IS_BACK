@@ -1,35 +1,19 @@
 import uuid
 
-from fastapi import Request, APIRouter, Depends, HTTPException, UploadFile, File, Form
-from app.db.database import SessionLocal, engine, Base
-from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV,ReportCon,ReportFinal
-from app.schemas.client import ClientCreate,CounselingCreateRequest,ReportCompleteRequest
-
-from sqlalchemy.orm import Session
 import random
 import datetime
 import os
 import shutil
 import httpx
 from datetime import datetime
-
-
-from fastapi import Request, APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
-from app.db.database import SessionLocal, engine, Base
+from fastapi.responses import JSONResponse
+from fastapi import Request, APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks, Form
+from app.db.database import SessionLocal, engine, Base, get_db
 from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV,ReportCon,ReportFinal, ReCommentEnum, AiVideoAnalyze
-from app.schemas.client import ClientCreate,CounselingCreateRequest,ReportCompleteRequest, SurveySubmitRequest, AIAnalysisRequest
+from app.schemas.client import ClientCreate,CounselingCreateRequest,ReportCompleteRequest, SurveySubmitRequest, AIAnalysisRequest, CompleteRequest
 
 from sqlalchemy.orm import Session
-
-# DB 및 모델 임포트 
-from app.db.database import get_db
-
-
-
-from app.schemas.client import AIAnalysisRequest
 from app.services.report_service import calculate_balance_score 
-
-
 
 
 router = APIRouter(
@@ -37,6 +21,8 @@ router = APIRouter(
     tags=["Client"]
 )
 
+BACKEND_BASE_URL = os.getenv("BACKEND_URL")
+AI_SERVER_BASE_URL = os.getenv("AI_SERVER_URL")
 
 
 @router.get("/")
@@ -57,7 +43,7 @@ def login_or_create_client(client_data: ClientCreate, request: Request, db: Sess
         birth = str(client_data.birthdate)
         email = str(client_data.email)
 
-        existing_client = db.query(Client).filter(
+        existing_client = db.query(Client).filter( 
             Client.phone_num == phone,
             Client.name == name,
             Client.birthdate == birth
@@ -427,10 +413,69 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 import httpx # 설치 필요: pip install httpx
 
 @router.post("/video/upload/{counseling_id}")
+# async def upload_video(
+#     counseling_id: int,
+#     request: Request,
+#     background_tasks: BackgroundTasks, # 추가
+#     file: UploadFile = File(...),
+#     report_id: int = Form(...),
+#     db: Session = Depends(get_db)
+# ):
+#     try:
+#         client_id = request.session.get("client_id")
+#         if not client_id:
+#             raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+
+#         client = db.query(Client).filter(Client.client_id == client_id).first()
+#         if not client:
+#             raise HTTPException(status_code=404, detail="학생 없음")
+
+#         c_id = client.c_id
+#         counseling_folder = os.path.join(UPLOAD_DIR, str(counseling_id))
+#         os.makedirs(counseling_folder, exist_ok=True)
+
+#         files = os.listdir(counseling_folder)
+#         numbers = []
+#         for f in files:
+#             if f.startswith(f"{c_id}_") and f.endswith(".webm"):
+#                 try:
+#                     num = int(f.replace(".webm", "").split("_")[1])
+#                     numbers.append(num)
+#                 except: pass
+
+#         next_number = max(numbers, default=0) + 1
+#         filename = f"{c_id}_{next_number}.webm"
+#         file_path = os.path.join(counseling_folder, filename)
+
+#         # ⭐ 동일 영상 중복 업로드 방지
+#         if os.path.exists(file_path):
+#             return {
+#                 "success": True,
+#                 "message": "이미 업로드된 영상입니다.",
+#                 "url": f"{BACKEND_BASE_URL}/videos/{counseling_id}/{filename}"
+#             }
+
+#         with open(file_path, "wb") as buffer:
+#             shutil.copyfileobj(file.file, buffer)
+
+        
+#         if next_number >= 3:
+#             # 백그라운드 태스크로 실행하여 파일 업로드 응답 속도를 유지
+#             background_tasks.add_task(trigger_ai_analysis, counseling_id, client_id)
+
+#         return {
+#             "success": True,
+#             "message": "영상 저장 성공",
+#             "url": f"{BACKEND_BASE_URL}/videos/{counseling_id}/{filename}"
+#         }
+
+#     except Exception as e:
+#         print("영상 저장 오류:", str(e))
+#         raise HTTPException(status_code=500, detail=str(e))
+    
 async def upload_video(
     counseling_id: int,
     request: Request,
-    background_tasks: BackgroundTasks, # 추가
     file: UploadFile = File(...),
     report_id: int = Form(...),
     db: Session = Depends(get_db)
@@ -445,56 +490,55 @@ async def upload_video(
             raise HTTPException(status_code=404, detail="학생 없음")
 
         c_id = client.c_id
-        counseling_folder = os.path.join(UPLOAD_DIR, str(counseling_id))
-        os.makedirs(counseling_folder, exist_ok=True)
+        file_bytes = await file.read()
+        filename = file.filename or "upload.webm"
 
-        files = os.listdir(counseling_folder)
-        numbers = []
-        for f in files:
-            if f.startswith(f"{c_id}_") and f.endswith(".webm"):
-                try:
-                    num = int(f.replace(".webm", "").split("_")[1])
-                    numbers.append(num)
-                except: pass
+        async with httpx.AsyncClient(timeout=120.0) as http_client:
+            response = await http_client.post(
+                f"{AI_SERVER_BASE_URL}/ai/upload-video",
+                data={
+                    "counseling_id": str(counseling_id),
+                    "client_id": str(client_id),
+                    "report_id": str(report_id),
+                    "c_id": str(c_id),
+                },
+                files={
+                    "file": (filename, file_bytes, file.content_type or "video/webm")
+                }
+            )
 
-        next_number = max(numbers, default=0) + 1
-        filename = f"{c_id}_{next_number}.webm"
-        file_path = os.path.join(counseling_folder, filename)
-
-        # ⭐ 동일 영상 중복 업로드 방지
-        if os.path.exists(file_path):
-            return {
-                "success": True,
-                "message": "이미 업로드된 영상입니다.",
-                "url": f"http://localhost:8000/videos/{counseling_id}/{filename}"
-            }
-
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
-        
-        if next_number >= 3:
-            # 백그라운드 태스크로 실행하여 파일 업로드 응답 속도를 유지
-            background_tasks.add_task(trigger_ai_analysis, counseling_id, client_id)
+        response.raise_for_status()
+        result = response.json()
 
         return {
             "success": True,
-            "message": "영상 저장 성공",
-            "url": f"http://localhost:8000/videos/{counseling_id}/{filename}"
+            "message": "AI 서버로 영상 전송 성공",
+            "ai_result": result
         }
 
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"AI 서버 오류: {e.response.status_code}, {e.response.text}"
+        )
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=502, detail=f"AI 서버 호출 실패: {str(e)}")
     except Exception as e:
-        print("영상 저장 오류:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
+
+
+
+
 async def trigger_ai_analysis(counseling_id: int, client_id: str):
-    AI_SERVER_URL = f"http://localhost:8001/api/analysis/start/{counseling_id}?user_id={client_id}"
+    AI_SERVER_URL = f"{AI_SERVER_BASE_URL}/api/analysis/start/{counseling_id}?user_id={client_id}"
     async with httpx.AsyncClient() as client:
         try:
             await client.post(AI_SERVER_URL, timeout=2.0)
             print(f"🚀 AI 분석 트리거 성공: Session {counseling_id}")
         except Exception as e:
             print(f"⚠️ AI 서버 연결 실패: {e}")
+    
     
     
 @router.get('/sesstion/clear')
@@ -512,7 +556,7 @@ async def video_analyze():
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(
-                'http://localhost:8001/ai/video/analyze',
+                f'{AI_SERVER_BASE_URL}/ai/video/analyze',
                 json={"video_path": video_path},
                 timeout=120.0,  # 120초 대기 (필요에 따라 조절)
                 )
@@ -578,10 +622,6 @@ async def receive_ai_analysis(data: AIAnalysisRequest):
     return {"status": "success", "final_score": final_score}
 
 
-
-
-
-
 @router.post("/analysis-result")
 async def receive_ai_analysis(data: AIAnalysisRequest, db: Session = Depends(get_db)):
     try:
@@ -628,7 +668,40 @@ async def receive_ai_analysis(data: AIAnalysisRequest, db: Session = Depends(get
         raise HTTPException(status_code=500, detail=str(e))
     
 
-@router.post("/session/clear")
+@router.post("/complete-client")
+async def complete_counseling(req_data: CompleteRequest, db: Session = Depends(get_db)):
+    
+    # 1. DB에서 counseling_id를 이용해 client_id 조회 (세션 의존성 제거)
+    counseling = db.query(Counseling).filter(Counseling.counseling_id == req_data.counseling_id).first()
+    
+    if not counseling.client_id:
+        raise HTTPException(status_code=404, detail="해당 상담 기록을 찾을 수 없습니다.")
+        
+    client = db.query(Client).filter(Client.client_id == counseling.client_id).first()
+
+    # 2. AI 서버로 분석 지시 내리기
+    ai_server_url = f"{AI_SERVER_BASE_URL}/focus-rule/start-analysis"
+    
+    payload = {
+        "counseling_id": req_data.counseling_id,
+        "client_id": client.c_id
+    }
+
+    try:
+        # 비동기로 AI 서버 호출
+        async with httpx.AsyncClient() as client:
+            response = await client.post(ai_server_url, json=payload, timeout=10.0)
+        
+        if response.status_code == 200:
+            return JSONResponse(content={"success": True, "message": "AI 분석 요청이 성공적으로 전달되었습니다."})
+        else:
+            raise HTTPException(status_code=500, detail="AI 서버에서 오류가 발생했습니다.")
+            
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=500, detail=f"AI 서버와 통신 실패: {str(e)}")
+    
+
+@router.get("/session/clear")
 def clear_session(request: Request):
     request.session.clear()
     return {"success": True}

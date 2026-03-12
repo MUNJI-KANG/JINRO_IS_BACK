@@ -51,6 +51,15 @@ const SLogin = () => {
 
         const finalEmailDomain = emailDomain === "custom" ? customEmailDomain : emailDomain;
 
+        if (
+            !name.trim() || !ssn1.trim() || !ssn2.trim() ||
+            !phone2.trim() || !phone3.trim() ||
+            !emailId.trim() || !finalEmailDomain
+        ) {
+            alert("모든 정보를 정확히 입력해주세요.");
+            return;
+        }
+
         const fullSsn = `${ssn1}${ssn2}`;
         const fullPhone = `${phone1}${phone2}${phone3}`;
         const fullEmail = `${emailId}@${finalEmailDomain}`;
@@ -58,7 +67,7 @@ const SLogin = () => {
         try {
 
             const response = await api.post("/client/login", {
-                name,
+                name: name,
                 birthdate: fullSsn,
                 phone_num: fullPhone,
                 email: fullEmail
@@ -79,7 +88,42 @@ const SLogin = () => {
             }
 
             localStorage.setItem("client_id", data.client_id);
-
+            
+             if (data.has_unfinished_video) {
+                const wantsToContinue = window.confirm('아직 완료하지 않은 영상이 있습니다. 이어보시겠습니까?');
+                if (wantsToContinue) {
+                    // 1. 리덕스에 남은 영상 목록 채워넣기
+                    if (data.video_list && data.video_list.length > 0) {
+                        dispatch(addVideo(data.video_list));
+                    }
+                    
+                    // 2. localStorage 대신 navigate의 state로 데이터를 숨겨서 전달!
+                    navigate(`/student/video/${data.category_id}`, { 
+                        state: { 
+                            isResume: true, 
+                            counseling_id: data.counseling_id,
+                            report_ids: data.report_ids
+                        } 
+                    });
+                    return; 
+                } else {
+                    try {
+                        // 1. 백엔드에 기존 상담 세션(Counseling, ReportAiV) 삭제 요청
+                        await api.delete(`/client/counselling/${data.counseling_id}`);
+                        
+                        // 2. 혹시 남아있을지 모르는 로컬 데이터도 안전하게 초기화
+                        localStorage.removeItem("counseling_id");
+                        localStorage.removeItem("report_ids");
+                        dispatch(clearVideos()); // 리덕스 초기화
+                        
+                    } catch (err) {
+                        console.error("기존 기록 삭제 실패:", err);
+                        alert("기존 기록을 삭제하는 중 문제가 발생했습니다.");
+                        setIsLoading(false); // 에러 발생 시 로딩 풀어주기
+                        return; // 삭제에 실패하면 다음 페이지로 넘어가지 않도록 막음
+                    }
+                }
+            }
             navigate("/student/category/big");
 
         } catch (error) {
@@ -101,7 +145,7 @@ const SLogin = () => {
             dispatch(clearVideos());
 
             try {
-                await api.post('/client/session/clear');
+                await api.get('/client/session/clear');
             } catch (e) {
                 console.log('session clear error', e);
             }

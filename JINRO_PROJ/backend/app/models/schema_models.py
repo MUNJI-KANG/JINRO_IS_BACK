@@ -54,7 +54,7 @@ class Counseling(Base):
     client_id = Column(Integer, ForeignKey('CLIENT.CLIENT_ID'), nullable=False)
 
 class ReportCon(Base):
-    __tablename__ = 'REPOR_CON'
+    __tablename__ = 'REPORT_CON'
     
     title = Column(String(100), nullable=False, comment='상담 제목')
     con_rep_id = Column(Integer, primary_key=True, autoincrement=True, comment='PK')
@@ -73,7 +73,7 @@ class ReportAiM(Base):
     stt_text = Column(Text, nullable=False, comment='STT 원문')
     reg_date = Column(DateTime, default=func.now(), nullable=False, comment='리포트 생성 날짜')
     counselor_opinion = Column(Text, comment='상담사 의견')
-    con_rep_id = Column(Integer, ForeignKey('REPOR_CON.con_rep_id'), nullable=False)
+    con_rep_id = Column(Integer, ForeignKey('REPORT_CON.con_rep_id'), nullable=False)
 
 class ReportAiV(Base):
     __tablename__ = 'REPORT_AI_V'

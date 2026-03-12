@@ -49,9 +49,12 @@ class ReportCompleteRequest(BaseModel):
     report_id: int
     answer: Dict[str, Any]
 
-
 class AIAnalysisRequest(BaseModel):
     user_id: str
     session_id: str
     emotion_score: float   # FER 결과 (0~100)
     attention_score: float # DAiSEE 결과 (0~100)
+
+class CompleteRequest(BaseModel):
+    counseling_id: str
+
