@@ -1,20 +1,17 @@
-import uuid
 
 import random
 import datetime
 import os
-import shutil
 import httpx
 from datetime import datetime
-from fastapi.responses import JSONResponse
-from fastapi import Request, APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks, Form
-from app.db.database import SessionLocal, engine, Base, get_db
-from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV,ReportCon,ReportFinal, ReCommentEnum, AiVideoAnalyze
+from fastapi import Request, APIRouter, Depends, HTTPException, UploadFile, File, Form
+from app.db.database import get_db
+from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV,ReportCon,ReportFinal, ReCommentEnum
 from app.schemas.client import ClientCreate,CounselingCreateRequest,ReportCompleteRequest, SurveySubmitRequest, AIAnalysisRequest, CompleteRequest
 from app.services.survey_service import analyze_survey
 
 from sqlalchemy.orm import Session
-from app.services.report_service import calculate_balance_score 
+
 
 
 router = APIRouter(

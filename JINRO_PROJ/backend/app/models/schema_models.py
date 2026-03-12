@@ -89,6 +89,7 @@ class ReportAiV(Base):
     counseling_id = Column(Integer, ForeignKey('COUNSELING.counseling_id'), nullable=False)
     complete_yn = Column(String(1), default='N', nullable=False, comment='최종작성여부')
     re_comment = Column(Enum(ReCommentEnum), comment='분석여부')
+
 class AiVideoAnalyze(Base):
     __tablename__ = "AI_VIDEO_ANALYZE"
 
@@ -102,19 +103,19 @@ class AiVideoAnalyze(Base):
     )
 
     attention_score = Column(
-        float,
+        Integer,
         nullable=False,
         comment="집중도 점수(0~100)"
     )
 
     emotion_score = Column(
-        float,
+        Integer,
         nullable=False,
         comment="감정 점수(0~100)"
     )
 
     final_score = Column(
-        float,
+        Integer,
         nullable=False,
         comment="영상 최종 점수"
     )
