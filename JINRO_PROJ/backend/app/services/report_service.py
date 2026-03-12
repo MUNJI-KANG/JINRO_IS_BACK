@@ -9,8 +9,8 @@ def calculate_balance_score(ai_data: dict, survey_score: int):
     """
     try:
         # 1. 가중치 설정
-        W_EMOTION = 0.3
-        W_ATTENTION = 0.3
+        W_EMOTION = 0.25
+        W_ATTENTION = 0.35
         W_SURVEY = 0.4
 
         # 2. 설문 점수 정규화 (1~5점 -> 0~100점)

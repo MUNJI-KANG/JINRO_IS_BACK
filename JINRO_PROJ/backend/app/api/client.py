@@ -11,6 +11,7 @@ from fastapi import Request, APIRouter, Depends, HTTPException, UploadFile, File
 from app.db.database import SessionLocal, engine, Base, get_db
 from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV,ReportCon,ReportFinal, ReCommentEnum, AiVideoAnalyze
 from app.schemas.client import ClientCreate,CounselingCreateRequest,ReportCompleteRequest, SurveySubmitRequest, AIAnalysisRequest, CompleteRequest
+from app.services.survey_service import analyze_survey
 
 from sqlalchemy.orm import Session
 from app.services.report_service import calculate_balance_score 
@@ -208,35 +209,35 @@ def get_survey_data(category_id: int, db: Session = Depends(get_db)):
 
 @router.post("/survey/submit")
 def submit_survey(data: SurveySubmitRequest, db: Session = Depends(get_db)):
-    """설문 결과를 REPORT_AI_V 테이블에 저장(UPDATE)"""
     try:
-        # 기존 ReportAiV 찾기 (같은 상담 + 같은 영상)
         report = db.query(ReportAiV).filter(
             ReportAiV.counseling_id == data.counseling_id,
             ReportAiV.url == data.url
         ).first()
 
         if not report:
-            raise HTTPException(status_code=404, detail="해당 영상 리포트를 찾을 수 없습니다.")
+            raise HTTPException(status_code=404, detail="리포트 없음")
 
-        # 설문 답변 저장
         report.answer = data.answer
-        report.complete_yn = 'Y'
 
-        # 분석 상태 업데이트
+        scores = [int(v) for v in data.answer.values()]
+        avg = sum(scores) / len(scores)
+
+        report.survey_score = (avg / 5) * 100
+        report.complete_yn = 'Y'
         report.re_comment = ReCommentEnum.SUCCESS
 
         db.commit()
 
         return {
             "success": True,
-            "message": "설문 결과가 성공적으로 저장되었습니다.",
+            "survey_score": report.survey_score,
             "ai_v_erp_id": report.ai_v_erp_id
         }
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"저장 중 오류 발생: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # 상담시작(내담자의 영상선택 완료)
 @router.post("/counselling")
@@ -603,105 +604,143 @@ def delete_unfinished_counseling(counseling_id: int, db: Session = Depends(get_d
     
 
 
-
-@router.post("/analysis-result")
-async def receive_ai_analysis(data: AIAnalysisRequest):
-    """
-    AI 서버가 분석 완료 후 호출하는 엔드포인트
-    """
-    # 1. DB에서 해당 유저의 설문 점수 조회 (가정)
-    survey_score = 4.0 
-    
-    # 2. 밸런스 모델(3:3:4) 합산
-    final_score, is_reliable = calculate_balance_score(data.dict(), survey_score)
-    
-    # 3. 최종 리포트 DB 저장 로직 (여기에 주인님이 만든 DB 저장 함수를 넣으세요)
-    # db_save_report(data.user_id, final_score, is_reliable)
-    
-    print(f"✅ 상담 {data.session_id} 리포트 생성 완료: {final_score}점")
-    return {"status": "success", "final_score": final_score}
-
-
 @router.post("/analysis-result")
 async def receive_ai_analysis(data: AIAnalysisRequest, db: Session = Depends(get_db)):
     try:
-        # 1. REPORT_AI_V에서 해당 상담의 리포트 레코드 조회
-        report_v = db.query(ReportAiV).filter(
+        report = db.query(ReportAiV).filter(
             ReportAiV.counseling_id == data.session_id
-        ).first()
+        ).order_by(ReportAiV.ai_v_erp_id.desc()).first()
 
-        if not report_v:
-            print(f"⚠️ 상담 ID {data.session_id}에 대한 AI 리포트 설정을 찾을 수 없습니다.")
-            raise HTTPException(status_code=404, detail="리포트 설정 없음")
+        if not report:
+            raise HTTPException(status_code=404, detail="영상 리포트 없음")
 
-        # 2. 설문 답변(JSON)에서 점수 추출 (1~5점 척도)
-        # 주인님, answer['score'] 같은 형태로 저장되어 있다고 가정했습니다.
-        survey_score = report_v.answer.get('score', 3) if report_v.answer else 3
+        report.attention_score = data.attention_score
+        report.emotion_score = data.emotion_score
 
-        # 3. 3:3:4 밸런스 점수 계산 (서비스 레이어 호출)
-        final_score, is_reliable = calculate_balance_score(data.dict(), survey_score)
+        survey = report.survey_score or 0
 
-        # 4. AI_VIDEO_ANALYZE 테이블에 분석 상세 결과 저장
-        analysis_detail = AiVideoAnalyze(
-            ai_v_erp_id=report_v.ai_v_erp_id,
-            ai_v_comment=f"집중도 {data.attention_score}%와 감정 분석을 통한 종합 행동 요약입니다.",
-            emotion_v_score={
-                "emotion": data.emotion_score,
-                "attention": data.attention_score,
-                "final_balanced_score": final_score # 계산된 최종 점수도 저장
-            },
-            prompt=data.get('prompt', '기본 분석 프롬프트')
+        final_score = (
+            data.attention_score * 0.3 +
+            data.emotion_score * 0.3 +
+            survey * 0.4
         )
-        db.add(analysis_detail)
 
-        # 5. REPORT_AI_V 상태 업데이트 (분석 완료 표시)
-        report_v.re_comment = ReCommentEnum.ANALYZED
-        report_v.complete_yn = 'Y' if is_reliable else 'N'
+        report.final_score = round(final_score, 2)
+        report.re_comment = ReCommentEnum.ANALYZED
 
         db.commit()
-        print(f"✅ [상담 {data.session_id}] AI 분석 데이터 DB 저장 성공!")
-        return {"status": "success", "final_score": final_score}
+
+        return {
+            "success": True,
+            "final_score": report.final_score
+        }
 
     except Exception as e:
         db.rollback()
-        print(f"❌ DB 저장 중 오류 발생: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
     
 
 @router.post("/complete-client")
 async def complete_counseling(req_data: CompleteRequest, db: Session = Depends(get_db)):
-    
-    # 1. DB에서 counseling_id를 이용해 client_id 조회 (세션 의존성 제거)
-    counseling = db.query(Counseling).filter(Counseling.counseling_id == req_data.counseling_id).first()
-    
-    if not counseling.client_id:
-        raise HTTPException(status_code=404, detail="해당 상담 기록을 찾을 수 없습니다.")
-        
-    client = db.query(Client).filter(Client.client_id == counseling.client_id).first()
 
-    # 2. AI 서버로 분석 지시 내리기
-    ai_server_url = f"{AI_SERVER_BASE_URL}/focus-rule/start-analysis"
-    
+    counseling = db.query(Counseling).filter(
+        Counseling.counseling_id == req_data.counseling_id
+    ).first()
+
+    if not counseling:
+        raise HTTPException(status_code=404, detail="상담 없음")
+
+    client = db.query(Client).filter(
+        Client.client_id == counseling.client_id
+    ).first()
+
     payload = {
         "counseling_id": req_data.counseling_id,
         "client_id": client.c_id
     }
 
-    try:
-        # 비동기로 AI 서버 호출
-        async with httpx.AsyncClient() as client:
-            response = await client.post(ai_server_url, json=payload, timeout=10.0)
-        
-        if response.status_code == 200:
-            return JSONResponse(content={"success": True, "message": "AI 분석 요청이 성공적으로 전달되었습니다."})
-        else:
-            raise HTTPException(status_code=500, detail="AI 서버에서 오류가 발생했습니다.")
-            
-    except httpx.RequestError as e:
-        raise HTTPException(status_code=500, detail=f"AI 서버와 통신 실패: {str(e)}")
+    async with httpx.AsyncClient() as client_http:
+        await client_http.post(
+            f"{AI_SERVER_BASE_URL}/focus-rule/start-analysis",
+            json=payload,
+            timeout=10
+        )
+
+    return {"success": True}
     
 
 @router.get("/session/clear")
 def clear_session(request: Request):
     request.session.clear()
     return {"success": True}
+
+
+
+@router.get("/final-score/{counseling_id}")
+def get_final_score(counseling_id: int, db: Session = Depends(get_db)):
+
+    reports = db.query(ReportAiV).filter(
+        ReportAiV.counseling_id == counseling_id
+    ).all()
+
+    if not reports:
+        raise HTTPException(status_code=404, detail="데이터 없음")
+
+    avg = sum(r.final_score or 0 for r in reports) / len(reports)
+
+    return {
+        "success": True,
+        "counseling_score": round(avg, 2)
+    }
+
+@router.post("/survey/submit")
+def submit_survey(data: SurveySubmitRequest, db: Session = Depends(get_db)):
+    try:
+        report = db.query(ReportAiV).filter(
+            ReportAiV.counseling_id == data.counseling_id,
+            ReportAiV.url == data.url
+        ).first()
+
+        if not report:
+            raise HTTPException(status_code=404, detail="리포트 없음")
+
+        report.answer = data.answer
+
+        survey_score = analyze_survey(data.answer)
+
+        report.survey_score = survey_score
+        report.complete_yn = "Y"
+        report.re_comment = ReCommentEnum.SUCCESS
+
+        db.commit()
+
+        return {
+            "success": True,
+            "survey_score": survey_score,
+            "ai_v_erp_id": report.ai_v_erp_id
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.get("/survey/score/{counseling_id}")
+def get_survey_score(counseling_id: int, db: Session = Depends(get_db)):
+
+    reports = db.query(ReportAiV).filter(
+        ReportAiV.counseling_id == counseling_id
+    ).all()
+
+    scores = [r.survey_score for r in reports if r.survey_score is not None]
+
+    if not scores:
+        return {"success": True, "survey_score": 0}
+
+    avg = sum(scores) / len(scores)
+
+    return {
+        "success": True,
+        "survey_score": round(avg, 2)
+    }

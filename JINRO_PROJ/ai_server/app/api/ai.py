@@ -2,8 +2,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Form, FastAPI
 
 from fastapi.responses import FileResponse
-from app.services.attention_analysis import analyze_attention
-from app.services.emotion_analysis import analyze_emotion
 from app.schemas.ai import (
     VideoAnalyze, SummaryRequest
     )
