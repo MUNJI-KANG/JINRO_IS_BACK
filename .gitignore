@@ -50,3 +50,11 @@ data
 audio_records
 temp_audio
 audio_uploads
+
+
+# AI model
+*.pth
+*.pt
+*.h5
+*.ckpt
+

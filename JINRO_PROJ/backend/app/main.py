@@ -54,7 +54,11 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 VIDEO_DIR = os.path.join(BASE_DIR, "..", "..", "ai_server", "videos")
 
-app.mount("/videos", StaticFiles(directory=VIDEO_DIR), name="videos")
+app.mount(
+    "/videos",
+    StaticFiles(directory=str(VIDEO_DIR)),
+    name="videos"
+)
 
 app.include_router(client.router)
 app.include_router(counselor.router)

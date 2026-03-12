@@ -11,15 +11,32 @@ import datetime
 import os
 import shutil
 import httpx
+from datetime import datetime
 
 
+from fastapi import Request, APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
+from app.db.database import SessionLocal, engine, Base
+from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV,ReportCon,ReportFinal, ReCommentEnum, AiVideoAnalyze
+from app.schemas.client import ClientCreate,CounselingCreateRequest,ReportCompleteRequest, SurveySubmitRequest, AIAnalysisRequest
+
+from sqlalchemy.orm import Session
 
 # DB 및 모델 임포트 
 from app.db.database import get_db
-from app.models.schema_models import Client, Category, ReportAiV, ReCommentEnum
-from app.schemas.client import ClientCreate, SurveySubmitRequest
 
-router = APIRouter(prefix="/client", tags=["Client (내담자)"])
+
+
+from app.schemas.client import AIAnalysisRequest
+from app.services.report_service import calculate_balance_score 
+
+
+
+
+router = APIRouter(
+    prefix="/client",
+    tags=["Client"]
+)
+
 
 
 @router.get("/")
@@ -35,84 +52,88 @@ def get_client_detail(client_id: int):
 @router.post("/login")
 def login_or_create_client(client_data: ClientCreate, request: Request, db: Session = Depends(get_db)):
     try:
-        # ── STEP 1: 이름 + 전화번호 + 주민번호 3가지로 조회 ──
+        name = (client_data.name or "").strip()
+        phone = str(client_data.phone_num)
+        birth = str(client_data.birthdate)
+        email = str(client_data.email)
+
         existing_client = db.query(Client).filter(
-            Client.phone_num == client_data.phone_num,
-            Client.name      == client_data.name.strip(),
-            Client.birthdate == client_data.birthdate
+            Client.phone_num == phone,
+            Client.name == name,
+            Client.birthdate == birth
         ).first()
 
         if existing_client:
 
-            # ── STEP 2: 이메일이 달라졌으면 UPDATE ──
-            if existing_client.email != client_data.email:
-                existing_client.email = client_data.email
+            if existing_client.email != email:
+                existing_client.email = email
                 db.commit()
                 db.refresh(existing_client)
 
-            # ── STEP 3: 세션 저장 ──
             request.session['client_id'] = existing_client.client_id
 
-            # ── STEP 4: 진행 중인 상담(complete_yn == 0) 조회 ──
             active_counseling = db.query(Counseling).filter(
-                Counseling.client_id   == existing_client.client_id,
-                Counseling.complete_yn == 0
-            ).first()
+                Counseling.client_id == existing_client.client_id,
+                Counseling.complete_yn.in_([0,1,2])
+            ).order_by(Counseling.counseling_id.desc()).first()
 
             has_unfinished_video = False
-            resume_category_id   = None
-            video_list           = []
-            report_ids           = []
+            resume_category_id = None
+            video_list = []
+            report_ids = []
 
             if active_counseling:
                 unfinished_reports = db.query(ReportAiV).filter(
                     ReportAiV.counseling_id == active_counseling.counseling_id,
-                    ReportAiV.complete_yn   == 'N'
+                    ReportAiV.complete_yn == 'N'
                 ).order_by(ReportAiV.ai_v_erp_id.asc()).all()
 
                 if unfinished_reports:
                     has_unfinished_video = True
-                    resume_category_id   = unfinished_reports[0].category_id
+                    resume_category_id = unfinished_reports[0].category_id
 
                     for report in unfinished_reports:
                         video_list.append({"id": report.category_id})
                         report_ids.append(report.ai_v_erp_id)
 
             return {
-                "success":              True,
-                "message":              "기존 회원 로그인 성공",
-                "client_id":            existing_client.client_id,
+                "success": True,
+                "message": "기존 회원 로그인 성공",
+                "client_id": existing_client.client_id,
                 "has_unfinished_video": has_unfinished_video,
-                "counseling_id":        active_counseling.counseling_id if active_counseling else None,
-                "category_id":          resume_category_id,
-                "video_list":           video_list,
-                "report_ids":           report_ids
+                "counseling_id": active_counseling.counseling_id if active_counseling else None,
+                "category_id": resume_category_id,
+                "video_list": video_list,
+                "report_ids": report_ids
             }
 
-        # ── STEP 5: 3가지 중 불일치 → 전화번호로 재조회해서 기존 회원인지 확인 ──
         phone_exists = db.query(Client).filter(
-            Client.phone_num == client_data.phone_num
+            Client.phone_num == phone
         ).first()
 
         if phone_exists:
-            # 전화번호는 있는데 이름 or 주민번호가 틀린 경우
             return {
                 "success": False,
-                "message": "입력하신 정보가 일치하지 않습니다. 이름, 전화번호, 생년월일/성별을 확인해주세요."
+                "message": "입력 정보 불일치"
             }
 
-        # ── STEP 6: 완전 신규 회원 가입 ──
-        current_year   = datetime.datetime.now().strftime("%Y")
-        random_num     = f"{random.randint(1, 999):03d}"
-        generated_c_id = f"S{current_year}{random_num}"
+        current_year = datetime.now().strftime("%Y")
+
+        while True:
+            random_num = f"{random.randint(1, 999999):06d}"
+            generated_c_id = f"S{current_year}{random_num}"
+
+            exists = db.query(Client).filter(Client.c_id == generated_c_id).first()
+            if not exists:
+                break
 
         new_client = Client(
-            c_id      = generated_c_id,
-            name      = client_data.name.strip(),
-            phone_num = client_data.phone_num,
-            email     = client_data.email,
-            birthdate = client_data.birthdate,
-            agree     = 'Y'
+            c_id=generated_c_id,
+            name=name,
+            phone_num=phone,
+            email=email,
+            birthdate=birth,
+            agree='Y'
         )
 
         db.add(new_client)
@@ -122,14 +143,14 @@ def login_or_create_client(client_data: ClientCreate, request: Request, db: Sess
         request.session['client_id'] = new_client.client_id
 
         return {
-            "success":              True,
-            "message":              "신규 회원 등록 및 로그인 성공",
-            "client_id":            new_client.client_id,
+            "success": True,
+            "message": "신규 회원 등록 및 로그인 성공",
+            "client_id": new_client.client_id,
             "has_unfinished_video": False,
-            "counseling_id":        None,
-            "category_id":          None,
-            "video_list":           [],
-            "report_ids":           None
+            "counseling_id": None,
+            "category_id": None,
+            "video_list": [],
+            "report_ids": []
         }
 
     except Exception as e:
@@ -138,7 +159,6 @@ def login_or_create_client(client_data: ClientCreate, request: Request, db: Sess
         print("=== 로그인 에러 ===")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
-    
     
 @router.get("/list/{kind_id}")
 def get_videos_by_kind(kind_id: int, db: Session = Depends(get_db)):
@@ -252,7 +272,7 @@ def create_counselling_and_reports(
     assigned_counselor = random.choice(active_counselors)
 
     try:
-        now = datetime.datetime.now()
+        now = datetime.now()
 
         #  Counseling(상담 매칭) 테이블 데이터 생성
         new_counseling = Counseling(
@@ -404,34 +424,41 @@ UPLOAD_DIR = os.path.join(BASE_DIR, "..", "ai_server", "videos")
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+import httpx # 설치 필요: pip install httpx
+
 @router.post("/video/upload/{counseling_id}")
 async def upload_video(
     counseling_id: int,
     request: Request,
+    background_tasks: BackgroundTasks, # 추가
     file: UploadFile = File(...),
     report_id: int = Form(...),
     db: Session = Depends(get_db)
 ):
-
     try:
-
         client_id = request.session.get("client_id")
         if not client_id:
             raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
 
         client = db.query(Client).filter(Client.client_id == client_id).first()
-
         if not client:
             raise HTTPException(status_code=404, detail="학생 없음")
 
         c_id = client.c_id
-
         counseling_folder = os.path.join(UPLOAD_DIR, str(counseling_id))
         os.makedirs(counseling_folder, exist_ok=True)
 
-        # ⭐ report_id 기반 파일명
-        filename = f"{c_id}_{report_id}.webm"
+        files = os.listdir(counseling_folder)
+        numbers = []
+        for f in files:
+            if f.startswith(f"{c_id}_") and f.endswith(".webm"):
+                try:
+                    num = int(f.replace(".webm", "").split("_")[1])
+                    numbers.append(num)
+                except: pass
 
+        next_number = max(numbers, default=0) + 1
+        filename = f"{c_id}_{next_number}.webm"
         file_path = os.path.join(counseling_folder, filename)
 
         # ⭐ 동일 영상 중복 업로드 방지
@@ -445,6 +472,11 @@ async def upload_video(
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
+        
+        if next_number >= 3:
+            # 백그라운드 태스크로 실행하여 파일 업로드 응답 속도를 유지
+            background_tasks.add_task(trigger_ai_analysis, counseling_id, client_id)
+
         return {
             "success": True,
             "message": "영상 저장 성공",
@@ -454,6 +486,15 @@ async def upload_video(
     except Exception as e:
         print("영상 저장 오류:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
+
+async def trigger_ai_analysis(counseling_id: int, client_id: str):
+    AI_SERVER_URL = f"http://localhost:8001/api/analysis/start/{counseling_id}?user_id={client_id}"
+    async with httpx.AsyncClient() as client:
+        try:
+            await client.post(AI_SERVER_URL, timeout=2.0)
+            print(f"🚀 AI 분석 트리거 성공: Session {counseling_id}")
+        except Exception as e:
+            print(f"⚠️ AI 서버 연결 실패: {e}")
     
     
 @router.get('/session/clear')
@@ -515,3 +556,79 @@ def delete_unfinished_counseling(counseling_id: int, db: Session = Depends(get_d
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"상담 데이터 삭제 중 오류 발생: {str(e)}")
+    
+
+
+
+@router.post("/analysis-result")
+async def receive_ai_analysis(data: AIAnalysisRequest):
+    """
+    AI 서버가 분석 완료 후 호출하는 엔드포인트
+    """
+    # 1. DB에서 해당 유저의 설문 점수 조회 (가정)
+    survey_score = 4.0 
+    
+    # 2. 밸런스 모델(3:3:4) 합산
+    final_score, is_reliable = calculate_balance_score(data.dict(), survey_score)
+    
+    # 3. 최종 리포트 DB 저장 로직 (여기에 주인님이 만든 DB 저장 함수를 넣으세요)
+    # db_save_report(data.user_id, final_score, is_reliable)
+    
+    print(f"✅ 상담 {data.session_id} 리포트 생성 완료: {final_score}점")
+    return {"status": "success", "final_score": final_score}
+
+
+
+
+
+
+@router.post("/analysis-result")
+async def receive_ai_analysis(data: AIAnalysisRequest, db: Session = Depends(get_db)):
+    try:
+        # 1. REPORT_AI_V에서 해당 상담의 리포트 레코드 조회
+        report_v = db.query(ReportAiV).filter(
+            ReportAiV.counseling_id == data.session_id
+        ).first()
+
+        if not report_v:
+            print(f"⚠️ 상담 ID {data.session_id}에 대한 AI 리포트 설정을 찾을 수 없습니다.")
+            raise HTTPException(status_code=404, detail="리포트 설정 없음")
+
+        # 2. 설문 답변(JSON)에서 점수 추출 (1~5점 척도)
+        # 주인님, answer['score'] 같은 형태로 저장되어 있다고 가정했습니다.
+        survey_score = report_v.answer.get('score', 3) if report_v.answer else 3
+
+        # 3. 3:3:4 밸런스 점수 계산 (서비스 레이어 호출)
+        final_score, is_reliable = calculate_balance_score(data.dict(), survey_score)
+
+        # 4. AI_VIDEO_ANALYZE 테이블에 분석 상세 결과 저장
+        analysis_detail = AiVideoAnalyze(
+            ai_v_erp_id=report_v.ai_v_erp_id,
+            ai_v_comment=f"집중도 {data.attention_score}%와 감정 분석을 통한 종합 행동 요약입니다.",
+            emotion_v_score={
+                "emotion": data.emotion_score,
+                "attention": data.attention_score,
+                "final_balanced_score": final_score # 계산된 최종 점수도 저장
+            },
+            prompt=data.get('prompt', '기본 분석 프롬프트')
+        )
+        db.add(analysis_detail)
+
+        # 5. REPORT_AI_V 상태 업데이트 (분석 완료 표시)
+        report_v.re_comment = ReCommentEnum.ANALYZED
+        report_v.complete_yn = 'Y' if is_reliable else 'N'
+
+        db.commit()
+        print(f"✅ [상담 {data.session_id}] AI 분석 데이터 DB 저장 성공!")
+        return {"status": "success", "final_score": final_score}
+
+    except Exception as e:
+        db.rollback()
+        print(f"❌ DB 저장 중 오류 발생: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.post("/session/clear")
+def clear_session(request: Request):
+    request.session.clear()
+    return {"success": True}

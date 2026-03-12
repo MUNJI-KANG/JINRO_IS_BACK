@@ -1,9 +1,10 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import shutil
 import os
-from app.api import ai, focus_binary_ai, data_ai
+from app.api import ai, focus_binary_ai, data_ai, analysis
+
 
 import uvicorn
 
@@ -16,7 +17,7 @@ app = FastAPI(
 )
 
 app.include_router(focus_binary_ai.router)
-
+app.include_router(analysis.router)
 app.include_router(ai.router)
 app.include_router(data_ai.router)
 
@@ -29,6 +30,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -45,6 +47,8 @@ def read_root():
         "status": "success", 
         "message": "AI 분석 서버가 정상적으로 실행 중입니다. (포트: 8001)"
     }
+
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)
