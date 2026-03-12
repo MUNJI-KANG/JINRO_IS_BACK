@@ -1,0 +1,34 @@
+{
+    "counseling_id": "56",
+    "client_id": "S2026743",
+    "status": "completed",
+    "results": [
+        {
+            "video_number": 1,
+            "status": "success",
+            "overall_focus_score": 53.75,
+            "avg_movement": 13.89,
+            "avg_angle_change": 19.07,
+            "missing_ratio": 0.12,
+            "dozing_ratio": 0.0
+        },
+        {
+            "video_number": 2,
+            "status": "success",
+            "overall_focus_score": 47.32,
+            "avg_movement": 5.0,
+            "avg_angle_change": 6.11,
+            "missing_ratio": 0.0,
+            "dozing_ratio": 0.5
+        },
+        {
+            "video_number": 3,
+            "status": "success",
+            "overall_focus_score": 60.9,
+            "avg_movement": 1.75,
+            "avg_angle_change": 2.83,
+            "missing_ratio": 0.0,
+            "dozing_ratio": 0.5
+        }
+    ]
+}

@@ -57,7 +57,7 @@ def login_or_create_client(client_data: ClientCreate, request: Request, db: Sess
                 db.refresh(existing_client)
 
             request.session['client_id'] = existing_client.client_id
-
+            
             active_counseling = db.query(Counseling).filter(
                 Counseling.client_id == existing_client.client_id,
                 Counseling.complete_yn.in_([0,1,2])
@@ -246,6 +246,7 @@ def create_counselling_and_reports(
     db: Session = Depends(get_db)
 ):
     # 내담자(Client) ID 가져오기
+    print("좆",request.session.get('client_id'))
     client_id = request.session.get('client_id')
     if not client_id:
         raise HTTPException(status_code=401, detail="로그인이 만료되었거나 비정상적인 접근입니다.")
@@ -315,6 +316,7 @@ def complete_video_report(
     payload: ReportCompleteRequest, 
     db: Session = Depends(get_db)
 ):
+   
     client_id = request.session.get('client_id')
     if not client_id:
         raise HTTPException(status_code=401, detail="로그인이 만료되었거나 비정상적인 접근입니다.")
