@@ -131,7 +131,7 @@ def extract_frames_features(video_path: str, max_faces: int = 1) -> List[Dict[st
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     results_list = []
     
-    skip_frames = max(1, int(fps / 5))
+    skip_frames = max(1, int(fps / 5)) # 1초당 5프레임
 
     with mp.solutions.face_mesh.FaceMesh(
         static_image_mode=False, max_num_faces=max_faces, refine_landmarks=True,

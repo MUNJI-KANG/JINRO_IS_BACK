@@ -16,12 +16,8 @@ import requests
 import ollama
 
 
-BACKEND_HOST = os.getenv("BACKEND_HOST", "127.0.0.1")
-BACKEND_PORT = os.getenv("BACKEND_PORT", "8000")
-AI_SERVER_HOST = os.getenv("AI_SERVER_HOST", "127.0.0.1")
-AI_SERVER_PORT = os.getenv("AI_SERVER_PORT", "8001")
+BACKEND_URL = os.getenv("BACKEND_URL")
 
-BACKEND_URL = f"http://{BACKEND_HOST}:{BACKEND_PORT}"
 UPLOAD_DIR = "audio_uploads"
 UPLOAD_VIDEO = "videos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
