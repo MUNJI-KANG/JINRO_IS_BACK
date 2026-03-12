@@ -12,7 +12,7 @@
 
   width: 100vw;
 
-  height: 100vh;
+  height:100dvh;
 
   background: var(--bg-main);
 
@@ -40,6 +40,7 @@
   padding: 30px;
 
   box-shadow: var(--shadow);
+
 }
 
 /* ===============================
@@ -323,8 +324,4 @@
   font-weight:700;
 
   color:white;
-}
-
-.card:hover{
-  transform: translateY(-2px);
 }

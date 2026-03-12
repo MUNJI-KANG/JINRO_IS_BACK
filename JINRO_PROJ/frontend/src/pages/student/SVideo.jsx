@@ -356,49 +356,6 @@ function SVideo() {
   const currentCounselingId = location.state?.counseling_id || null;
   const currentReportIds = location.state?.report_ids || []
 
-  // const handleStart = async () => {
-
-  //     try {
-
-  //         if (isResume) {
-
-  //             setStarted(true);
-
-  //             if (currentCounselingId) {
-  //                 localStorage.setItem("counselingId", currentCounselingId);
-  //             }
-
-  //             if (currentReportIds.length > 0) {
-  //                 localStorage.setItem("reportIds", JSON.stringify(currentReportIds));
-  //             }
-
-  //             if (webcamReady && webcamRef.current?.srcObject) {
-  //                 startRecording();
-  //             }
-
-  //         } else {
-
-  //             const videos = selectedVideos.map(v => ({ id: Number(v.id) }));
-  //             const res = await api.post("/client/counselling", { videos });
-
-  //             localStorage.setItem("counselingId", res.data.counseling_id);
-  //             localStorage.setItem("reportIds", JSON.stringify(res.data.report_ids));
-
-  //             setStarted(true);
-
-  //             if (webcamReady && webcamRef.current?.srcObject) {
-  //                 startRecording();
-  //             }
-
-  //         }
-
-  //     } catch (err) {
-
-  //         console.error("상담 생성/시작 실패:", err);
-
-  //     }
-
-  // };
   const handleStart = async () => {
 
     try {
