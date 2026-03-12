@@ -19,6 +19,8 @@ function SVideo() {
   const webcamRef = useRef(null);
   const recorderRef = useRef(null);
   const recordedChunks = useRef([]);
+  const cameraRef = useRef(null);
+  const streamRef = useRef(null);
 
   const frontStartTimeRef = useRef(null);
   const frontFrameCountRef = useRef(0); // 프레임 누적 필요
@@ -43,6 +45,7 @@ function SVideo() {
 
   // 웹캠 초기화
   useEffect(() => {
+    let activeStream = null;
 
   const initWebcam = async () => {
 
@@ -53,6 +56,7 @@ function SVideo() {
           audio: false
         });
 
+        activeStream = stream;
         if (webcamRef.current) {
           webcamRef.current.srcObject = stream;
           setWebcamReady(true);
@@ -81,6 +85,20 @@ function SVideo() {
 
         webcamRef.current.srcObject = null;
 
+      }
+
+      if (activeStream) {
+        activeStream.getTracks().forEach((track) => track.stop());
+      }
+
+      if (cameraRef.current) {
+        cameraRef.current.stop();
+        cameraRef.current = null;
+      }
+
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
       }
 
     };
@@ -213,6 +231,12 @@ function SVideo() {
       height: 480,
     });
 
+    if (cameraRef.current) {
+      cameraRef.current.stop();
+      cameraRef.current = null;
+    }
+
+    cameraRef.current = camera;
     camera.start();
 
     return () => {
@@ -306,7 +330,13 @@ function SVideo() {
       return;
     }
 
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
     const stream = webcamRef.current.srcObject;
+    streamRef.current = stream;
     const mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
 
     recorderRef.current = mediaRecorder;
