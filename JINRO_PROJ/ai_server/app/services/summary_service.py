@@ -23,7 +23,7 @@ def clean_text(text: str):
 # -----------------------------
 # Whisper segment → semantic chunk
 # -----------------------------
-def build_chunks_from_segments(segments, max_chars=1500):
+def build_chunks_from_segments(segments, max_chars=2500):
 
     chunks = []
     current_chunk = ""
@@ -38,7 +38,7 @@ def build_chunks_from_segments(segments, max_chars=1500):
             chunks.append(current_chunk.strip())
             current_chunk = text
 
-    if current_chunk:
+    if current_chunk.strip():
         chunks.append(current_chunk.strip())
 
     return chunks
@@ -86,7 +86,8 @@ def summarize_chunks(chunks):
 
     summaries = []
 
-    with ThreadPoolExecutor(max_workers=3) as executor:
+    # 병렬 LLM 호출
+    with ThreadPoolExecutor(max_workers=4) as executor:
         results = executor.map(summarize_chunk, chunks)
 
     for r in results:
@@ -150,9 +151,17 @@ JSON만 출력하세요.
 
     content = res.choices[0].message.content.strip()
 
+    # GPT JSON 파싱 오류 방지
+    content = re.sub(r"^```json", "", content)
+    content = re.sub(r"^```", "", content)
+    content = re.sub(r"```$", "", content)
+    content = content.strip()
+
     try:
         return json.loads(content)
+
     except Exception:
+
         return {
             "interest_field": "",
             "low_interest_field": "",
@@ -167,8 +176,15 @@ JSON만 출력하세요.
 # -----------------------------
 def summarize_text(stt_result):
 
-    if not stt_result:
-        return "음성 내용이 인식되지 않았습니다."
+    # STT 결과 검증
+    if not stt_result or "segments" not in stt_result or not stt_result["segments"]:
+        return {
+            "interest_field": "",
+            "low_interest_field": "",
+            "student_trait": "",
+            "career_recommendation": "",
+            "summary": "음성 내용이 인식되지 않았습니다."
+        }
 
     segments = stt_result["segments"]
 

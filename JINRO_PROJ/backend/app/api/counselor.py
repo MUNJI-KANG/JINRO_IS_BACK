@@ -692,6 +692,40 @@ def receive_stt_result(counseling_id: int, data: dict, db: Session = Depends(get
     }
 
 # ===============================
+# 🔹 AI 처리 상태 조회
+# ===============================
+@router.get("/report/status/{counseling_id}")
+def get_ai_process_status(counseling_id: int, db: Session = Depends(get_db)):
+
+    report = db.query(ReportCon).filter(
+        ReportCon.counseling_id == counseling_id
+    ).first()
+
+    if not report:
+        return {"success": False, "status": "NOT_FOUND"}
+
+    ai_report = db.query(ReportAiM).filter(
+        ReportAiM.con_rep_id == report.con_rep_id
+    ).first()
+
+    if not ai_report:
+        return {
+            "success": True,
+            "status": "STT_PROCESSING"
+        }
+
+    if ai_report and not ai_report.ai_m_comment:
+        return {
+            "success": True,
+            "status": "LLM_PROCESSING"
+        }
+
+    return {
+        "success": True,
+        "status": "COMPLETED"
+    }
+
+# ===============================
 # 🔹 상담 예약 date정보 가져오기
 # ===============================
 @router.get("/counseling/date/{counseling_id}")
