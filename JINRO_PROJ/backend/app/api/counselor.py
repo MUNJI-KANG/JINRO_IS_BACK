@@ -618,7 +618,8 @@ def get_student_consultations(client_id: int, db: Session = Depends(get_db)):
                 "description":  final_report.final_comment if final_report else "상담 진행 중 입니다.",
                 "date":         display_date,
                 "unread":       unread_count,
-                "final":        is_final  # Counseling 기준값 대입
+                "final":        is_final,  # Counseling 기준값 대입
+                "final_report_yn": final_report.complete_yn if final_report else "",
             })
 
         return {"success": True, "data": result}
