@@ -1,10 +1,10 @@
+from __future__ import annotations
 import os
 import shutil
 import subprocess
 import tempfile
 
 from pathlib import Path
-from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from faster_whisper import WhisperModel
 
