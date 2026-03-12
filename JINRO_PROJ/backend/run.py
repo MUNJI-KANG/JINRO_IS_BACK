@@ -1,4 +1,6 @@
 import uvicorn
+import os
+from dotenv import load_dotenv
 
 if __name__ == "__main__":
     # app 폴더 안의 main.py에 있는 app 객체를 실행합니다.

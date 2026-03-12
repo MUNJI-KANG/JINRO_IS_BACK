@@ -28,9 +28,18 @@ class SummaryRequest(BaseModel):
     """
 
 
+
 class AnalysisResult(BaseModel):
     user_id: str
     session_id: str
     emotion: str          
     attention_score: float 
     status: str = "success"
+
+# -----------------------------
+# 지울거임(data_ai를 통한 집중도 분석을 위한 스키마)
+# -----------------------------
+class AnalyzeRequest(BaseModel):
+    counseling_id: str
+    client_id: str
+
