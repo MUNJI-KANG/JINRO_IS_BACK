@@ -51,13 +51,20 @@
 
 .report-card h3 {
 
-  font-size: 18px;
+  font-size: 20px;
 
   font-weight: 700;
 
   margin-bottom: 8px;
 
   color: var(--text-main);
+}
+
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
 }
 
 .sub-text {
@@ -476,7 +483,11 @@
 .analysis-text{
     padding:16px;
     line-height:1.6;
-    font-size:14px;
+    font-size:18px;
+}
+
+.analysis-text div::before {
+    content: "• ";
 }
 
 .summary-box{

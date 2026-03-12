@@ -66,7 +66,7 @@ const CFinal = () => {
 
                 if (data.success && data.data && data.data.ai_m_comment) {
 
-                    const parsed = JSON.parse(data.data.ai_m_comment);
+                    const parsed = data.data.ai_m_comment;
 
                     setLlmResult(parsed);
 
@@ -78,6 +78,30 @@ const CFinal = () => {
             });
 
     }, [counselingId]);
+
+    // 최종 상담 리포트 조회
+    useEffect(() => {
+
+    if (!counselingId || counselingId === 'undefined') return;
+
+    api.get(`/counselor/report/final/comment/${counselingId}`)
+        .then(res => res.data)
+        .then(data => {
+
+            if (!data.success) return;
+
+            // DB에 저장된 상담 내용 불러오기
+            setReport(data.comment || "");
+
+            // 작성 완료 여부
+            setIsComplete(data.complete === "Y");
+
+        })
+        .catch(err => {
+            console.error("최종 리포트 조회 실패", err);
+        });
+
+}, [counselingId]);
 
     // 녹음 정리 useEffect
     useEffect(() => {
@@ -262,7 +286,7 @@ const CFinal = () => {
 
                 if (result.data.success && result.data.data.ai_m_comment) {
 
-                    const parsed = JSON.parse(result.data.data.ai_m_comment);
+                    const parsed = result.data.data.ai_m_comment;
 
                     setLlmResult(parsed);
 
@@ -395,7 +419,13 @@ const CFinal = () => {
                     {llmResult ? (
 
                         <div className="analysis-text">
-                            {llmResult.career_recommendation}
+                        {
+                            llmResult.career_recommendation
+                                .split(',')
+                                .map((item, index) => (
+                                    <div key={index}>{item.trim()}</div>
+                                ))
+                        }
                         </div>
 
                     ) : (
@@ -413,73 +443,7 @@ const CFinal = () => {
 
                 <div className="summary-header">
 
-                    <h3>상담 대화 요약 (STT → LLM)</h3>
-
-                    <div className="record-control">
-
-                        {recordState === "idle" && (
-
-                            <button
-                                className="btn-record"
-                                onClick={startRecording}
-                            >
-                                🎤 녹음 시작
-                            </button>
-
-                        )}
-
-                        {recordState === "recording" && (
-
-                            <div className="record-box">
-
-                                <span className="rec-text">
-                                    녹음중 <span className="rec-dot">●</span>
-                                </span>
-
-                                <span className="record-timer">
-                                    {formatTime(recordTime)}
-                                </span>
-
-                                <button
-                                    className="btn-record small"
-                                    onClick={pauseRecording}
-                                >
-                                    중지
-                                </button>
-
-                            </div>
-
-                        )}
-
-                        {recordState === "paused" && (
-
-                            <div className="record-box">
-
-                                <span>일시정지</span>
-
-                                <span className="record-timer">
-                                    {formatTime(recordTime)}
-                                </span>
-
-                                <button
-                                    className="btn-record small"
-                                    onClick={resumeRecording}
-                                >
-                                    재시작
-                                </button>
-
-                                <button
-                                    className="btn-record small"
-                                    onClick={stopRecording}
-                                >
-                                    종료
-                                </button>
-
-                            </div>
-
-                        )}
-
-                    </div>
+                    <h3>AI 상담 대화 요약</h3>
 
                 </div>
 
@@ -500,12 +464,83 @@ const CFinal = () => {
             </section>
 
             <section className="report-card full-width">
-                <div className="report-content-box">
-                    <p>최종 리포트 내용</p>
+    <div className="report-content-box">
+
+        <div className="report-header">
+
+            <p>상담 기록 및 종합 리포트</p>
+
+            <div className="record-control">
+
+                {recordState === "idle" && (
+
+                    <button
+                        className="btn-record"
+                        onClick={startRecording}
+                    >
+                        🎤 녹음 시작
+                    </button>
+
+                )}
+
+                {recordState === "recording" && (
+
+                    <div className="record-box">
+
+                        <span className="rec-text">
+                            녹음중 <span className="rec-dot">●</span>
+                        </span>
+
+                        <span className="record-timer">
+                            {formatTime(recordTime)}
+                        </span>
+
+                        <button
+                            className="btn-record small"
+                            onClick={pauseRecording}
+                        >
+                            중지
+                        </button>
+
+                    </div>
+
+                )}
+
+                {recordState === "paused" && (
+
+                    <div className="record-box">
+
+                        <span>일시정지</span>
+
+                        <span className="record-timer">
+                            {formatTime(recordTime)}
+                        </span>
+
+                        <button
+                            className="btn-record small"
+                            onClick={resumeRecording}
+                        >
+                            재시작
+                        </button>
+
+                        <button
+                            className="btn-record small"
+                            onClick={stopRecording}
+                        >
+                            종료
+                        </button>
+
+                    </div>
+
+                )}
+
+            </div>
+
+        </div>
                     <form className="final-report-comment" onSubmit={(e) => e.preventDefault()}>
                         <textarea
                             id="finalComment"
-                            placeholder="상담 내용을 입력해주세요..."
+                            placeholder="학생과의 상담 내용을 입력해주세요."
                             value={report}
                             onChange={(e) => setReport(e.target.value)}
                             readOnly={isComplete}
