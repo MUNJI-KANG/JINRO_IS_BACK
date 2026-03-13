@@ -76,19 +76,22 @@
 // }
 
 // export default SComplete;
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/app.js';
 import styles from '../../css/student_css/SComplete.module.css';
 
 function SComplete() {
     const navigate = useNavigate();
+    const [counselingVal, setCounselingVal] = useState(null)
 
     useEffect(() => {
         const triggerAIAnalysis = async () => {
             try {
                 // ⭐ 1. localStorage에서 먼저 값을 꺼냅니다 (지우기 전에!)
                 const counselingId = localStorage.getItem("counselingId");
+
+                setCounselingVal(counselingId)
 
                 if (!counselingId) {
                     console.error("상담 ID(counselingId)를 찾을 수 없습니다.");
@@ -125,7 +128,12 @@ function SComplete() {
         stopCamera();
     }, []);
 
-    const handleGoHome = () => navigate('/');
+    const handleGoHome = () => {
+        api.post('/client/complete/video', {
+            counseling_id: counselingVal
+        });
+        navigate('/');
+    }
 
     return (
         <main className={styles.container}>

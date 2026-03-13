@@ -6,7 +6,7 @@ import httpx
 from datetime import datetime
 from fastapi import Request, APIRouter, Depends, HTTPException, UploadFile, File, Form
 from app.db.database import get_db
-from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV,ReportCon,ReportFinal, ReCommentEnum
+from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV,ReportCon,ReportFinal, ReCommentEnum, AiVideoAnalyze
 from app.schemas.client import ClientCreate,CounselingCreateRequest,ReportCompleteRequest, SurveySubmitRequest, AIAnalysisRequest, CompleteRequest
 from app.services.survey_service import analyze_survey
 
@@ -741,3 +741,46 @@ def get_survey_score(counseling_id: int, db: Session = Depends(get_db)):
         "success": True,
         "survey_score": round(avg, 2)
     }
+
+@router.post("/complete/video")
+def complete_video(complete_request: CompleteRequest, db: Session = Depends(get_db)):
+
+    try:
+        counseling = db.query(Counseling, ReportAiV).join(
+            ReportAiV, Counseling.counseling_id == ReportAiV.counseling_id
+        ).where(Counseling.counseling_id == complete_request.counseling_id).all()
+
+        data = {}
+        if counseling:
+            for c, r in counseling:
+                total_score = 0
+                if len(r.answer) > 0:
+                    for sc in r.answer.values():
+                        total_score += sc + 1
+                    
+                    score = ((total_score - len(r.answer)) / ((len(r.answer) * 5) - len(r.answer))) * 100
+
+                    if f"{r.ai_v_erp_id}" not in data:
+                        data[f'{r.ai_v_erp_id}'] = {}
+
+                    data[f'{r.ai_v_erp_id}']['survey'] = score
+        
+        
+        for k, v in data.items():
+            db.add(AiVideoAnalyze(
+                ai_v_erp_id=int(k),
+                attention_score=None,
+                emotion_score=None,
+                final_score=None,
+                survey_score=v['survey'],
+                ai_v_comment='',
+                raw_data={},
+                prompt='',
+            ))
+
+        db.commit()
+
+        return {'success': True}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
