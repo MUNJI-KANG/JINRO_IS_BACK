@@ -637,7 +637,9 @@ def get_student_consultations(client_id: int, db: Session = Depends(get_db)):
     try:
         # 1. 상담 기록 조회 (Counseling 테이블)
         records = db.query(Counseling).filter(
-            Counseling.client_id == client_id
+            Counseling.client_id == client_id,
+            Counseling.complete_yn != 1,
+            Counseling.complete_yn != 0,
         ).order_by(Counseling.datetime.desc()).all()
 
         result = []

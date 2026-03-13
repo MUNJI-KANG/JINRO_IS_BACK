@@ -6,7 +6,10 @@ import {
     CartesianGrid,
     Tooltip,
     BarChart,
-    Bar
+    Bar,
+    PieChart, 
+    Pie,
+    Legend
 } from 'recharts';
 
 import '../../../css/common_css/base.css'
@@ -36,6 +39,8 @@ const CFinal = () => {
     const [personalityComment, setPersonalityComment] = useState('');
     const [careerComment, setCareerComment] = useState('');
     const [finalComment, setFinalComment] = useState('');
+
+    const [report, setReport] = useState('');
 
     const [isComplete, setIsComplete] = useState(false);
     const [llmResult, setLlmResult] = useState(null);
@@ -349,14 +354,45 @@ const CFinal = () => {
                         <h3>❶ 분야별 관심 비교 그래프</h3>
                         {focusData.length > 0 ? (
                             <div className="chart-box">
-                                <ResponsiveContainer width="100%" height={200}>
-                                    <BarChart data={focusData}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="subject" />
-                                        <YAxis />
-                                        <Tooltip />
-                                        <Bar dataKey="value" fill="#4A90E2" radius={[6, 6, 0, 0]} />
-                                    </BarChart>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Legend
+                                            height={110}
+                                            layout="vertical"
+                                            verticalAlign="middle"
+                                            align="right"
+                                            iconSize={7}
+                                            payload={[
+                                                { value: `방송`, type: 'square', color: '#FFB7B2' },
+                                                { value: `항해사`, type: 'square', color: '#E2F0CB' },
+                                                { value: `자동차`, type: 'square', color: '#C7CEEA' },
+                                            ]}
+                                            />
+                                        <Pie
+                                            data={[
+                                                {
+                                                    name: '방송',
+                                                    value: 30,
+                                                    fill: "#FFB7B2"
+                                                },
+                                                {
+                                                    name: '항해사',
+                                                    value: 30,
+                                                    fill: "#E2F0CB"
+                                                },
+                                                {
+                                                    name: '자동차',
+                                                    value: 40,
+                                                    fill: "#C7CEEA"
+                                                },
+                                            ]}
+                                            cx="50%"
+                                            cy="50%"
+                                            outerRadius={80}
+                                            dataKey="value"
+                                        />
+                                        <Tooltip/>
+                                    </PieChart>
                                 </ResponsiveContainer>
                             </div>
                         ) : (
