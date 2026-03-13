@@ -7,11 +7,17 @@ from app.schemas.ai import (
     )
 from app.services.stt_service import speech_to_text
 from app.services.summary_service import summarize_text
+from app.services.interest_analyze import analyze_video_with_face_crop
 from datetime import datetime
 import shutil
 import os
 import requests
 import ollama
+import torch
+import torch.nn as nn
+from torchvision import models, transforms
+import mediapipe as mp
+
 
 
 BACKEND_URL = os.getenv("BACKEND_URL")
@@ -20,6 +26,36 @@ UPLOAD_DIR = "audio_uploads"
 UPLOAD_VIDEO = "videos"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(UPLOAD_VIDEO, exist_ok=True)
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# 1. 디바이스 및 예측 모델 설정
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+class_names = ['interested', 'not_interested']
+
+test_transforms = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+])
+
+model = models.resnet50(pretrained=False)
+num_ftrs = model.fc.in_features
+model.fc = nn.Linear(num_ftrs, len(class_names))
+
+# 저장된 모델 가중치 불러오기
+model_path = os.path.join(BASE_DIR, '..', 'model', 'interest_classifier_best.pth')
+if os.path.exists(model_path):
+    model.load_state_dict(torch.load(model_path, map_location=device))
+else:
+    print(f"⚠️ 모델 파일을 찾을 수 없습니다: {model_path}")
+    
+model = model.to(device)
+model.eval()
+
+# 2. 미디어파이프 얼굴 인식 모듈 초기화
+mp_face_detection = mp.solutions.face_detection
+face_detector = mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.5)
 
 router = APIRouter(prefix="/ai", tags=["Client (내담자)"])
 
@@ -136,7 +172,7 @@ async def summarize_text(summaryRequest: SummaryRequest):
 
 @router.get("/audio/load/{counseling_id}", summary="음성파일 가져오기")
 async def audio_load(counseling_id: int):
-    counseling_dir = os.path.join(UPLOAD_VIDEO, str(counseling_id), f"counseling_{counseling_id}.webm")
+    counseling_dir = os.path.join(UPLOAD_DIR, str(counseling_id), f"counseling_{counseling_id}.webm")
     
     if not os.path.exists(counseling_dir):
         raise HTTPException(status_code=404, detail="File not found")
@@ -197,3 +233,14 @@ async def ai_upload_video(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.get("/interest/test", summary="흥미분석 테스트")
+def interest_test():
+    # 4. 테스트 실행
+    sample_video_path = os.path.join(UPLOAD_VIDEO, "26", f"S2026378_3.webm")
+
+    # frame_skip=5 인자를 명시적으로 전달 (기본값이 5이므로 생략해도 됩니다)
+    df_results, stats = analyze_video_with_face_crop(sample_video_path, model, test_transforms, class_names, device, face_detector, frame_skip=5, margin_ratio=0.4)
+
+    return stats
