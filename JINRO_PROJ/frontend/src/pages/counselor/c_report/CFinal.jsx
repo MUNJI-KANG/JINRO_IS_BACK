@@ -31,7 +31,12 @@ const CFinal = () => {
     // 상담 데이터 관련 상태
     const [focusData, setFocusData] = useState([]);
     const [interestData, setInterestData] = useState([]);
-    const [report, setReport] = useState('');
+
+    // 상담사 TEXT 리포트 부분
+    const [personalityComment, setPersonalityComment] = useState('');
+    const [careerComment, setCareerComment] = useState('');
+    const [finalComment, setFinalComment] = useState('');
+
     const [isComplete, setIsComplete] = useState(false);
     const [llmResult, setLlmResult] = useState(null);
     const [aiStatus, setAiStatus] = useState(null);
@@ -168,7 +173,9 @@ const CFinal = () => {
         if (!counselingId) return alert("ID가 없습니다.");
         await api.post("/counselor/report/final/save", {
             counseling_id: counselingId,
-            comment: report
+            personality_comment: personalityComment,
+            career_comment: careerComment,
+            final_comment: finalComment
         });
         alert("수정 저장되었습니다.");
     };
@@ -334,6 +341,9 @@ const CFinal = () => {
             <div ref={printRef} className="pdf-export-container" style={{ padding: '20px', backgroundColor: '#fff' }}>
                 <h2 className="student-info-title">{studentName}의 진로 상담 최종 리포트</h2>
 
+                {/* ================= AI 분석 ================= */}
+                <h3 className="section-title">AI 분석</h3>
+
                 <div className="report-top-grid">
                     <section className="report-card">
                         <h3>❶ 분야별 관심 비교 그래프</h3>
@@ -449,6 +459,35 @@ const CFinal = () => {
 
                 </section>
 
+                {/* ===== 상담사 분석 ===== */}
+                <h3 style={{marginTop:"40px", marginBottom:"10px"}}>상담사 분석</h3>
+
+                <div className="report-top-grid-2">
+
+                    <section className="report-card">
+                        <h3>학생 성향 분석 요약</h3>
+
+                        <textarea
+                            className="analysis-textarea"
+                            placeholder="학생 성향에 대한 상담사의 분석을 작성해주세요."
+                            value={personalityComment}
+                            onChange={(e) => setPersonalityComment(e.target.value)}
+                        />
+                    </section>
+
+                    <section className="report-card">
+                        <h3>추천 진로 분석 요약</h3>
+
+                        <textarea
+                            className="analysis-textarea"
+                            placeholder="추천 진로에 대한 상담사의 의견을 작성해주세요."
+                            value={careerComment}
+                            onChange={(e) => setCareerComment(e.target.value)}
+                        />
+                    </section>
+
+                </div>
+
                 <section className="report-card full-width">
                     <div className="report-content-box">
                         <div className="report-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -485,8 +524,8 @@ const CFinal = () => {
                                     id="finalComment"
                                     style={{ width: '100%', minHeight: '150px' }}
                                     placeholder="학생과의 상담 내용을 입력해주세요."
-                                    value={report}
-                                    onChange={(e) => setReport(e.target.value)}
+                                    value={finalComment}
+                                    onChange={(e) => setFinalComment(e.target.value)}
                                 />
                             )}
                         </div>
