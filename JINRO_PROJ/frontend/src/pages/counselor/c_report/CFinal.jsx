@@ -56,17 +56,39 @@ const CFinal = () => {
             });
     }, [counselingId]);
 
+    // 페이지 진입 시 status 확인
     useEffect(() => {
 
         if (!counselingId || counselingId === 'undefined') return;
 
-        api.get(`/counselor/ai-report/${counselingId}`)
-            .then(res => res.data)
-            .then(data => {
+        api.get(`/counselor/report/status/${counselingId}`)
+            .then(res => {
 
-                if (data.success && data.data && data.data.ai_m_comment) {
+                if (!res.data.success) return;
 
-                    const parsed = data.data.ai_m_comment;
+                const status = res.data.status;
+
+                setAiStatus(status);
+
+                if (status === "COMPLETED") {
+
+                    return api.get(`/counselor/ai-report/${counselingId}`);
+
+                }
+
+            })
+            .then(result => {
+
+                if (!result) return;
+
+                if (result.data.success && result.data.data.ai_m_comment) {
+
+                    const raw = result.data.data.ai_m_comment;
+
+                    const parsed =
+                        typeof raw === "string"
+                            ? JSON.parse(raw)
+                            : raw;
 
                     setLlmResult(parsed);
 
@@ -74,7 +96,7 @@ const CFinal = () => {
 
             })
             .catch(err => {
-                console.error("LLM 결과 조회 실패", err);
+                console.error("AI 상태 조회 실패", err);
             });
 
     }, [counselingId]);
@@ -117,6 +139,8 @@ const CFinal = () => {
         }
 
         clearInterval(timerRef.current);
+
+        setIsAnalyzing(false);
 
     };
 
@@ -195,7 +219,9 @@ const CFinal = () => {
                     const formData = new FormData();
                     formData.append("file", blob, "record.webm");
 
-                    // stopRecording 상태 초기화
+                    // React StrictMode 중복 실행 방지
+                    if (isAnalyzing) return;
+
                     setIsAnalyzing(true);
                     setAiStatus(null);
 
@@ -266,52 +292,66 @@ const CFinal = () => {
     // Frontend STT -> LLM 분석 상태 polling
     const pollAIStatus = () => {
 
-    let retry = 0;
+        let retry = 0;
+        const maxRetry = 30;
 
-    const checkStatus = async () => {
+        const checkStatus = async () => {
 
-        try {
+            if (retry >= maxRetry) {
 
-            const res = await api.get(`/counselor/report/status/${counselingId}`);
-
-            if (!res.data.success) return;
-
-            // pollAIStatus 상태 업데이트 추가
-            const status = res.data.status;
-            setAiStatus(status);
-
-            if (status === "COMPLETED") {
-
-                const result = await api.get(`/counselor/ai-report/${counselingId}`);
-
-                if (result.data.success && result.data.data.ai_m_comment) {
-
-                    const parsed = result.data.data.ai_m_comment;
-
-                    setLlmResult(parsed);
-
-                }
+                console.warn("AI polling timeout");
 
                 setIsAnalyzing(false);
+                setAiStatus("TIMEOUT");
 
                 return;
 
             }
 
-        } catch (e) {
-            console.error("status polling error", e);
-        }
+            try {
 
-        // 무제한 polling (3초 간격)
-        if (!isAnalyzing) return; // 페이지 이동 or 컴포넌트 unmount 시 polling 자동 중지
+                const res = await api.get(`/counselor/report/status/${counselingId}`);
 
-        setTimeout(checkStatus, 3000);
+                if (!res.data.success) return;
+
+                const status = res.data.status;
+                setAiStatus(status);
+
+                if (status === "COMPLETED") {
+
+                    const result = await api.get(`/counselor/ai-report/${counselingId}`);
+
+                    if (result.data.success && result.data.data.ai_m_comment) {
+
+                        const raw = result.data.data.ai_m_comment;
+
+                        const parsed =
+                            typeof raw === "string"
+                                ? JSON.parse(raw)
+                                : raw;
+
+                        setLlmResult(parsed);
+
+                    }
+
+                    setIsAnalyzing(false);
+                    return;
+
+                }
+
+            } catch (e) {
+                console.error("status polling error", e);
+            }
+
+            retry++;
+
+            setTimeout(checkStatus, 3000);
+
+        };
+
+        checkStatus();
 
     };
-
-    checkStatus();
-
-};
 
     const handleComplete = async (e) => {
 
@@ -385,7 +425,7 @@ const CFinal = () => {
                     {llmResult ? (
 
                         <div className="summary-box">
-                            {llmResult.summary}
+                            {llmResult?.summary || llmResult.analysis?.summary}
                         </div>
 
                     ) : isAnalyzing ? (
@@ -420,11 +460,10 @@ const CFinal = () => {
 
                         <div className="analysis-text">
                         {
-                            llmResult.career_recommendation
-                                .split(',')
+                            (llmResult.analysis?.career_recommendation || [])
                                 .map((item, index) => (
-                                    <div key={index}>{item.trim()}</div>
-                                ))
+                                    <div key={index}>{item}</div>
+                            ))
                         }
                         </div>
 
@@ -450,7 +489,7 @@ const CFinal = () => {
                 {llmResult ? (
 
                     <div className="summary-box">
-                        {llmResult.summary}
+                        {llmResult?.summary || llmResult.analysis?.summary}
                     </div>
 
                 ) : (
