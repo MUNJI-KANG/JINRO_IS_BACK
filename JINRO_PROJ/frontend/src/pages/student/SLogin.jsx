@@ -120,6 +120,8 @@ const SLogin = () => {
     };
     useEffect(() => {
 
+        if(localStorage.getItem("skip_all_onboarding")==="true") return;
+
         sessionStorage.clear();
 
         dispatch(clearVideos());

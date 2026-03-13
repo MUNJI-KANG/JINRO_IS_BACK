@@ -1,4 +1,9 @@
 import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from 'react-redux';
+import { useEffect, useState } from "react";
+
+
+
 import "../../../css/student_css/SBigCat.css";
 import {
   Briefcase, Calculator, Banknote, GraduationCap, Gavel,
@@ -6,8 +11,9 @@ import {
   Hotel, Utensils, Building, Cog, Layers, FlaskConical,
   Shirt, Zap, Cpu, Wheat, TreeDeciduous, Plug, Leaf,
 } from "lucide-react";
-import { useSelector, useDispatch } from 'react-redux';
-import { addVideo, deleteVideo } from '../../../redux/cVideos'
+
+import { addVideo, deleteVideo } from '../../../redux/cVideos';
+import CatBigOnboarding from "../s_onboarding/CatBigOnboarding.jsx";
 
 const categories = [
   { id: 1, name: "사업관리", icon: Briefcase },
@@ -37,12 +43,27 @@ const categories = [
 ];
 
 function SBigCat() {
-
+  const [onboardStep, setOnboardStep] = useState(1);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
-  // Redux에 저장된 선택 영상
   const selectedVideos = useSelector((state) => state.cVideos);
+
+  const [onboard, setOnboard] = useState(false);
+
+  useEffect(() => {
+
+    if (localStorage.getItem("skip_all_onboarding") === "true") return;
+
+    if (!localStorage.getItem("onboard_big")) {
+
+      setTimeout(() => {
+        setOnboard(true);
+      }, 500);
+
+      localStorage.setItem("onboard_big", "1");
+    }
+
+  }, []);
 
   const handleDelete = (id) => {
     dispatch(deleteVideo(id));
@@ -51,12 +72,18 @@ function SBigCat() {
   return (
     <div className="student-category-page">
 
-      <h2 className="page-title">카테고리 선택</h2>
+      {onboard && (
+        <CatBigOnboarding onClose={() => setOnboard(false)}
+        onStepChange={setOnboardStep}
+        />
+      )}
 
-      {/* 선택 영상 개수 */}
+      <h2 className="page-title">카테고리 선택</h2>
       <div className="progress-badge">
-        🛒 선택한 영상 {selectedVideos.length} / 3
-      </div>
+        <span className="progress-badge-target">
+          🛒 선택한 영상 {selectedVideos.length} / 3
+        </span>
+     </div>  
 
       <div className="category-grid">
 
@@ -89,8 +116,11 @@ function SBigCat() {
         })}
 
       </div>
+      {onboard && onboardStep === 3 && (
+        <div className="selected-video-container onboard-dummy-target">
+        </div>
+      )}
 
-      {/* 선택된 영상 목록 */}
       {selectedVideos.length > 0 && (
 
         <div className="selected-video-container">

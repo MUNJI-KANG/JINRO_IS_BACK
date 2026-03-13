@@ -5,6 +5,9 @@ import VideoCard from "../../../component/VideoCard";
 import { useSelector, useDispatch } from 'react-redux';
 import { deleteVideo } from '../../../redux/cVideos';
 
+import CatMedOnboarding from "../s_onboarding/CatMedOnboarding.jsx";
+
+
 // ✅ 상담사 중분류와 동일 + id만 부여
 const midCategoryMap = {
   1: [{ id: 101, name: "사업관리" }],
@@ -179,9 +182,24 @@ function SMedCat() {
     navigate(-1);
   };
 
+  const [onboard,setOnboard]=useState(false);
+
+  useEffect(()=>{
+    
+    if(localStorage.getItem("skip_all_onboarding")==="true") return;
+
+    if(!localStorage.getItem("onboard_med")){
+      setOnboard(true);
+      localStorage.setItem("onboard_med","1");
+    }
+  },[]);
+
+
   return (
     <div className={styles.container}>
 
+      {onboard && <CatMedOnboarding onClose={()=>setOnboard(false)} />}
+        
       <h1 className={styles.title}>분야 선택</h1>
 
       <p className={styles.subtitle}>

@@ -6,6 +6,8 @@ import { addVideo, deleteVideo } from "../../../redux/cVideos";
 import axios from 'axios';
 import api from '../../../services/app'
 
+import CatMedOnboarding from "../s_onboarding/CatSmallOnboarding.jsx";
+
 function SSmallCat() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -108,8 +110,24 @@ function SSmallCat() {
     };
 
 
+    const [onboard,setOnboard]=useState(false);
+
+    useEffect(()=>{
+
+    if(localStorage.getItem("skip_all_onboarding")==="true") return;
+
+    if(!localStorage.getItem("onboard_small")){
+        setOnboard(true);
+        localStorage.setItem("onboard_small","1");
+    }
+    },[]);
+
+
+
     return (
         <div className={styles.container}>
+
+            {onboard && <CatSmallOnboarding onClose={()=>setOnboard(false)} />}
 
             <h1 className={styles.title}>분야 선택</h1>
 

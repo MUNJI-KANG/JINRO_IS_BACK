@@ -29,6 +29,8 @@ function SAgreement() {
 
   const handleOnboardingClose = () => {
 
+    if(localStorage.getItem("skip_all_onboarding")==="true") return;
+
     localStorage.setItem("needLoginOnboarding", "true");
 
     setShowOnboarding(false);

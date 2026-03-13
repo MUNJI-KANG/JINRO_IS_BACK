@@ -11,6 +11,9 @@ const Home = () => {
   const [onboard, setOnboard] = useState(false);
 
   const handleYes = () => {
+
+    localStorage.removeItem("skip_all_onboarding");
+
     localStorage.setItem("needAgreementOnboarding", "true");
 
     setAsk(false);
@@ -21,6 +24,9 @@ const Home = () => {
   };
 
   const handleNo = () => {
+
+    localStorage.setItem("skip_all_onboarding","true");
+
     setAsk(false);
   };
 

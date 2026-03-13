@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import "../../../css/student_css/Checkout.css";
 import api from "../../../services/app.js";
 
+import CheckoutOnboarding from "../s_onboarding/CheckoutOnboarding.jsx"
+
 function Checkout() {
 
   const navigate = useNavigate();
@@ -77,8 +79,23 @@ function Checkout() {
     }
   };
 
+  const [onboard,setOnboard]=useState(false);
+
+  useEffect(()=>{
+
+    if(localStorage.getItem("skip_all_onboarding")==="true") return;
+
+    if(!localStorage.getItem("onboard_checkout")){
+      setOnboard(true);
+      localStorage.setItem("onboard_checkout","1");
+    }
+  },[]);
+
   return (
     <div className="cart-page">
+      
+      {onboard && <CheckoutOnboarding onClose={()=>setOnboard(false)} />}
+        
       <div className="cart-container">
 
         <div className="cart-header">

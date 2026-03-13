@@ -282,3 +282,21 @@
   }
 
 }
+
+.progress-badge{
+display:flex;
+justify-content:flex-start;
+}
+
+.progress-badge-inner{
+display:inline-block;
+padding:8px 14px;
+border-radius:20px;
+background:#fff;
+box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
+
+.onboard-dummy-target{
+  height:140px;
+  margin-top:40px;
+}
