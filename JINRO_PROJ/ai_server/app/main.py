@@ -6,7 +6,7 @@ ENV_PATH = os.path.normpath(os.path.join(BASE_DIR, "..", ".env"))
 load_dotenv(ENV_PATH)
 
 from fastapi import FastAPI
-from app.api import ai, data_ai, analysis
+from app.api import ai, data_ai
 
 app = FastAPI(title="AI_SERVER")
 
@@ -15,7 +15,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app.include_router(ai.router)
 app.include_router(data_ai.router)
-app.include_router(analysis.router)
+
 
 @app.get("/")
 def read_root():

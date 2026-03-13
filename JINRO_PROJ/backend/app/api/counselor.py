@@ -659,8 +659,19 @@ def receive_stt_result(counseling_id: int, data: dict, db: Session = Depends(get
         ReportCon.counseling_id == counseling_id
     ).first()
 
+    # 상담 일지 없어도 AI 분석 저장 가능
     if not report:
-        raise HTTPException(status_code=404, detail="상담 일지 없음")
+
+        report = ReportCon(
+            title="AI 상담 기록",
+            con_rep_comment="",
+            counseling_id=counseling_id,
+            complete_yn='N'
+        )
+
+        db.add(report)
+        db.commit()
+        db.refresh(report)
 
     stt_text = data.get("stt_text", "")
     summary = data.get("summary", "")
@@ -711,16 +722,16 @@ def get_ai_process_status(counseling_id: int, db: Session = Depends(get_db)):
     ).first()
 
     if not ai_report:
+
         return {
             "success": True,
-            "status": "STT_PROCESSING"
+            "status": "PROCESSING"
         }
 
-    if ai_report and not ai_report.ai_m_comment:
-        return {
-            "success": True,
-            "status": "LLM_PROCESSING"
-        }
+    return {
+        "success": True,
+        "status": "COMPLETED"
+    }
 
     return {
         "success": True,

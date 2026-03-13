@@ -91,15 +91,59 @@ class ReportAiV(Base):
     re_comment = Column(Enum(ReCommentEnum), comment='분석여부')
 
 class AiVideoAnalyze(Base):
-    __tablename__ = 'AI_VIDEO_ANALYZE'
-    
-    analyze_id = Column(Integer, primary_key=True, autoincrement=True, comment='PK')
-    ai_v_comment = Column(Text, nullable=False, comment='행동 요약')
-    emotion_v_score = Column(JSON, nullable=False, comment='감정 점수')
-    prompt = Column(String(300), comment='프롬프트')
-    reg_date = Column(DateTime, default=func.now(), nullable=False, comment='생성날짜')
-    # 수정: ai_v_erp_id (소문자)
-    ai_v_erp_id = Column(Integer, ForeignKey('REPORT_AI_V.ai_v_erp_id'), nullable=False)
+    __tablename__ = "AI_VIDEO_ANALYZE"
+
+    analyze_id = Column(Integer, primary_key=True, autoincrement=True, comment="PK")
+
+    ai_v_erp_id = Column(
+        Integer,
+        ForeignKey("REPORT_AI_V.ai_v_erp_id"),
+        nullable=False,
+        comment="영상 리포트 FK"
+    )
+
+    attention_score = Column(
+        Integer,
+        nullable=False,
+        comment="집중도 점수(0~100)"
+    )
+
+    emotion_score = Column(
+        Integer,
+        nullable=False,
+        comment="감정 점수(0~100)"
+    )
+
+    final_score = Column(
+        Integer,
+        nullable=False,
+        comment="영상 최종 점수"
+    )
+
+    ai_v_comment = Column(
+        Text,
+        nullable=True,
+        comment="AI 행동 요약"
+    )
+
+    raw_data = Column(
+        JSON,
+        nullable=True,
+        comment="AI 원본 분석 데이터"
+    )
+
+    prompt = Column(
+        String(300),
+        nullable=True,
+        comment="사용된 프롬프트"
+    )
+
+    reg_date = Column(
+        DateTime,
+        default=func.now(),
+        nullable=False,
+        comment="생성일"
+)
 
 class ReportFinal(Base):
     __tablename__ = 'REPORT_FINAL'
