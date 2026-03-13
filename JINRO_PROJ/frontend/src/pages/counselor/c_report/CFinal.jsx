@@ -82,6 +82,20 @@ const CFinal = () => {
         }
     };
 
+    // modalStyle 변수 없음 => 런타임 에러 발생 될 수 있어서 임시로 추가 0313 - 12:17 AHW
+    const modalStyle = {
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        backgroundColor: "rgba(0,0,0,0.6)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 9999
+    };
+
     // ---------------------------------------------------------
     // 데이터 로딩 및 녹음 로직 (기존 유지)
     // ---------------------------------------------------------
@@ -237,69 +251,58 @@ const CFinal = () => {
 
     const pollAIStatus = () => {
 
-    let retry = 0;
+        let retry = 0;
+        const maxRetry = 30;
 
-    const checkStatus = async () => {
+        const checkStatus = async () => {
 
-        try {
+            try {
 
-            const res = await api.get(`/counselor/report/status/${counselingId}`);
+                const res = await api.get(`/counselor/report/status/${counselingId}`);
 
-            if (!res.data.success) return;
+                if (!res.data.success) return;
 
-            // pollAIStatus 상태 업데이트 추가
-            const status = res.data.status;
-            setAiStatus(status);
+                const status = res.data.status;
+                setAiStatus(status);
 
-            if (status === "COMPLETED") {
+                if (status === "COMPLETED") {
 
-                const result = await api.get(`/counselor/ai-report/${counselingId}`);
+                    const result = await api.get(`/counselor/ai-report/${counselingId}`);
 
-                if (result.data.success && result.data.data.ai_m_comment) {
+                    if (result.data.success && result.data.data.ai_m_comment) {
 
-                    const parsed = result.data.data.ai_m_comment;
+                        const parsed = result.data.data.ai_m_comment;
 
-                    setLlmResult(parsed);
+                        setLlmResult(parsed);
+
+                    }
+
+                    setIsAnalyzing(false);
+                    return;
 
                 }
 
-                setIsAnalyzing(false);
+            } catch (e) {
 
-                return;
+                console.error("status polling error", e);
 
             }
 
-        } catch (e) {
-            console.error("status polling error", e);
-        }
+            retry++;
 
-        // 무제한 polling (3초 간격)
-        if (!isAnalyzing) return; // 페이지 이동 or 컴포넌트 unmount 시 polling 자동 중지
+            if (retry < maxRetry && isAnalyzing) {
 
-        setTimeout(checkStatus, 3000);
+                setTimeout(checkStatus, 3000);
 
-    };
+            } else {
 
-    checkStatus();
+                setIsAnalyzing(false);
 
-};
+            }
 
-    const handleComplete = async (e) => {
+        };
 
-        e.preventDefault();
-
-        if (!counselingId) {
-            alert("ID가 없습니다.");
-            return;
-        }
-
-        await api.post("/counselor/report/final/complete", {
-            counseling_id: counselingId,
-            comment: report
-        });
-
-        alert("작성 완료되었습니다.");
-        setIsComplete(true);
+        checkStatus();
 
     };
 
@@ -374,7 +377,7 @@ const CFinal = () => {
                     {llmResult ? (
 
                         <div className="summary-box">
-                            {llmResult.summary}
+                            {llmResult?.summary}
                         </div>
 
                     ) : isAnalyzing ? (
@@ -409,11 +412,10 @@ const CFinal = () => {
 
                         <div className="analysis-text">
                         {
-                            llmResult.career_recommendation
-                                .split(',')
+                            (llmResult?.analysis?.career_recommendation || [])
                                 .map((item, index) => (
                                     <div key={index}>{item.trim()}</div>
-                                ))
+                            ))
                         }
                         </div>
 
@@ -431,23 +433,21 @@ const CFinal = () => {
                 <section className="report-card full-width">
                     <h3>AI 상담 대화 요약</h3>
 
-                </div>
+                    {llmResult ? (
 
-                {llmResult ? (
+                        <div className="summary-box">
+                            {llmResult?.summary}
+                        </div>
 
-                    <div className="summary-box">
-                        {llmResult.summary}
-                    </div>
+                    ) : (
 
-                ) : (
+                        <div className="chart-empty">
+                            상담이 완료된 후 자동으로 생성됩니다.
+                        </div>
 
-                    <div className="chart-empty">
-                        상담이 완료된 후 자동으로 생성됩니다.
-                    </div>
+                    )}
 
-                )}
-
-            </section>
+                </section>
 
                 <section className="report-card full-width">
                     <div className="report-content-box">
