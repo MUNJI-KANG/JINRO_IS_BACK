@@ -1,23 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import {
     ResponsiveContainer,
-    XAxis,
-    YAxis,
-    CartesianGrid,
     Tooltip,
-    BarChart,
-    Bar,
-    PieChart, 
+    PieChart,
     Pie,
     Legend
 } from 'recharts';
 
-import '../../../css/common_css/base.css'
-import '../../../css/counselor_css/cFinal.css'
+import '../../../css/common_css/base.css';
+import '../../../css/counselor_css/cFinal.css';
 import { useLocation, useParams } from 'react-router-dom';
-import api from '../../../services/app'
+import api from '../../../services/app';
 
-// PDF 라이브러리 추가
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -26,25 +20,28 @@ const CFinal = () => {
     const clientId = Number(params.clientId);
     const counselingId = Number(params.counselingId);
     const location = useLocation();
-    const studentName = location.state?.studentName || "학생";
+    const studentName = location.state?.studentName || '학생';
 
     // PDF 관련 상태 및 Ref
-    const printRef = useRef(null);
+    const aiPageRef = useRef(null);
+    const counselorPageRef = useRef(null);
     const [pdfUrl, setPdfUrl] = useState(null);
     const [showPreview, setShowPreview] = useState(false);
 
     // 상담 데이터 관련 상태
     const [focusData, setFocusData] = useState([]);
     const [interestData, setInterestData] = useState([]);
-    const [tableData, setTableData] = useState([]); //분석 테이블 표
-    
+    const [tableData, setTableData] = useState([]);
 
     // 상담사 TEXT 리포트 부분
     const [personalityComment, setPersonalityComment] = useState('');
     const [careerComment, setCareerComment] = useState('');
     const [finalComment, setFinalComment] = useState('');
 
-    const [report, setReport] = useState('');
+    // 읽기/편집 모드
+    const [isEditingPersonality, setIsEditingPersonality] = useState(false);
+    const [isEditingCareer, setIsEditingCareer] = useState(false);
+    const [isEditingFinalComment, setIsEditingFinalComment] = useState(false);
 
     const [isComplete, setIsComplete] = useState(false);
     const [llmResult, setLlmResult] = useState(null);
@@ -52,44 +49,81 @@ const CFinal = () => {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     // 녹음 관련 상태
-    const [recordState, setRecordState] = useState("idle");
+    const [recordState, setRecordState] = useState('idle');
     const [recordTime, setRecordTime] = useState(0);
     const timerRef = useRef(null);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
 
-    const tableHeaderStyle = {
-        padding: "10px",
-        fontWeight: "600"
-        };
+    const modalStyle = {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 9999
+    };
 
-        const tableCellStyle = {
-        padding: "10px"
-        };
+    const textViewStyle = {
+        minHeight: '150px',
+        whiteSpace: 'pre-wrap',
+        border: '1px solid #eee',
+        padding: '15px',
+        borderRadius: '8px',
+        backgroundColor: '#fff',
+        lineHeight: 1.6
+    };
+
+    const textareaStyle = {
+        width: '100%',
+        minHeight: '150px',
+        padding: '15px',
+        border: '1px solid #ddd',
+        borderRadius: '8px',
+        resize: 'vertical',
+        boxSizing: 'border-box',
+        font: 'inherit',
+        lineHeight: 1.6
+    };
 
     // ---------------------------------------------------------
     // PDF 생성 및 미리보기 로직
     // ---------------------------------------------------------
-    const generatePDF = async (action = 'download') => {
-        const element = printRef.current;
-        if (!element) return;
+    const buildPdf = async (action = 'download') => {
+        const aiElement = aiPageRef.current;
+        const counselorElement = counselorPageRef.current;
+
+        if (!aiElement || !counselorElement) return;
 
         try {
-            // PDF 생성 중에는 잠시 로딩 표시를 하거나 버튼을 숨길 수 있습니다.
-            const canvas = await html2canvas(element, {
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const margin = 10;
+            const contentWidth = pageWidth - margin * 2;
+
+            const captureOptions = {
                 scale: 2,
                 useCORS: true,
                 logging: false,
-                // data-html2canvas-ignore 속성이 있는 요소는 제외함
+                backgroundColor: '#ffffff',
                 ignoreElements: (el) => el.getAttribute('data-html2canvas-ignore') === 'true'
-            });
+            };
 
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            const aiCanvas = await html2canvas(aiElement, captureOptions);
+            const aiImgData = aiCanvas.toDataURL('image/png');
+            const aiImgHeight = (aiCanvas.height * contentWidth) / aiCanvas.width;
+            pdf.addImage(aiImgData, 'PNG', margin, margin, contentWidth, aiImgHeight);
 
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.addPage();
+
+            const counselorCanvas = await html2canvas(counselorElement, captureOptions);
+            const counselorImgData = counselorCanvas.toDataURL('image/png');
+            const counselorImgHeight = (counselorCanvas.height * contentWidth) / counselorCanvas.width;
+            pdf.addImage(counselorImgData, 'PNG', margin, margin, contentWidth, counselorImgHeight);
 
             if (action === 'download') {
                 pdf.save(`${studentName}_진로상담_리포트.pdf`);
@@ -100,127 +134,130 @@ const CFinal = () => {
                 setShowPreview(true);
             }
         } catch (error) {
-            console.error("PDF 생성 실패:", error);
-            alert("PDF 생성 중 오류가 발생했습니다.");
+            console.error('PDF 생성 실패:', error);
+            alert('PDF 생성 중 오류가 발생했습니다.');
         }
     };
 
-    // modalStyle 변수 없음 => 런타임 에러 발생 될 수 있어서 임시로 추가 0313 - 12:17 AHW
-    const modalStyle = {
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        backgroundColor: "rgba(0,0,0,0.6)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 9999
+    const generatePDF = async (action = 'download') => {
+        const prevEditing = {
+            personality: isEditingPersonality,
+            career: isEditingCareer,
+            final: isEditingFinalComment
+        };
+
+        setIsEditingPersonality(false);
+        setIsEditingCareer(false);
+        setIsEditingFinalComment(false);
+
+        setTimeout(async () => {
+            await buildPdf(action);
+
+            setIsEditingPersonality(prevEditing.personality);
+            setIsEditingCareer(prevEditing.career);
+            setIsEditingFinalComment(prevEditing.final);
+        }, 50);
     };
 
     // ---------------------------------------------------------
-    // 데이터 로딩 및 녹음 로직 (기존 유지)
+    // 데이터 로딩 및 녹음 로직
     // ---------------------------------------------------------
     useEffect(() => {
-
         if (!counselingId) return;
 
         api.get(`/counselor/report/final/${counselingId}`)
             .then(res => res.data)
             .then(data => {
-
                 if (data.success) {
-
                     setFocusData(data.focus || []);
-                    setInterestData(data.interest || []);                    
-                    setTableData(data.table || []); // ⭐ 테이블 데이터 추가
-
+                    setInterestData(data.interest || []);
+                    setTableData(data.table || []);
                 }
-
             })
-            .catch(err => console.error("리포트 조회 실패", err));
-
+            .catch(err => console.error('리포트 조회 실패', err));
     }, [counselingId]);
 
-    // 페이지 진입 시 status 확인
     useEffect(() => {
-        if (!counselingId || counselingId === 'undefined') return;
+        if (!counselingId) return;
 
         api.get(`/counselor/ai-report/${counselingId}`)
             .then(res => res.data)
             .then(data => {
-
                 if (data.success && data.data && data.data.ai_m_comment) {
-
-                    const parsed = data.data.ai_m_comment;
-
-                    setLlmResult(parsed);
-
+                    setLlmResult(data.data.ai_m_comment);
                 }
-
             })
             .catch(err => {
-                console.error("LLM 결과 조회 실패", err);
+                console.error('LLM 결과 조회 실패', err);
             });
-
     }, [counselingId]);
 
     useEffect(() => {
-        if (!counselingId || counselingId === 'undefined') return;
+        if (!counselingId) return;
+
         api.get(`/counselor/report/final/comment/${counselingId}`)
             .then(res => res.data)
             .then(data => {
                 if (!data.success) return;
-                setFinalComment(data.comment || "");
-                setIsComplete(data.complete === "Y");
-            }).catch(err => console.error("최종 리포트 조회 실패", err));
+
+                setPersonalityComment(data.personality_comment || '');
+                setCareerComment(data.career_comment || '');
+                setFinalComment(data.comment || '');
+                setIsComplete(data.complete === 'Y');
+            })
+            .catch(err => console.error('최종 리포트 조회 실패', err));
     }, [counselingId]);
 
     useEffect(() => {
-
-    return () => {
-
-        if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
-
-            mediaRecorderRef.current.stream
-                .getTracks()
-                .forEach(track => track.stop());
-
-        }
-
-        clearInterval(timerRef.current);
-
-    };
-
-}, []);
+        return () => {
+            if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
+                mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+            }
+            clearInterval(timerRef.current);
+        };
+    }, []);
 
     const handleSave = async (e) => {
         e.preventDefault();
-        if (!counselingId) return alert("ID가 없습니다.");
-        await api.post("/counselor/report/final/save", {
+        if (!counselingId) return alert('ID가 없습니다.');
+
+        await api.post('/counselor/report/final/save', {
             counseling_id: counselingId,
             personality_comment: personalityComment,
             career_comment: careerComment,
             final_comment: finalComment
         });
-        alert("수정 저장되었습니다.");
+
+        setIsEditingPersonality(false);
+        setIsEditingCareer(false);
+        setIsEditingFinalComment(false);
+
+        alert('수정 저장되었습니다.');
     };
 
     const handleComplete = async (e) => {
         e.preventDefault();
-        if (!counselingId) return alert("ID가 없습니다.");
-        await api.post("/counselor/report/final/complete", {
+        if (!counselingId) return alert('ID가 없습니다.');
+
+        await api.post('/counselor/report/final/complete', {
             counseling_id: counselingId,
-            comment: finalComment
+            comment: finalComment,
+            personality_comment: personalityComment,
+            career_comment: careerComment,
+            final_comment: finalComment
         });
-        alert("작성 완료되었습니다.");
+
+        setIsEditingPersonality(false);
+        setIsEditingCareer(false);
+        setIsEditingFinalComment(false);
         setIsComplete(true);
+
+        alert('작성 완료되었습니다.');
     };
 
     const formatTime = (sec) => {
-        const minutes = Math.floor(sec / 60).toString().padStart(2,"0");
-        const seconds = (sec % 60).toString().padStart(2,"0");
+        const minutes = Math.floor(sec / 60).toString().padStart(2, '0');
+        const seconds = (sec % 60).toString().padStart(2, '0');
         return `${minutes}:${seconds}`;
     };
 
@@ -233,11 +270,11 @@ const CFinal = () => {
                 if (event.data.size > 0) audioChunksRef.current.push(event.data);
             };
             mediaRecorderRef.current.start();
-            setRecordState("recording");
+            setRecordState('recording');
             setRecordTime(0);
             timerRef.current = setInterval(() => setRecordTime(prev => prev + 1), 1000);
         } catch (err) {
-            alert("오디오 권한이 필요합니다.");
+            alert('오디오 권한이 필요합니다.');
         }
     };
 
@@ -245,53 +282,51 @@ const CFinal = () => {
         return new Promise((resolve) => {
             if (mediaRecorderRef.current) {
                 mediaRecorderRef.current.onstop = async () => {
-                    const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+                    const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
                     const formData = new FormData();
-                    formData.append("file", blob, "record.webm");
+                    formData.append('file', blob, 'record.webm');
 
-                    // stopRecording 상태 초기화
                     setIsAnalyzing(true);
                     setAiStatus(null);
                     await api.post(`/counselor/report/con/${counselingId}/audio`, formData, {
-                        headers: { "Content-Type": "multipart/form-data" }
+                        headers: { 'Content-Type': 'multipart/form-data' }
                     });
                     pollAIStatus();
                     resolve();
                 };
+
                 mediaRecorderRef.current.stop();
                 mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
             }
-            setRecordState("idle");
+
+            setRecordState('idle');
             clearInterval(timerRef.current);
             setRecordTime(0);
         });
     };
 
     const pauseRecording = () => {
-        if (mediaRecorderRef.current && recordState === "recording") {
+        if (mediaRecorderRef.current && recordState === 'recording') {
             mediaRecorderRef.current.pause();
-            setRecordState("paused");
+            setRecordState('paused');
             clearInterval(timerRef.current);
         }
     };
 
     const resumeRecording = () => {
-        if (mediaRecorderRef.current && recordState === "paused") {
+        if (mediaRecorderRef.current && recordState === 'paused') {
             mediaRecorderRef.current.resume();
-            setRecordState("recording");
+            setRecordState('recording');
             timerRef.current = setInterval(() => setRecordTime(prev => prev + 1), 1000);
         }
     };
 
     const pollAIStatus = () => {
-
         let retry = 0;
         const maxRetry = 30;
 
         const checkStatus = async () => {
-
             try {
-
                 const res = await api.get(`/counselor/report/status/${counselingId}`);
 
                 if (!res.data.success) return;
@@ -299,58 +334,46 @@ const CFinal = () => {
                 const status = res.data.status;
                 setAiStatus(status);
 
-                if (status === "COMPLETED") {
-
+                if (status === 'COMPLETED') {
                     const result = await api.get(`/counselor/ai-report/${counselingId}`);
 
                     if (result.data.success && result.data.data.ai_m_comment) {
-
-                        const parsed = result.data.data.ai_m_comment;
-
-                        setLlmResult(parsed);
-
+                        setLlmResult(result.data.data.ai_m_comment);
                     }
 
                     setIsAnalyzing(false);
                     return;
-
                 }
-
             } catch (e) {
-
-                console.error("status polling error", e);
-
+                console.error('status polling error', e);
             }
 
             retry++;
 
             if (retry < maxRetry && isAnalyzing) {
-
                 setTimeout(checkStatus, 3000);
-
             } else {
-
                 setIsAnalyzing(false);
-
             }
-
         };
 
         checkStatus();
-
     };
 
     return (
         <>
-            {/* PDF 미리보기 모달 */}
             {showPreview && (
                 <div className="pdf-preview-modal" style={modalStyle}>
                     <div style={{ background: '#fff', padding: '20px', borderRadius: '12px', width: '85%', height: '90%', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
                             <h3 style={{ margin: 0 }}>리포트 미리보기</h3>
                             <div>
-                                <button className="btn-main" style={{ marginRight: '10px' }} onClick={() => generatePDF('download')}>다운로드</button>
-                                <button className="btn-sub" onClick={() => setShowPreview(false)}>닫기</button>
+                                <button className="btn-main" style={{ marginRight: '10px' }} onClick={() => generatePDF('download')}>
+                                    다운로드
+                                </button>
+                                <button className="btn-sub" onClick={() => setShowPreview(false)}>
+                                    닫기
+                                </button>
                             </div>
                         </div>
                         <iframe src={pdfUrl} width="100%" height="100%" style={{ border: '1px solid #ddd' }} title="PDF Preview" />
@@ -358,17 +381,19 @@ const CFinal = () => {
                 </div>
             )}
 
-            {/* PDF 추출 컨트롤 버튼 (PDF 스캔 영역 밖) */}
             <div className="pdf-action-bar" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '15px' }}>
-                <button className="btn-sub" onClick={() => generatePDF('preview')}>PDF 미리보기</button>
-                <button className="btn-main" onClick={() => generatePDF('download')}>PDF 다운로드</button>
+                <button className="btn-sub" onClick={() => generatePDF('preview')}>
+                    PDF 미리보기
+                </button>
+                <button className="btn-main" onClick={() => generatePDF('download')}>
+                    PDF 다운로드
+                </button>
             </div>
 
-            {/* 메인 리포트 영역 시작 */}
-            <div ref={printRef} className="pdf-export-container" style={{ padding: '20px', backgroundColor: '#fff' }}>
+            {/* 1페이지: AI 분석 */}
+            <div ref={aiPageRef} className="pdf-export-container" style={{ padding: '20px', backgroundColor: '#fff' }}>
                 <h2 className="student-info-title">{studentName}의 진로 상담 최종 리포트</h2>
 
-                {/* ================= AI 분석 ================= */}
                 <h3 className="section-title">AI 분석</h3>
 
                 <div className="report-top-grid">
@@ -385,35 +410,23 @@ const CFinal = () => {
                                             align="right"
                                             iconSize={7}
                                             payload={[
-                                                { value: `방송`, type: 'square', color: '#FFB7B2' },
-                                                { value: `항해사`, type: 'square', color: '#E2F0CB' },
-                                                { value: `자동차`, type: 'square', color: '#C7CEEA' },
+                                                { value: '방송', type: 'square', color: '#FFB7B2' },
+                                                { value: '항해사', type: 'square', color: '#E2F0CB' },
+                                                { value: '자동차', type: 'square', color: '#C7CEEA' }
                                             ]}
-                                            />
+                                        />
                                         <Pie
                                             data={[
-                                                {
-                                                    name: '방송',
-                                                    value: 30,
-                                                    fill: "#FFB7B2"
-                                                },
-                                                {
-                                                    name: '항해사',
-                                                    value: 30,
-                                                    fill: "#E2F0CB"
-                                                },
-                                                {
-                                                    name: '자동차',
-                                                    value: 40,
-                                                    fill: "#C7CEEA"
-                                                },
+                                                { name: '방송', value: 30, fill: '#FFB7B2' },
+                                                { name: '항해사', value: 30, fill: '#E2F0CB' },
+                                                { name: '자동차', value: 40, fill: '#C7CEEA' }
                                             ]}
                                             cx="50%"
                                             cy="50%"
                                             outerRadius={80}
                                             dataKey="value"
                                         />
-                                        <Tooltip/>
+                                        <Tooltip />
                                     </PieChart>
                                 </ResponsiveContainer>
                             </div>
@@ -422,88 +435,51 @@ const CFinal = () => {
                         )}
                     </section>
 
-                <section className="report-card">
-                    <h3>❷ 학생 성향 분석</h3>
-                    
-                    {/* UI 표시 (분석 중 메시지) */}
-                   {isAnalyzing && !llmResult && (
+                    <section className="report-card">
+                        <h3>❷ 학생 성향 분석</h3>
 
-                        <div className="chart-empty ai-loading">
+                        {isAnalyzing && !llmResult && (
+                            <div className="chart-empty ai-loading">
+                                <div className="ai-spinner"></div>
+                                {aiStatus === 'STT_PROCESSING' && '음성을 텍스트로 변환 중입니다...'}
+                                {aiStatus === 'LLM_PROCESSING' && 'AI가 상담 내용을 분석 중입니다...'}
+                                {!aiStatus && 'AI 상담 분석을 준비 중입니다...'}
+                            </div>
+                        )}
 
-                            <div className="ai-spinner"></div>
+                        {llmResult ? (
+                            <div className="summary-box">{llmResult?.summary}</div>
+                        ) : isAnalyzing ? (
+                            <div className="chart-empty ai-loading">
+                                <div className="ai-spinner"></div>
+                                {aiStatus === 'STT_PROCESSING' && '음성을 분석 중입니다...'}
+                                {aiStatus === 'LLM_PROCESSING' && 'AI가 상담 내용을 요약 중입니다...'}
+                                {!aiStatus && 'AI 분석 준비 중입니다...'}
+                            </div>
+                        ) : (
+                            <div className="chart-empty">상담이 완료된 후 자동으로 생성됩니다.</div>
+                        )}
+                    </section>
 
-                            {aiStatus === "STT_PROCESSING" && "음성을 텍스트로 변환 중입니다..."}
+                    <section className="report-card">
+                        <h3>❸ 추천 진로 TOP5</h3>
 
-                            {aiStatus === "LLM_PROCESSING" && "AI가 상담 내용을 분석 중입니다..."}
-
-                            {!aiStatus && "AI 상담 분석을 준비 중입니다..."}
-
-                        </div>
-
-                    )}
-
-                    {llmResult ? (
-
-                        <div className="summary-box">
-                            {llmResult?.summary}
-                        </div>
-
-                    ) : isAnalyzing ? (
-
-                        <div className="chart-empty ai-loading">
-
-                            <div className="ai-spinner"></div>
-
-                            {aiStatus === "STT_PROCESSING" && "음성을 분석 중입니다..."}
-
-                            {aiStatus === "LLM_PROCESSING" && "AI가 상담 내용을 요약 중입니다..."}
-
-                            {!aiStatus && "AI 분석 준비 중입니다..."}
-
-                        </div>
-
-                    ) : (
-
-                        <div className="chart-empty">
-                            상담이 완료된 후 자동으로 생성됩니다.
-                        </div>
-
-                    )}
-
-                </section>
-
-                <section className="report-card">
-
-                    <h3>❸ 추천 진로 TOP5</h3>
-
-                    {llmResult ? (
-
-                        <div className="analysis-text">
-                        {
-                            (llmResult?.analysis?.career_recommendation || [])
-                                .map((item, index) => (
+                        {llmResult ? (
+                            <div className="analysis-text">
+                                {(llmResult?.analysis?.career_recommendation || []).map((item, index) => (
                                     <div key={index}>{item.trim()}</div>
-                            ))
-                        }
-                        </div>
-
-                    ) : (
-
-                        <div className="chart-empty">
-                            상담이 완료된 후 자동으로 생성됩니다.
-                        </div>
-
-                    )}
-
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="chart-empty">상담이 완료된 후 자동으로 생성됩니다.</div>
+                        )}
                     </section>
                 </div>
 
                 <div className="ai-summary-grid">
-
                     <section className="ai-summary-left">
                         <h3>분야별 비교</h3>
                         <div className="summary-box" style={{ padding: '0' }}>
-                            {/* 액셀 형태의 테이블 */}
                             <table className="report-table">
                                 <thead>
                                     <tr style={{ backgroundColor: '#f8f9fa' }}>
@@ -516,117 +492,127 @@ const CFinal = () => {
                                 </thead>
                                 <tbody>
                                     {tableData.length > 0 ? (
-
                                         tableData.map((video, index) => (
-
                                             <tr key={video.video_id || index} style={{ textAlign: 'center' }}>
-
                                                 <td className="report-table-cell">
-                                                    {video.category?.replace(" 직업","")}
+                                                    {video.category?.replace(' 직업', '')}
                                                 </td>
-
                                                 <td className="report-table-cell">
-                                                    {video.attention_score ?? "-"}
+                                                    {video.attention_score ?? '-'}
                                                 </td>
-
                                                 <td className="report-table-cell">
-                                                    {video.emotion_score ?? "-"}
+                                                    {video.emotion_score ?? '-'}
                                                 </td>
-
                                                 <td className="report-table-cell">
-                                                    {video.survey_score ?? "-"}
+                                                    {video.survey_score ?? '-'}
                                                 </td>
-
                                                 <td className="report-table-cell final-score-value">
-                                                    {video.final_score ?? "-"}
+                                                    {video.final_score ?? '-'}
                                                 </td>
-
                                             </tr>
-
                                         ))
-
                                     ) : (
-
                                         <tr>
-                                            <td colSpan="5" style={{ textAlign: "center", padding: "20px" }}>
+                                            <td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>
                                                 분석 데이터가 없습니다
                                             </td>
                                         </tr>
-
                                     )}
                                 </tbody>
                             </table>
                         </div>
                     </section>
 
-
-                    {/* AI 상담 대화 요약 (오른쪽 2칸) */}
                     <section className="ai-summary-right">
-
                         <h3>AI 상담 대화 요약</h3>
 
                         {llmResult ? (
-
-                            <div className="summary-box">
-                                {llmResult?.summary}
-                            </div>
-
+                            <div className="summary-box">{llmResult?.summary}</div>
                         ) : (
-
-                            <div className="chart-empty">
-                                상담이 완료된 후 자동으로 생성됩니다.
-                            </div>
-
+                            <div className="chart-empty">상담이 완료된 후 자동으로 생성됩니다.</div>
                         )}
-
                     </section>
-
                 </div>
+            </div>
 
-                {/* ===== 상담사 분석 ===== */}
+            {/* 2페이지: 상담사 분석 */}
+            <div ref={counselorPageRef} className="pdf-export-container" style={{ padding: '20px', backgroundColor: '#fff', marginTop: '20px' }}>
                 <h3 className="section-title">상담사 분석</h3>
 
                 <div className="report-top-grid-2">
-
                     <section className="report-card">
                         <h3>학생 성향 분석 요약</h3>
 
-                        <textarea
-                            className="analysis-textarea"
-                            placeholder="학생 성향에 대한 상담사의 분석을 작성해주세요."
-                            value={personalityComment}
-                            onChange={(e) => setPersonalityComment(e.target.value)}
-                        />
+                        {isEditingPersonality && !isComplete ? (
+                            <textarea
+                                className="analysis-textarea"
+                                style={textareaStyle}
+                                placeholder="학생 성향에 대한 상담사의 분석을 작성해주세요."
+                                value={personalityComment}
+                                onChange={(e) => setPersonalityComment(e.target.value)}
+                                onBlur={() => setIsEditingPersonality(false)}
+                                autoFocus
+                            />
+                        ) : (
+                            <div
+                                className="report-text-display"
+                                style={{
+                                    ...textViewStyle,
+                                    cursor: isComplete ? 'default' : 'text'
+                                }}
+                                onClick={() => {
+                                    if (!isComplete) setIsEditingPersonality(true);
+                                }}
+                            >
+                                {personalityComment || '학생 성향에 대한 상담사의 분석을 작성해주세요.'}
+                            </div>
+                        )}
                     </section>
 
                     <section className="report-card">
                         <h3>추천 진로 분석 요약</h3>
 
-                        <textarea
-                            className="analysis-textarea"
-                            placeholder="추천 진로에 대한 상담사의 의견을 작성해주세요."
-                            value={careerComment}
-                            onChange={(e) => setCareerComment(e.target.value)}
-                        />
+                        {isEditingCareer && !isComplete ? (
+                            <textarea
+                                className="analysis-textarea"
+                                style={textareaStyle}
+                                placeholder="추천 진로에 대한 상담사의 의견을 작성해주세요."
+                                value={careerComment}
+                                onChange={(e) => setCareerComment(e.target.value)}
+                                onBlur={() => setIsEditingCareer(false)}
+                                autoFocus
+                            />
+                        ) : (
+                            <div
+                                className="report-text-display"
+                                style={{
+                                    ...textViewStyle,
+                                    cursor: isComplete ? 'default' : 'text'
+                                }}
+                                onClick={() => {
+                                    if (!isComplete) setIsEditingCareer(true);
+                                }}
+                            >
+                                {careerComment || '추천 진로에 대한 상담사의 의견을 작성해주세요.'}
+                            </div>
+                        )}
                     </section>
-
                 </div>
 
                 <section className="report-card full-width">
                     <div className="report-content-box">
                         <div className="report-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <p style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>상담 기록 및 종합 리포트</p>
-                            
-                            {/* 녹음 컨트롤 - PDF에서는 보이지 않도록 처리 */}
+
                             <div className="record-control" data-html2canvas-ignore="true">
-                                {recordState === "idle" && <button className="btn-record" onClick={startRecording}>🎤 녹음 시작</button>}
-                                {recordState === "recording" && (
+                                {recordState === 'idle' && <button className="btn-record" onClick={startRecording}>🎤 녹음 시작</button>}
+                                {recordState === 'recording' && (
                                     <div className="record-box">
                                         <span className="rec-text">녹음중 <span className="rec-dot">●</span> {formatTime(recordTime)}</span>
                                         <button className="btn-record small" onClick={pauseRecording}>중지</button>
                                     </div>
                                 )}
-                                {recordState === "paused" && (
+                                {recordState === 'paused' && (
                                     <div className="record-box">
                                         <span>일시정지 {formatTime(recordTime)}</span>
                                         <button className="btn-record small" onClick={resumeRecording}>재시작</button>
@@ -636,29 +622,37 @@ const CFinal = () => {
                             </div>
                         </div>
 
-                        {/* PDF 생성 시 Textarea의 스크롤 문제를 방지하기 위해, 
-                            작성 완료 상태이거나 PDF 출력시에는 일반 div로 보여줍니다. */}
                         <div className="final-report-content">
-                            {isComplete ? (
-                                <div className="report-text-display" style={{ minHeight: '150px', whiteSpace: 'pre-wrap', border: '1px solid #eee', padding: '15px' }}>
-                                    {report || "입력된 상담 내용이 없습니다."}
-                                </div>
-                            ) : (
+                            {isEditingFinalComment && !isComplete ? (
                                 <textarea
                                     id="finalComment"
-                                    style={{ width: '100%', minHeight: '150px' }}
+                                    style={{ ...textareaStyle, minHeight: '180px' }}
                                     placeholder="학생과의 상담 내용을 입력해주세요."
                                     value={finalComment}
                                     onChange={(e) => setFinalComment(e.target.value)}
+                                    onBlur={() => setIsEditingFinalComment(false)}
+                                    autoFocus
                                 />
+                            ) : (
+                                <div
+                                    className="report-text-display"
+                                    style={{
+                                        ...textViewStyle,
+                                        minHeight: '180px',
+                                        cursor: isComplete ? 'default' : 'text'
+                                    }}
+                                    onClick={() => {
+                                        if (!isComplete) setIsEditingFinalComment(true);
+                                    }}
+                                >
+                                    {finalComment || '학생과의 상담 내용을 입력해주세요.'}
+                                </div>
                             )}
                         </div>
                     </div>
                 </section>
             </div>
-            {/* 메인 리포트 영역 끝 */}
 
-            {/* 하단 저장 버튼 영역 - PDF 제외 */}
             {!isComplete && (
                 <div className="report-buttons" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px' }} data-html2canvas-ignore="true">
                     <button type="button" className="btn-sub" onClick={handleSave}>수정 저장</button>
