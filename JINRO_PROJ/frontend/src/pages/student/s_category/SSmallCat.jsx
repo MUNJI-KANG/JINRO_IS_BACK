@@ -3,249 +3,204 @@ import { useNavigate, useLocation } from "react-router-dom";
 import styles from "../../../css/student_css/SSmallCat.module.css";
 import { useSelector, useDispatch } from "react-redux";
 import { addVideo, deleteVideo } from "../../../redux/cVideos";
-import axios from 'axios';
-import api from '../../../services/app'
+import api from "../../../services/app";
 
-import CatMedOnboarding from "../s_onboarding/CatSmallOnboarding.jsx";
+import CatSmallOnboarding from "../s_onboarding/CatSmallOnboarding.jsx";
 
 function SSmallCat() {
-    const navigate = useNavigate();
-    const location = useLocation();
-    const dispatch = useDispatch();
-    const host = import.meta.env.VITE_HOST;
 
-    const select = useSelector((state) => state.cVideos);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const dispatch = useDispatch();
 
-    const { midId, bigName, midName } = location.state || {};
+  const select = useSelector((state) => state.cVideos);
 
-    const [videos, setVideos] = useState([]);
-    const [selectedVideo, setSelectedVideo] = useState(null);
+  const { midId, bigName, midName } = location.state || {};
 
-    const extractVideoId = (url) => {
+  const [videos, setVideos] = useState([]);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [onboard, setOnboard] = useState(false);
 
-        if (!url) return null;
+  const extractVideoId = (url) => {
+    if (!url) return null;
 
-        try {
+    try {
+      const parsed = new URL(url);
 
-            const parsed = new URL(url);
+      if (parsed.hostname.includes("youtu.be"))
+        return parsed.pathname.slice(1);
 
-            if (parsed.hostname.includes("youtu.be"))
-            return parsed.pathname.slice(1);
+      if (parsed.searchParams.get("v"))
+        return parsed.searchParams.get("v");
 
-            if (parsed.searchParams.get("v"))
-            return parsed.searchParams.get("v");
+      return null;
+    } catch {
+      return null;
+    }
+  };
 
-            return null;
+  /* ⭐ 영상 조회 */
+  useEffect(() => {
 
-        } catch {
+    if (!midId) {
+      navigate("/student/category/big");
+      return;
+    }
 
-            return null;
+    api.get(`/counselor/category/kind/${midId}`)
+      .then(res => {
+        if (res.data.success) setVideos(res.data.data || []);
+        else setVideos([]);
+      })
+      .catch(() => setVideos([]));
 
-        }
+  }, [midId, navigate]);
 
-        };
-    useEffect(() => {
+  /* ⭐⭐⭐ SMALL 온보딩 실행 로직 (단 하나만 존재해야 함) */
 
-        if (!midId) {
-            navigate("/student/category/big");
-            return;
-        }
+  useEffect(()=>{
 
-        api.get(`/counselor/category/kind/${midId}`)
-            .then((res) => {
-                return res.data;
-            })
-            .then((data) => {
-
-                if (data.success) {
-                    setVideos(data.data || []);
-                } else {
-                    setVideos([]);
-                }
-
-            })
-            .catch(() => setVideos([]));
-
-    }, [midId, navigate]);
-
-
-    const handleCardClick = (video) => {
-
-        if (!video) return;
-
-        if (select.find((v) => v.id === video.c_id)) {
-            alert("이미 선택된 영상입니다.");
-            return;
-        }
-
-        if (select.length >= 3) {
-            alert("최대 3개까지만 선택 가능합니다.");
-            return;
-        }
-
-        const newVideo = {
-            id: video.c_id,
-            mainCategory: bigName,
-            subCategory: video.title,
-        };
-
-        dispatch(addVideo([newVideo]));
-        setSelectedVideo(video.c_id);
-    };
-
-
-    const handleDelete = (id) => {
-        dispatch(deleteVideo(id));
-    };
-
-    const handleBack = () => navigate(-1);
-
-    const handleNext = () => {
-        navigate("/student/category/checkout");
-       
-    };
-
-    const handleNextVideoSelect = () => {
-        navigate("/student/category/big");
-    };
-
-
-    const [onboard,setOnboard]=useState(false);
-
-    useEffect(()=>{
+    console.log("SMALL 온보딩 체크");
 
     if(localStorage.getItem("skip_all_onboarding")==="true") return;
 
-    if(!localStorage.getItem("onboard_small")){
+    setTimeout(()=>{
         setOnboard(true);
-        localStorage.setItem("onboard_small","1");
-    }
+    },600);
+
     },[]);
 
+  const handleCardClick = (video) => {
 
+    if (select.find(v => v.id === video.c_id)) {
+      alert("이미 선택된 영상입니다.");
+      return;
+    }
 
-    return (
-        <div className={styles.container}>
+    if (select.length >= 3) {
+      alert("최대 3개까지만 선택 가능합니다.");
+      return;
+    }
 
-            {onboard && <CatSmallOnboarding onClose={()=>setOnboard(false)} />}
+    const newVideo = {
+      id: video.c_id,
+      mainCategory: bigName,
+      subCategory: video.title
+    };
 
-            <h1 className={styles.title}>분야 선택</h1>
+    dispatch(addVideo([newVideo]));
+    setSelectedVideo(video.c_id);
+  };
 
-            <p className={styles.subtitle}>
-                서로 다른 카테고리에서 3개의 영상을 선택하세요
-            </p>
+  const handleDelete = (id) => dispatch(deleteVideo(id));
 
-            <div className={styles.progressBadge}>
-                🛒 선택한 영상: {select.length} / 3
+  return (
+    <div className={styles.container}>
+
+      {onboard && (
+        <CatSmallOnboarding onClose={() => setOnboard(false)} />
+      )}
+
+      <h1 className={styles.title}>분야 선택</h1>
+
+      <p className={styles.subtitle}>
+        서로 다른 카테고리에서 3개의 영상을 선택하세요
+      </p>
+
+      <div className={styles.progressBadge}>
+        🛒 선택한 영상: {select.length} / 3
+      </div>
+
+      <div className={styles.headerRow}>
+        <button
+          className={styles.backButton}
+          onClick={() => navigate(-1)}
+        >
+          ← 뒤로
+        </button>
+
+        <h2 className={styles.categoryTitle}>
+          {bigName} &gt; {midName}
+        </h2>
+      </div>
+
+      <div className={`${styles.cardGrid} onboard-target-card-grid`}>
+
+        {videos.map(video => (
+
+          <div
+            key={video.c_id}
+            className={`${styles.card} ${selectedVideo === video.c_id ? styles.activeCard : ""}`}
+            onClick={() => handleCardClick(video)}
+          >
+
+            <div className={styles.imageContainer}>
+              <img
+                src={`https://img.youtube.com/vi/${extractVideoId(video.url)}/hqdefault.jpg`}
+                className={styles.thumbnail}
+              />
             </div>
 
+            <div className={styles.content}>
+              <strong className={styles.title}>{video.title}</strong>
+              <p className={styles.duration}>영상보기</p>
+            </div>
 
-            <div className={styles.headerRow}>
+          </div>
 
-                <button
-                    className={styles.backButton}
-                    onClick={handleBack}
-                >
-                    ← 뒤로
-                </button>
+        ))}
 
-                <h2 className={styles.categoryTitle}>
-                    {bigName} &gt; {midName}
-                </h2>
+      </div>
+
+      {select.length > 0 && (
+
+        <div className="selected-video-container">
+
+          <h3>선택된 영상</h3>
+
+          {select.map(video => (
+
+            <div key={video.id} className="selected-video-item">
+
+              <span>{video.subCategory}</span>
+
+              <button
+                className="delete-button"
+                onClick={() => handleDelete(video.id)}
+              >
+                ✕
+              </button>
 
             </div>
 
-
-            <div className={styles.cardGrid}>
-
-                {videos.map((video) => (
-
-                    <div
-                        key={video.c_id}
-                        className={`${styles.card} ${selectedVideo === video.c_id ? styles.activeCard : ""}`}
-                        onClick={() => handleCardClick(video)}
-                    >
-
-                    <div className={styles.imageContainer}>
-
-                        <img
-                            src={`https://img.youtube.com/vi/${extractVideoId(video.url)}/hqdefault.jpg`}
-                            alt={video.title}
-                            className={styles.thumbnail}
-                        />
-
-                    </div>
-                        <div className={styles.content}>
-
-                            <strong className={styles.title}>
-                                {video.title}
-                            </strong>
-
-                            <p className={styles.duration}>
-                                영상보기
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                ))}
-
-            </div>
-
-
-            {/* Big과 동일한 선택 영상 UI */}
-            {select.length > 0 && (
-
-                <div className="selected-video-container">
-
-                    <h3>선택된 영상</h3>
-
-                    {select.map((video) => (
-
-                        <div key={video.id} className="selected-video-item">
-
-                            <span>{video.subCategory}</span>
-
-                            <button
-                                className="delete-button"
-                                onClick={() => handleDelete(video.id)}
-                            >
-                                ✕
-                            </button>
-
-                        </div>
-
-                    ))}
-
-                </div>
-
-            )}
-
-
-            {select.length === 3 ? (
-
-                <button
-                    className={`${styles.nextButton} ${styles.activeNextButton}`}
-                    onClick={handleNext}
-                >
-                    영상보기
-                </button>
-
-            ) : (
-
-                <button
-                    className={styles.nextButton}
-                    onClick={handleNextVideoSelect}
-                >
-                    카테고리로 이동 ({select.length}/3)
-                </button>
-
-            )}
+          ))}
 
         </div>
-    );
 
+      )}
+
+      {select.length === 3 ? (
+
+        <button
+          className={`${styles.nextButton} onboard-target-next`}
+          onClick={() => navigate("/student/category/checkout")}
+        >
+          영상보기
+        </button>
+
+      ) : (
+
+        <button
+          className={`${styles.nextButton} onboard-target-next`}
+          onClick={() => navigate("/student/category/big")}
+        >
+          카테고리로 이동 ({select.length}/3)
+        </button>
+
+      )}
+
+    </div>
+  );
 }
 
 export default SSmallCat;

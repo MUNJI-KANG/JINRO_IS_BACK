@@ -1,4 +1,4 @@
-import "../../../css/student_css/s_onboarding/CatOnboarding.css"
+// import "../../../css/student_css/s_onboarding/CatOnboarding.css"
 
 function CheckoutOnboarding({ onClose }) {
 

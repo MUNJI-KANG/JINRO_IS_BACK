@@ -1,12 +1,9 @@
-import React, { useMemo,useEffect } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import styles from "../../../css/student_css/SMedCat.module.css";
-import VideoCard from "../../../component/VideoCard";
-import { useSelector, useDispatch } from 'react-redux';
-import { deleteVideo } from '../../../redux/cVideos';
-
+import { useSelector, useDispatch } from "react-redux";
+import { deleteVideo } from "../../../redux/cVideos";
 import CatMedOnboarding from "../s_onboarding/CatMedOnboarding.jsx";
-
 
 // ✅ 상담사 중분류와 동일 + id만 부여
 const midCategoryMap = {
@@ -148,65 +145,66 @@ function SMedCat() {
   const selectedVideos = useSelector((state) => state.cVideos);
 
   const { bigId, bigName } = location.state || {};
-
   const safeBigId = Number(bigId);
-
-  // 새로고침 시 state 사라지면 big 페이지로 이동
-  useEffect(() => {
-    if (!safeBigId) {
-      navigate("/student/category/big");
-    }
-  }, [safeBigId, navigate]);
-
-  const midCategories = useMemo(() => {
-    if (!safeBigId) return [];
-    return midCategoryMap[safeBigId] || [];
-  }, [safeBigId]);
-
-  const handleCardClick = (mid) => {
-    navigate("/student/category/small", {
-      state: {
-        bigId: safeBigId,
-        bigName,
-        midId: mid.id,
-        midName: mid.name,
-      },
-    });
-  };
-
-  const handleDelete = (id) => {
-    dispatch(deleteVideo(id));
-  };
-
-  const handleBack = () => {
-    navigate(-1);
-  };
 
   const [onboard,setOnboard]=useState(false);
 
   useEffect(()=>{
-    
+    if(!safeBigId){
+      navigate("/student/category/big");
+    }
+  },[safeBigId]);
+
+  const midCategories = useMemo(()=>{
+    if(!safeBigId) return [];
+    return midCategoryMap[safeBigId] || [];
+  },[safeBigId]);
+
+  const handleCardClick = (mid)=>{
+    navigate("/student/category/small",{
+      state:{
+        bigId:safeBigId,
+        bigName,
+        midId:mid.id,
+        midName:mid.name
+      }
+    });
+  };
+
+  const handleDelete = (id)=>dispatch(deleteVideo(id));
+  const handleBack = ()=>navigate(-1);
+
+  /* ⭐ BIG 온보딩 흐름 이어받기 */
+  useEffect(()=>{
+
+    if(sessionStorage.getItem("flow_med_onboard")==="true"){
+      setOnboard(true);
+      sessionStorage.removeItem("flow_med_onboard");
+      return;
+    }
+
     if(localStorage.getItem("skip_all_onboarding")==="true") return;
 
     if(!localStorage.getItem("onboard_med")){
-      setOnboard(true);
+      setTimeout(()=>setOnboard(true),400);
       localStorage.setItem("onboard_med","1");
     }
-  },[]);
 
+  },[]);
 
   return (
     <div className={styles.container}>
 
       {onboard && <CatMedOnboarding onClose={()=>setOnboard(false)} />}
-        
+
       <h1 className={styles.title}>분야 선택</h1>
 
       <p className={styles.subtitle}>
         서로 다른 카테고리에서 3개의 영상을 선택하세요
       </p>
 
-      <div className={styles.progressBadge}>
+      {/* ⭐ onboarding target */}
+      <div className={`${styles.progressBadge} progressBadge`}>
         🛒 선택한 영상: {selectedVideos.length} / 3
       </div>
 
@@ -218,55 +216,46 @@ function SMedCat() {
         <h2 className={styles.categoryTitle}>{bigName}</h2>
       </div>
 
-      <div className={styles.cardGrid}>
-        {midCategories.map((mid) => (
+      {/* ⭐ onboarding target */}
+      <div className={`${styles.cardGrid} cardGrid`}>
+        {midCategories.map(mid=>(
           <div
             key={mid.id}
             className={styles.card}
-            onClick={() => handleCardClick(mid)}
+            onClick={()=>handleCardClick(mid)}
           >
             {mid.name}
           </div>
         ))}
       </div>
 
-     {selectedVideos.length > 0 && (
+      {selectedVideos.length > 0 && (
+        <div className="selected-video-container">
+          <h3>선택된 영상</h3>
 
-    <div className="selected-video-container">
+          {selectedVideos.map(video=>(
+            <div key={video.id} className="selected-video-item">
+              <span>{video.subCategory}</span>
 
-        <h3>선택된 영상</h3>
+              <button
+                className="delete-button"
+                onClick={()=>handleDelete(video.id)}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
-        {selectedVideos.map((video) => (
-
-          <div key={video.id} className="selected-video-item">
-
-            <span>{video.subCategory}</span>
-
-            <button
-              className="delete-button"
-              onClick={() => handleDelete(video.id)}
-            >
-              ✕
-            </button>
-
-          </div>
-
-        ))}
-
-      </div>
-
-    )}
-
-    {selectedVideos.length === 3 && (
-
-      <button
-        className={styles.nextButton}
-        onClick={() => navigate("/student/category/checkout")}
-      >
-        영상보기
-      </button>
-
-    )}
+      {selectedVideos.length === 3 && (
+        <button
+          className={styles.nextButton}
+          onClick={()=>navigate("/student/category/checkout")}
+        >
+          영상보기
+        </button>
+      )}
 
     </div>
   );
