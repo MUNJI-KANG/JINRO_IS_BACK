@@ -109,8 +109,9 @@ class ReportFinal(Base):
     
     final_id = Column(Integer, primary_key=True, autoincrement=True, comment='PK')
     reg_date = Column(DateTime, default=func.now(), nullable=False, comment='리포트 생성 날짜')
+    personality_comment = Column(Text, nullable=True, comment='학생 성향 분석 요약')
+    career_comment = Column(Text, nullable=True, comment='추천 진로 분석 요약')    
     final_comment = Column(Text, nullable=False, comment='상담 요약')
     update_date = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False, comment='리포트 수정 날짜')
     complete_yn = Column(String(1), default='N', nullable=False, comment='최종작성여부')
-    # 수정: counseling_id (소문자)
     counseling_id = Column(Integer, ForeignKey('COUNSELING.counseling_id'), nullable=False)

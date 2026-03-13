@@ -200,9 +200,9 @@ const CFinal = () => {
             .then(data => {
                 if (!data.success) return;
 
-                setPersonalityComment(data.personality_comment || '');
-                setCareerComment(data.career_comment || '');
-                setFinalComment(data.comment || '');
+                setPersonalityComment(data.personality_comment ?? '');
+                setCareerComment(data.career_comment ?? '');
+                setFinalComment(data.final_comment ?? '');
                 setIsComplete(data.complete === 'Y');
             })
             .catch(err => console.error('최종 리포트 조회 실패', err));
@@ -241,7 +241,6 @@ const CFinal = () => {
 
         await api.post('/counselor/report/final/complete', {
             counseling_id: counselingId,
-            comment: finalComment,
             personality_comment: personalityComment,
             career_comment: careerComment,
             final_comment: finalComment
