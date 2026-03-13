@@ -145,7 +145,7 @@ const CFinal = () => {
             .then(res => res.data)
             .then(data => {
                 if (!data.success) return;
-                setReport(data.comment || "");
+                setFinalComment(data.comment || "");
                 setIsComplete(data.complete === "Y");
             }).catch(err => console.error("최종 리포트 조회 실패", err));
     }, [counselingId]);
@@ -440,27 +440,72 @@ const CFinal = () => {
                     </section>
                 </div>
 
-                <section className="report-card full-width">
-                    <h3>AI 상담 대화 요약</h3>
+                <div className="ai-summary-grid">
 
-                    {llmResult ? (
-
-                        <div className="summary-box">
-                            {llmResult?.summary}
+                    <section className="ai-summary-left">
+                        <h3>분야별 비교</h3>
+                        <div className="summary-box" style={{ padding: '0' }}>
+                            {/* 액셀 형태의 테이블 */}
+                            <table className="report-table">
+                                <thead>
+                                    <tr style={{ backgroundColor: '#f8f9fa' }}>
+                                        <th className="report-table-header">구분</th>
+                                        <th className="report-table-header">집중도</th>
+                                        <th className="report-table-header">흥미도</th>
+                                        <th className="report-table-header">설문</th>
+                                        <th className="report-table-header final-score">최종점수</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {/* 5, 6, 7번 영상 데이터를 매핑 */}
+                                    {[
+                                        { id: '5', label: '1번 영상' },
+                                        { id: '6', label: '2번 영상' },
+                                        { id: '7', label: '3번 영상' }
+                                    ].map((video) => {
+                                        // 실제 데이터가 focusData 등에 있다면 해당 값을 찾아 매핑합니다.
+                                        // 현재는 예시 데이터이며, 서버 응답 구조에 맞게 item.value 등으로 수정 가능합니다.
+                                        return (
+                                            <tr key={video.id} style={{ textAlign: 'center' }}>
+                                                <td className="report-table-cell">{video.label}</td>
+                                                <td className="report-table-cell">-</td>
+                                                <td className="report-table-cell">-</td>
+                                                <td className="report-table-cell">-</td>
+                                                <td className="report-table-cell final-score-value">-</td>
+                                                                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
+                    </section>
 
-                    ) : (
 
-                        <div className="chart-empty">
-                            상담이 완료된 후 자동으로 생성됩니다.
-                        </div>
+                    {/* AI 상담 대화 요약 (오른쪽 2칸) */}
+                    <section className="ai-summary-right">
 
-                    )}
+                        <h3>AI 상담 대화 요약</h3>
 
-                </section>
+                        {llmResult ? (
+
+                            <div className="summary-box">
+                                {llmResult?.summary}
+                            </div>
+
+                        ) : (
+
+                            <div className="chart-empty">
+                                상담이 완료된 후 자동으로 생성됩니다.
+                            </div>
+
+                        )}
+
+                    </section>
+
+                </div>
 
                 {/* ===== 상담사 분석 ===== */}
-                <h3 style={{marginTop:"40px", marginBottom:"10px"}}>상담사 분석</h3>
+                <h3 className="section-title">상담사 분석</h3>
 
                 <div className="report-top-grid-2">
 
