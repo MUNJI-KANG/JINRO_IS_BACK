@@ -176,12 +176,12 @@ function SSurvey() {
                         <div
                             key={idx}
                             className={`${styles.optionItem} ${
-                                answers[currentStep] === idx ? styles.selected : ""
+                                answers[currentStep] === (4 - idx) ? styles.selected : ""
                             }`}
                             onClick={() =>
                                 setAnswers(prev => ({
                                     ...prev,
-                                    [currentStep]: idx
+                                    [currentStep]: 4 - idx
                                 }))
                             }
                         >

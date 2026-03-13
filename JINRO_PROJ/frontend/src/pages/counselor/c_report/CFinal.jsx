@@ -6,7 +6,10 @@ import {
     CartesianGrid,
     Tooltip,
     BarChart,
-    Bar
+    Bar,
+    PieChart, 
+    Pie,
+    Legend
 } from 'recharts';
 
 import '../../../css/common_css/base.css'
@@ -19,7 +22,9 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 const CFinal = () => {
-    const { clientId, counselingId } = useParams();
+    const params = useParams();
+    const clientId = Number(params.clientId);
+    const counselingId = Number(params.counselingId);
     const location = useLocation();
     const studentName = location.state?.studentName || "학생";
 
@@ -31,7 +36,16 @@ const CFinal = () => {
     // 상담 데이터 관련 상태
     const [focusData, setFocusData] = useState([]);
     const [interestData, setInterestData] = useState([]);
+    const [tableData, setTableData] = useState([]); //분석 테이블 표
+    
+
+    // 상담사 TEXT 리포트 부분
+    const [personalityComment, setPersonalityComment] = useState('');
+    const [careerComment, setCareerComment] = useState('');
+    const [finalComment, setFinalComment] = useState('');
+
     const [report, setReport] = useState('');
+
     const [isComplete, setIsComplete] = useState(false);
     const [llmResult, setLlmResult] = useState(null);
     const [aiStatus, setAiStatus] = useState(null);
@@ -43,6 +57,15 @@ const CFinal = () => {
     const timerRef = useRef(null);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
+
+    const tableHeaderStyle = {
+        padding: "10px",
+        fontWeight: "600"
+        };
+
+        const tableCellStyle = {
+        padding: "10px"
+        };
 
     // ---------------------------------------------------------
     // PDF 생성 및 미리보기 로직
@@ -100,15 +123,24 @@ const CFinal = () => {
     // 데이터 로딩 및 녹음 로직 (기존 유지)
     // ---------------------------------------------------------
     useEffect(() => {
-        if (!counselingId || counselingId === 'undefined') return;
+
+        if (!counselingId) return;
+
         api.get(`/counselor/report/final/${counselingId}`)
             .then(res => res.data)
             .then(data => {
+
                 if (data.success) {
-                    setFocusData(data.focus);
-                    setInterestData(data.interest);
+
+                    setFocusData(data.focus || []);
+                    setInterestData(data.interest || []);                    
+                    setTableData(data.table || []); // ⭐ 테이블 데이터 추가
+
                 }
-            }).catch(err => console.error("리포트 조회 실패", err));
+
+            })
+            .catch(err => console.error("리포트 조회 실패", err));
+
     }, [counselingId]);
 
     // 페이지 진입 시 status 확인
@@ -140,7 +172,7 @@ const CFinal = () => {
             .then(res => res.data)
             .then(data => {
                 if (!data.success) return;
-                setReport(data.comment || "");
+                setFinalComment(data.comment || "");
                 setIsComplete(data.complete === "Y");
             }).catch(err => console.error("최종 리포트 조회 실패", err));
     }, [counselingId]);
@@ -168,7 +200,9 @@ const CFinal = () => {
         if (!counselingId) return alert("ID가 없습니다.");
         await api.post("/counselor/report/final/save", {
             counseling_id: counselingId,
-            comment: report
+            personality_comment: personalityComment,
+            career_comment: careerComment,
+            final_comment: finalComment
         });
         alert("수정 저장되었습니다.");
     };
@@ -178,7 +212,7 @@ const CFinal = () => {
         if (!counselingId) return alert("ID가 없습니다.");
         await api.post("/counselor/report/final/complete", {
             counseling_id: counselingId,
-            comment: report
+            comment: finalComment
         });
         alert("작성 완료되었습니다.");
         setIsComplete(true);
@@ -334,19 +368,53 @@ const CFinal = () => {
             <div ref={printRef} className="pdf-export-container" style={{ padding: '20px', backgroundColor: '#fff' }}>
                 <h2 className="student-info-title">{studentName}의 진로 상담 최종 리포트</h2>
 
+                {/* ================= AI 분석 ================= */}
+                <h3 className="section-title">AI 분석</h3>
+
                 <div className="report-top-grid">
                     <section className="report-card">
                         <h3>❶ 분야별 관심 비교 그래프</h3>
-                        {focusData.length > 0 ? (
+                        {Array.isArray(focusData) && focusData.length > 0 ? (
                             <div className="chart-box">
-                                <ResponsiveContainer width="100%" height={200}>
-                                    <BarChart data={focusData}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="subject" />
-                                        <YAxis />
-                                        <Tooltip />
-                                        <Bar dataKey="value" fill="#4A90E2" radius={[6, 6, 0, 0]} />
-                                    </BarChart>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Legend
+                                            height={110}
+                                            layout="vertical"
+                                            verticalAlign="middle"
+                                            align="right"
+                                            iconSize={7}
+                                            payload={[
+                                                { value: `방송`, type: 'square', color: '#FFB7B2' },
+                                                { value: `항해사`, type: 'square', color: '#E2F0CB' },
+                                                { value: `자동차`, type: 'square', color: '#C7CEEA' },
+                                            ]}
+                                            />
+                                        <Pie
+                                            data={[
+                                                {
+                                                    name: '방송',
+                                                    value: 30,
+                                                    fill: "#FFB7B2"
+                                                },
+                                                {
+                                                    name: '항해사',
+                                                    value: 30,
+                                                    fill: "#E2F0CB"
+                                                },
+                                                {
+                                                    name: '자동차',
+                                                    value: 40,
+                                                    fill: "#C7CEEA"
+                                                },
+                                            ]}
+                                            cx="50%"
+                                            cy="50%"
+                                            outerRadius={80}
+                                            dataKey="value"
+                                        />
+                                        <Tooltip/>
+                                    </PieChart>
                                 </ResponsiveContainer>
                             </div>
                         ) : (
@@ -430,24 +498,119 @@ const CFinal = () => {
                     </section>
                 </div>
 
-                <section className="report-card full-width">
-                    <h3>AI 상담 대화 요약</h3>
+                <div className="ai-summary-grid">
 
-                    {llmResult ? (
+                    <section className="ai-summary-left">
+                        <h3>분야별 비교</h3>
+                        <div className="summary-box" style={{ padding: '0' }}>
+                            {/* 액셀 형태의 테이블 */}
+                            <table className="report-table">
+                                <thead>
+                                    <tr style={{ backgroundColor: '#f8f9fa' }}>
+                                        <th className="report-table-header">구분</th>
+                                        <th className="report-table-header">집중도</th>
+                                        <th className="report-table-header">흥미도</th>
+                                        <th className="report-table-header">설문</th>
+                                        <th className="report-table-header final-score">최종점수</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {tableData.length > 0 ? (
 
-                        <div className="summary-box">
-                            {llmResult?.summary}
+                                        tableData.map((video, index) => (
+
+                                            <tr key={video.video_id || index} style={{ textAlign: 'center' }}>
+
+                                                <td className="report-table-cell">
+                                                    {video.category?.replace(" 직업","")}
+                                                </td>
+
+                                                <td className="report-table-cell">
+                                                    {video.attention_score ?? "-"}
+                                                </td>
+
+                                                <td className="report-table-cell">
+                                                    {video.emotion_score ?? "-"}
+                                                </td>
+
+                                                <td className="report-table-cell">
+                                                    {video.survey_score ?? "-"}
+                                                </td>
+
+                                                <td className="report-table-cell final-score-value">
+                                                    {video.final_score ?? "-"}
+                                                </td>
+
+                                            </tr>
+
+                                        ))
+
+                                    ) : (
+
+                                        <tr>
+                                            <td colSpan="5" style={{ textAlign: "center", padding: "20px" }}>
+                                                분석 데이터가 없습니다
+                                            </td>
+                                        </tr>
+
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
+                    </section>
 
-                    ) : (
 
-                        <div className="chart-empty">
-                            상담이 완료된 후 자동으로 생성됩니다.
-                        </div>
+                    {/* AI 상담 대화 요약 (오른쪽 2칸) */}
+                    <section className="ai-summary-right">
 
-                    )}
+                        <h3>AI 상담 대화 요약</h3>
 
-                </section>
+                        {llmResult ? (
+
+                            <div className="summary-box">
+                                {llmResult?.summary}
+                            </div>
+
+                        ) : (
+
+                            <div className="chart-empty">
+                                상담이 완료된 후 자동으로 생성됩니다.
+                            </div>
+
+                        )}
+
+                    </section>
+
+                </div>
+
+                {/* ===== 상담사 분석 ===== */}
+                <h3 className="section-title">상담사 분석</h3>
+
+                <div className="report-top-grid-2">
+
+                    <section className="report-card">
+                        <h3>학생 성향 분석 요약</h3>
+
+                        <textarea
+                            className="analysis-textarea"
+                            placeholder="학생 성향에 대한 상담사의 분석을 작성해주세요."
+                            value={personalityComment}
+                            onChange={(e) => setPersonalityComment(e.target.value)}
+                        />
+                    </section>
+
+                    <section className="report-card">
+                        <h3>추천 진로 분석 요약</h3>
+
+                        <textarea
+                            className="analysis-textarea"
+                            placeholder="추천 진로에 대한 상담사의 의견을 작성해주세요."
+                            value={careerComment}
+                            onChange={(e) => setCareerComment(e.target.value)}
+                        />
+                    </section>
+
+                </div>
 
                 <section className="report-card full-width">
                     <div className="report-content-box">
@@ -485,8 +648,8 @@ const CFinal = () => {
                                     id="finalComment"
                                     style={{ width: '100%', minHeight: '150px' }}
                                     placeholder="학생과의 상담 내용을 입력해주세요."
-                                    value={report}
-                                    onChange={(e) => setReport(e.target.value)}
+                                    value={finalComment}
+                                    onChange={(e) => setFinalComment(e.target.value)}
                                 />
                             )}
                         </div>
