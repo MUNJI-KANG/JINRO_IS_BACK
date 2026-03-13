@@ -378,76 +378,135 @@ async def upload_audio(
 # ===============================
 # 🔹 최종 리포트 API
 # ===============================
-@router.get("/report/final/comment/{counseling_id}")  
+@router.get("/report/final/comment/{counseling_id}")
 def get_final_comment(counseling_id: int, db: Session = Depends(get_db)):
-    report = db.query(ReportFinal).filter(ReportFinal.counseling_id == counseling_id).first()
+
+    report = (
+        db.query(ReportFinal)
+        .filter(ReportFinal.counseling_id == counseling_id)
+        .order_by(ReportFinal.final_id.desc())
+        .first()
+    )
+
     if not report:
-        return {"success": True, "comment": "", "complete": "N"}
-    return {"success": True, "comment": report.final_comment, "complete": report.complete_yn}
+        return {
+            "success": True,
+            "personality_comment": "",
+            "career_comment": "",
+            "final_comment": "",
+            "complete": "N"
+        }
+
+    return {
+        "success": True,
+        "personality_comment": report.personality_comment,
+        "career_comment": report.career_comment,
+        "final_comment": report.final_comment,
+        "complete": report.complete_yn
+    }
 
 
+# 분야별 비교표(?)
 @router.get("/report/final/{counseling_id}")
 def get_final_report(counseling_id: int, db: Session = Depends(get_db)):
 
-    videos        = db.query(ReportAiV).filter(ReportAiV.counseling_id == counseling_id).all()
-    focus_data    = []
-    interest_data = []
-    alerts        = []
+    rows = (
+        db.query(
+            ReportAiV.ai_v_erp_id,
+            ReportAiV.category,
+            AiVideoAnalyze.attention_score,
+            AiVideoAnalyze.emotion_score,
+            AiVideoAnalyze.survey_score,
+            AiVideoAnalyze.final_score
+        )
+        .join(
+            AiVideoAnalyze,
+            AiVideoAnalyze.ai_v_erp_id == ReportAiV.ai_v_erp_id
+        )
+        .filter(ReportAiV.counseling_id == counseling_id)
+        .order_by(ReportAiV.update_date.asc())   # 영상 순서 정렬
+        .all()
+    )
 
-    for v in videos:
-        analyze   = db.query(AiVideoAnalyze).filter(AiVideoAnalyze.ai_v_erp_id == v.ai_v_erp_id).first()
-        avg_focus = 0
+    table_data = []
 
-        if analyze and analyze.emotion_v_score:
-            scores    = analyze.emotion_v_score
-            avg_focus = round(sum(item["value"] for item in scores) / len(scores), 2)
+    for idx, r in enumerate(rows):
+        table_data.append({
+            "video_id": idx + 1,
+            "category": r.category,
+            "attention_score": r.attention_score,
+            "emotion_score": r.emotion_score,
+            "survey_score": r.survey_score,
+            "final_score": r.final_score
+        })
 
-        focus_data.append({"subject": v.category, "value": avg_focus})
-        interest_data.append({"subject": v.category, "관심도": 70, "자신감": 65, "수행도": 75})
-
-        if v.re_comment == ReCommentEnum.ANALYZE_FAIL:
-            alerts.append({
-                "id": v.ai_v_erp_id, "time": "[영상]", "level": "높음",
-                "msg": f"{v.category} 영상 AI 분석 실패", "videoId": v.ai_v_erp_id
-            })
-
-    return {"success": True, "focus": focus_data, "interest": interest_data, "alerts": alerts}
-
+    return {
+        "success": True,
+        "table": table_data
+    }
 
 @router.post("/report/final/save")
 def save_final_report(data: FinalReportSave, db: Session = Depends(get_db)):
-    report = db.query(ReportFinal).filter(ReportFinal.counseling_id == data.counseling_id).first()
+
+    report = db.query(ReportFinal).filter(
+        ReportFinal.counseling_id == data.counseling_id
+    ).first()
+
     counseling = db.query(Counseling).filter(
         Counseling.counseling_id == data.counseling_id
     ).first()
 
     if report:
-        report.final_comment = data.comment
+
+        report.personality_comment = data.personality_comment
+        report.career_comment = data.career_comment
+        report.final_comment = data.final_comment
+
     else:
-        db.add(ReportFinal(counseling_id=data.counseling_id, final_comment=data.comment, complete_yn='N'))
+
+        report = ReportFinal(
+            counseling_id=data.counseling_id,
+            personality_comment=data.personality_comment,
+            career_comment=data.career_comment,
+            final_comment=data.final_comment,
+            complete_yn='N'
+        )
+
+        db.add(report)
 
     if counseling and counseling.complete_yn == 2:
         counseling.complete_yn = 3
-        
+
     db.commit()
+
     return {"success": True, "message": "리포트 저장 완료"}
 
 
 @router.post("/report/final/complete")
 def complete_final_report(data: FinalReportSave, db: Session = Depends(get_db)):
-    report = db.query(ReportFinal).filter(ReportFinal.counseling_id == data.counseling_id).first()
+
+    report = db.query(ReportFinal).filter(
+        ReportFinal.counseling_id == data.counseling_id
+    ).first()
+
     counseling = db.query(Counseling).filter(
         Counseling.counseling_id == data.counseling_id
     ).first()
+
     if not report:
         raise HTTPException(status_code=404, detail="최종 리포트가 존재하지 않습니다.")
-    report.final_comment = data.comment
-    report.complete_yn   = 'Y'
+
+    report.personality_comment = data.personality_comment
+    report.career_comment = data.career_comment
+    report.final_comment = data.final_comment
+
+    report.complete_yn = 'Y'
 
     if counseling and counseling.complete_yn == 2:
-            counseling.complete_yn = 3
+        counseling.complete_yn = 3
 
     db.commit()
+
     return {"success": True, "message": "최종 리포트 작성 완료"}
 
 
@@ -637,7 +696,9 @@ def get_student_consultations(client_id: int, db: Session = Depends(get_db)):
     try:
         # 1. 상담 기록 조회 (Counseling 테이블)
         records = db.query(Counseling).filter(
-            Counseling.client_id == client_id
+            Counseling.client_id == client_id,
+            Counseling.complete_yn != 1,
+            Counseling.complete_yn != 0,
         ).order_by(Counseling.datetime.desc()).all()
 
         result = []

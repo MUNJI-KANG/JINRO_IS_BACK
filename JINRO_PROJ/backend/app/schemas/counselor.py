@@ -47,10 +47,11 @@ class ReportConUpdateRequest(BaseModel):
     complete_yn:     str = 'N'  # 'N': 임시저장, 'Y': 작성완료
 
 
-# 최종 리포트 저장
 class FinalReportSave(BaseModel):
     counseling_id: int
-    comment:       str
+    personality_comment: str | None = None
+    career_comment: str | None = None
+    final_comment: str | None = None
 
 # 상담대화분석
 class RecordingAnalyze(BaseModel):
