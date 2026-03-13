@@ -386,33 +386,44 @@ def get_final_comment(counseling_id: int, db: Session = Depends(get_db)):
     return {"success": True, "comment": report.final_comment, "complete": report.complete_yn}
 
 
+# 분야별 비교표(?)
 @router.get("/report/final/{counseling_id}")
 def get_final_report(counseling_id: int, db: Session = Depends(get_db)):
 
-    videos        = db.query(ReportAiV).filter(ReportAiV.counseling_id == counseling_id).all()
-    focus_data    = []
-    interest_data = []
-    alerts        = []
+    rows = (
+        db.query(
+            ReportAiV.ai_v_erp_id,
+            ReportAiV.category,
+            AiVideoAnalyze.attention_score,
+            AiVideoAnalyze.emotion_score,
+            AiVideoAnalyze.survey_score,
+            AiVideoAnalyze.final_score
+        )
+        .join(
+            AiVideoAnalyze,
+            AiVideoAnalyze.ai_v_erp_id == ReportAiV.ai_v_erp_id
+        )
+        .filter(ReportAiV.counseling_id == counseling_id)
+        .order_by(ReportAiV.update_date.asc())   # 영상 순서 정렬
+        .all()
+    )
 
-    for v in videos:
-        analyze   = db.query(AiVideoAnalyze).filter(AiVideoAnalyze.ai_v_erp_id == v.ai_v_erp_id).first()
-        avg_focus = 0
+    table_data = []
 
-        if analyze and analyze.emotion_v_score:
-            scores    = analyze.emotion_v_score
-            avg_focus = round(sum(item["value"] for item in scores) / len(scores), 2)
+    for idx, r in enumerate(rows):
+        table_data.append({
+            "video_id": idx + 1,
+            "category": r.category,
+            "attention_score": r.attention_score,
+            "emotion_score": r.emotion_score,
+            "survey_score": r.survey_score,
+            "final_score": r.final_score
+        })
 
-        focus_data.append({"subject": v.category, "value": avg_focus})
-        interest_data.append({"subject": v.category, "관심도": 70, "자신감": 65, "수행도": 75})
-
-        if v.re_comment == ReCommentEnum.ANALYZE_FAIL:
-            alerts.append({
-                "id": v.ai_v_erp_id, "time": "[영상]", "level": "높음",
-                "msg": f"{v.category} 영상 AI 분석 실패", "videoId": v.ai_v_erp_id
-            })
-
-    return {"success": True, "focus": focus_data, "interest": interest_data, "alerts": alerts}
-
+    return {
+        "success": True,
+        "table": table_data
+    }
 
 @router.post("/report/final/save")
 def save_final_report(data: FinalReportSave, db: Session = Depends(get_db)):

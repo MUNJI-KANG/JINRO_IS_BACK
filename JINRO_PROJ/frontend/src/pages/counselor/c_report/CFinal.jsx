@@ -22,7 +22,9 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 const CFinal = () => {
-    const { clientId, counselingId } = useParams();
+    const params = useParams();
+    const clientId = Number(params.clientId);
+    const counselingId = Number(params.counselingId);
     const location = useLocation();
     const studentName = location.state?.studentName || "학생";
 
@@ -34,6 +36,8 @@ const CFinal = () => {
     // 상담 데이터 관련 상태
     const [focusData, setFocusData] = useState([]);
     const [interestData, setInterestData] = useState([]);
+    const [tableData, setTableData] = useState([]); //분석 테이블 표
+    
 
     // 상담사 TEXT 리포트 부분
     const [personalityComment, setPersonalityComment] = useState('');
@@ -53,6 +57,15 @@ const CFinal = () => {
     const timerRef = useRef(null);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
+
+    const tableHeaderStyle = {
+        padding: "10px",
+        fontWeight: "600"
+        };
+
+        const tableCellStyle = {
+        padding: "10px"
+        };
 
     // ---------------------------------------------------------
     // PDF 생성 및 미리보기 로직
@@ -110,15 +123,24 @@ const CFinal = () => {
     // 데이터 로딩 및 녹음 로직 (기존 유지)
     // ---------------------------------------------------------
     useEffect(() => {
-        if (!counselingId || counselingId === 'undefined') return;
+
+        if (!counselingId) return;
+
         api.get(`/counselor/report/final/${counselingId}`)
             .then(res => res.data)
             .then(data => {
+
                 if (data.success) {
-                    setFocusData(data.focus);
-                    setInterestData(data.interest);
+
+                    setFocusData(data.focus || []);
+                    setInterestData(data.interest || []);                    
+                    setTableData(data.table || []); // ⭐ 테이블 데이터 추가
+
                 }
-            }).catch(err => console.error("리포트 조회 실패", err));
+
+            })
+            .catch(err => console.error("리포트 조회 실패", err));
+
     }, [counselingId]);
 
     // 페이지 진입 시 status 확인
@@ -190,7 +212,7 @@ const CFinal = () => {
         if (!counselingId) return alert("ID가 없습니다.");
         await api.post("/counselor/report/final/complete", {
             counseling_id: counselingId,
-            comment: report
+            comment: finalComment
         });
         alert("작성 완료되었습니다.");
         setIsComplete(true);
@@ -352,7 +374,7 @@ const CFinal = () => {
                 <div className="report-top-grid">
                     <section className="report-card">
                         <h3>❶ 분야별 관심 비교 그래프</h3>
-                        {focusData.length > 0 ? (
+                        {Array.isArray(focusData) && focusData.length > 0 ? (
                             <div className="chart-box">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
@@ -493,24 +515,45 @@ const CFinal = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {/* 5, 6, 7번 영상 데이터를 매핑 */}
-                                    {[
-                                        { id: '5', label: '1번 영상' },
-                                        { id: '6', label: '2번 영상' },
-                                        { id: '7', label: '3번 영상' }
-                                    ].map((video) => {
-                                        // 실제 데이터가 focusData 등에 있다면 해당 값을 찾아 매핑합니다.
-                                        // 현재는 예시 데이터이며, 서버 응답 구조에 맞게 item.value 등으로 수정 가능합니다.
-                                        return (
-                                            <tr key={video.id} style={{ textAlign: 'center' }}>
-                                                <td className="report-table-cell">{video.label}</td>
-                                                <td className="report-table-cell">-</td>
-                                                <td className="report-table-cell">-</td>
-                                                <td className="report-table-cell">-</td>
-                                                <td className="report-table-cell final-score-value">-</td>
-                                                                                            </tr>
-                                        );
-                                    })}
+                                    {tableData.length > 0 ? (
+
+                                        tableData.map((video, index) => (
+
+                                            <tr key={video.video_id || index} style={{ textAlign: 'center' }}>
+
+                                                <td className="report-table-cell">
+                                                    {video.category?.replace(" 직업","")}
+                                                </td>
+
+                                                <td className="report-table-cell">
+                                                    {video.attention_score ?? "-"}
+                                                </td>
+
+                                                <td className="report-table-cell">
+                                                    {video.emotion_score ?? "-"}
+                                                </td>
+
+                                                <td className="report-table-cell">
+                                                    {video.survey_score ?? "-"}
+                                                </td>
+
+                                                <td className="report-table-cell final-score-value">
+                                                    {video.final_score ?? "-"}
+                                                </td>
+
+                                            </tr>
+
+                                        ))
+
+                                    ) : (
+
+                                        <tr>
+                                            <td colSpan="5" style={{ textAlign: "center", padding: "20px" }}>
+                                                분석 데이터가 없습니다
+                                            </td>
+                                        </tr>
+
+                                    )}
                                 </tbody>
                             </table>
                         </div>
