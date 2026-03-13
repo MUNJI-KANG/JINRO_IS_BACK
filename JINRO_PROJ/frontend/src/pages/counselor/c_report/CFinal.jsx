@@ -82,6 +82,20 @@ const CFinal = () => {
         }
     };
 
+    // modalStyle 변수 없음 => 런타임 에러 발생 될 수 있어서 임시로 추가 0313 - 12:17 AHW
+    const modalStyle = {
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        backgroundColor: "rgba(0,0,0,0.6)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 9999
+    };
+
     // ---------------------------------------------------------
     // 데이터 로딩 및 녹음 로직 (기존 유지)
     // ---------------------------------------------------------
@@ -97,15 +111,27 @@ const CFinal = () => {
             }).catch(err => console.error("리포트 조회 실패", err));
     }, [counselingId]);
 
+    // 페이지 진입 시 status 확인
     useEffect(() => {
         if (!counselingId || counselingId === 'undefined') return;
+
         api.get(`/counselor/ai-report/${counselingId}`)
             .then(res => res.data)
             .then(data => {
+
                 if (data.success && data.data && data.data.ai_m_comment) {
-                    setLlmResult(data.data.ai_m_comment);
+
+                    const parsed = data.data.ai_m_comment;
+
+                    setLlmResult(parsed);
+
                 }
-            }).catch(err => console.error("LLM 결과 조회 실패", err));
+
+            })
+            .catch(err => {
+                console.error("LLM 결과 조회 실패", err);
+            });
+
     }, [counselingId]);
 
     useEffect(() => {
@@ -120,13 +146,22 @@ const CFinal = () => {
     }, [counselingId]);
 
     useEffect(() => {
-        return () => {
-            if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
-                mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-            }
-            clearInterval(timerRef.current);
-        };
-    }, []);
+
+    return () => {
+
+        if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
+
+            mediaRecorderRef.current.stream
+                .getTracks()
+                .forEach(track => track.stop());
+
+        }
+
+        clearInterval(timerRef.current);
+
+    };
+
+}, []);
 
     const handleSave = async (e) => {
         e.preventDefault();
@@ -179,6 +214,8 @@ const CFinal = () => {
                     const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
                     const formData = new FormData();
                     formData.append("file", blob, "record.webm");
+
+                    // stopRecording 상태 초기화
                     setIsAnalyzing(true);
                     setAiStatus(null);
                     await api.post(`/counselor/report/con/${counselingId}/audio`, formData, {
@@ -213,31 +250,60 @@ const CFinal = () => {
     };
 
     const pollAIStatus = () => {
+
+        let retry = 0;
+        const maxRetry = 30;
+
         const checkStatus = async () => {
+
             try {
+
                 const res = await api.get(`/counselor/report/status/${counselingId}`);
+
                 if (!res.data.success) return;
+
                 const status = res.data.status;
                 setAiStatus(status);
+
                 if (status === "COMPLETED") {
+
                     const result = await api.get(`/counselor/ai-report/${counselingId}`);
+
                     if (result.data.success && result.data.data.ai_m_comment) {
-                        setLlmResult(result.data.data.ai_m_comment);
+
+                        const parsed = result.data.data.ai_m_comment;
+
+                        setLlmResult(parsed);
+
                     }
+
                     setIsAnalyzing(false);
                     return;
-                }
-            } catch (e) { console.error("status polling error", e); }
-            if (isAnalyzing) setTimeout(checkStatus, 3000);
-        };
-        checkStatus();
-    };
 
-    // 미리보기 모달 스타일
-    const modalStyle = {
-        position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-        backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', 
-        alignItems: 'center', zIndex: 9999
+                }
+
+            } catch (e) {
+
+                console.error("status polling error", e);
+
+            }
+
+            retry++;
+
+            if (retry < maxRetry && isAnalyzing) {
+
+                setTimeout(checkStatus, 3000);
+
+            } else {
+
+                setIsAnalyzing(false);
+
+            }
+
+        };
+
+        checkStatus();
+
     };
 
     return (
@@ -288,40 +354,99 @@ const CFinal = () => {
                         )}
                     </section>
 
-                    <section className="report-card">
-                        <h3>❷ 학생 성향 분석</h3>
-                        {llmResult ? (
-                            <div className="summary-box">{llmResult.summary}</div>
-                        ) : (
-                            <div className="chart-empty">
-                                {isAnalyzing ? `분석 중... (${aiStatus || '준비'})` : "상담 완료 후 생성됩니다."}
-                            </div>
-                        )}
-                    </section>
+                <section className="report-card">
+                    <h3>❷ 학생 성향 분석</h3>
+                    
+                    {/* UI 표시 (분석 중 메시지) */}
+                   {isAnalyzing && !llmResult && (
 
-                    <section className="report-card">
-                        <h3>❸ 추천 진로 TOP5</h3>
-                        {llmResult ? (
-                            <div className="analysis-text">
-                                {llmResult.career_recommendation.split(',').map((item, i) => (
-                                    <div key={i} style={{ marginBottom: '4px' }}>• {item.trim()}</div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="chart-empty">상담 완료 후 생성됩니다.</div>
-                        )}
+                        <div className="chart-empty ai-loading">
+
+                            <div className="ai-spinner"></div>
+
+                            {aiStatus === "STT_PROCESSING" && "음성을 텍스트로 변환 중입니다..."}
+
+                            {aiStatus === "LLM_PROCESSING" && "AI가 상담 내용을 분석 중입니다..."}
+
+                            {!aiStatus && "AI 상담 분석을 준비 중입니다..."}
+
+                        </div>
+
+                    )}
+
+                    {llmResult ? (
+
+                        <div className="summary-box">
+                            {llmResult?.summary}
+                        </div>
+
+                    ) : isAnalyzing ? (
+
+                        <div className="chart-empty ai-loading">
+
+                            <div className="ai-spinner"></div>
+
+                            {aiStatus === "STT_PROCESSING" && "음성을 분석 중입니다..."}
+
+                            {aiStatus === "LLM_PROCESSING" && "AI가 상담 내용을 요약 중입니다..."}
+
+                            {!aiStatus && "AI 분석 준비 중입니다..."}
+
+                        </div>
+
+                    ) : (
+
+                        <div className="chart-empty">
+                            상담이 완료된 후 자동으로 생성됩니다.
+                        </div>
+
+                    )}
+
+                </section>
+
+                <section className="report-card">
+
+                    <h3>❸ 추천 진로 TOP5</h3>
+
+                    {llmResult ? (
+
+                        <div className="analysis-text">
+                        {
+                            (llmResult?.analysis?.career_recommendation || [])
+                                .map((item, index) => (
+                                    <div key={index}>{item.trim()}</div>
+                            ))
+                        }
+                        </div>
+
+                    ) : (
+
+                        <div className="chart-empty">
+                            상담이 완료된 후 자동으로 생성됩니다.
+                        </div>
+
+                    )}
+
                     </section>
                 </div>
 
                 <section className="report-card full-width">
                     <h3>AI 상담 대화 요약</h3>
+
                     {llmResult ? (
-                        <div className="summary-box" style={{ backgroundColor: '#f9f9f9', padding: '15px' }}>
-                            {llmResult.summary}
+
+                        <div className="summary-box">
+                            {llmResult?.summary}
                         </div>
+
                     ) : (
-                        <div className="chart-empty">상담 내용이 없습니다.</div>
+
+                        <div className="chart-empty">
+                            상담이 완료된 후 자동으로 생성됩니다.
+                        </div>
+
                     )}
+
                 </section>
 
                 <section className="report-card full-width">
