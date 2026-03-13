@@ -94,7 +94,7 @@ def audio_analyze(data: dict):
 
 
 @router.post("/audio/upload/{counseling_id}")
-async def upload_audio(counseling_id: int, file: UploadFile = File(...)):
+def upload_audio(counseling_id: int, file: UploadFile = File(...)):
 
     # 상담 ID 폴더 생성
     counseling_dir = os.path.join(UPLOAD_DIR, str(counseling_id))
@@ -148,7 +148,7 @@ async def upload_audio(counseling_id: int, file: UploadFile = File(...)):
 # 3. 텍스트 요약 전용 API 엔드포인트
 # ---------------------------------------------------------
 @router.post("/api/summarize", summary="긴 글 구조화 요약")
-async def summarize_text(summaryRequest: SummaryRequest):
+async def summarize_api(summaryRequest: SummaryRequest):
     try:
         client = ollama.AsyncClient()
         response = await client.chat(

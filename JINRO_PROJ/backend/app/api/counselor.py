@@ -162,8 +162,19 @@ def get_video_list(client_id: int, db: Session = Depends(get_db)):
 async def set_recording_analyze(record_analyze: RecordingAnalyze,  db: Session = Depends(get_db)):
     
     try:
-        report_con = db.query(ReportCon).filter(ReportCon.counseling_id == record_analyze.counseling_id).first()
-        report_ai_m = db.query(ReportAiM).filter(ReportAiM.con_rep_id == report_con.con_rep_id).first()
+        report_con = db.query(ReportCon).filter(
+            ReportCon.counseling_id == record_analyze.counseling_id
+        ).first()
+
+        if not report_con:
+            raise HTTPException(status_code=404, detail="report_con 없음")
+
+        report_ai_m = db.query(ReportAiM).filter(
+            ReportAiM.con_rep_id == report_con.con_rep_id
+        ).first()
+
+        if not report_ai_m:
+            raise HTTPException(status_code=404, detail="AI 분석 데이터 없음")
 
         data = {}
         async with httpx.AsyncClient() as client:
@@ -323,13 +334,23 @@ async def upload_audio(
 ):
 
     try:
-
+        # report_con 없어도 STT 저장 가능
         report = db.query(ReportCon).filter(
             ReportCon.counseling_id == counseling_id
         ).first()
 
         if not report:
-            raise HTTPException(status_code=404, detail="상담 일지를 찾을 수 없습니다.")
+
+            report = ReportCon(
+                title="AI 상담 기록",
+                con_rep_comment="",
+                counseling_id=counseling_id,
+                complete_yn='N'
+            )
+
+            db.add(report)
+            db.commit()
+            db.refresh(report)
 
         
         file_bytes = await file.read() # Backend → file 읽기
@@ -470,11 +491,28 @@ async def get_ai_report_voice_file(counseling_id: int, request: Request):
 # ===============================
 @router.get("/ai-report/{counseling_id}")
 def get_ai_report(counseling_id: int, db: Session = Depends(get_db)):
-    try:
-        report_con = db.query(ReportCon).filter(ReportCon.counseling_id == counseling_id).first()
-        report_ai_m = db.query(ReportAiM).filter(ReportAiM.con_rep_id == report_con.con_rep_id).first()
 
-        return { "success": True, "data": report_ai_m }
+    try:
+
+        report_ai_m = (
+            db.query(ReportAiM)
+            .join(ReportCon, ReportAiM.con_rep_id == ReportCon.con_rep_id)
+            .filter(ReportCon.counseling_id == counseling_id)
+            .order_by(ReportAiM.reg_date.desc())
+            .first()
+        )
+
+        if not report_ai_m:
+            return {"success": True, "data": None}
+
+        return {
+            "success": True,
+            "data": {
+                "ai_m_comment": report_ai_m.ai_m_comment,
+                "stt_text": report_ai_m.stt_text
+            }
+        }
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"상담내용 조회 오류: {str(e)}")
 
@@ -670,9 +708,12 @@ def update_counselor(counselor_id: int, request: CounselorModifyInfo, db: Sessio
 @router.post("/report/con/{counseling_id}/stt-result")
 def receive_stt_result(counseling_id: int, data: dict, db: Session = Depends(get_db)):
 
-    report = db.query(ReportCon).filter(
-        ReportCon.counseling_id == counseling_id
-    ).first()
+    report = (
+        db.query(ReportCon)
+        .filter(ReportCon.counseling_id == counseling_id)
+        .order_by(ReportCon.con_rep_id.asc())
+        .first()
+    )
 
     # 상담 일지 없어도 AI 분석 저장 가능
     if not report:
@@ -689,8 +730,12 @@ def receive_stt_result(counseling_id: int, data: dict, db: Session = Depends(get
         db.refresh(report)
 
     stt_text = data.get("stt_text", "")
-    summary = data.get("summary", "")
-    analysis = data.get("analysis", {})
+    # summary = data.get("summary", "") => 실제 DB 저장에는 사용하지 않음. 0313-10:44
+    analysis = {
+        "summary": data.get("summary", ""),
+        "career_recommendation": data.get("career_recommendation", ""),
+        "analysis": data.get("analysis", {})
+    }
 
     existing = db.query(ReportAiM).filter(
         ReportAiM.con_rep_id == report.con_rep_id
@@ -700,16 +745,15 @@ def receive_stt_result(counseling_id: int, data: dict, db: Session = Depends(get
     if existing:
 
         existing.stt_text = stt_text
-        existing.ai_m_comment = json.dumps(analysis, ensure_ascii=False)
+        existing.ai_m_comment = analysis
 
     else:
 
         ai_report = ReportAiM(
-            ai_m_comment=json.dumps(analysis, ensure_ascii=False),
+            ai_m_comment=analysis,
             stt_text=stt_text,
-            prompt="GPT_SUMMARY",
             con_rep_id=report.con_rep_id
-    )
+        )
 
         db.add(ai_report)
 
@@ -742,11 +786,6 @@ def get_ai_process_status(counseling_id: int, db: Session = Depends(get_db)):
             "success": True,
             "status": "PROCESSING"
         }
-
-    return {
-        "success": True,
-        "status": "COMPLETED"
-    }
 
     return {
         "success": True,
