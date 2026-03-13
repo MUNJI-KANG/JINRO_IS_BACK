@@ -5,30 +5,31 @@ import api from '../../services/app.js';
 import { useDispatch } from 'react-redux';
 import { clearVideos, addVideo } from '../../redux/cVideos';
 
+import LoginOnboarding from "../student/s_onboarding/LoginOnboarding.jsx";
+
 const SLogin = () => {
+
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
-    const [isLoading, setIsLoading] = useState(false); // 이어볼 영상이 있는지 확인
+    const [showOnboarding, setShowOnboarding] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-
-    // 1. 상태 관리: 세분화된 입력값 대응
     const [formData, setFormData] = useState({
         name: "",
-        ssn1: "", // 주민번호 앞 6자리
-        ssn2: "", // 주민번호 뒤 1자리
-        phone1: "010", // 휴대폰 첫자리 (기본값 010)
+        ssn1: "",
+        ssn2: "",
+        phone1: "010",
         phone2: "",
         phone3: "",
-        emailId: "", // 이메일 아이디
-        emailDomain: "", // 선택된 도메인
-        customEmailDomain: "" // 직접 입력용 도메인
+        emailId: "",
+        emailDomain: "",
+        customEmailDomain: ""
     });
 
-    // 2. 입력값 변경 핸들러
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({
+        setFormData(prev => ({
             ...prev,
             [name]: value
         }));
@@ -38,7 +39,6 @@ const SLogin = () => {
         navigate("/student/agreement");
     };
 
-    // 3. 진단 시작 및 데이터 검증
     const handleStartDiagnosis = async () => {
 
         if (isLoading) return;
@@ -67,18 +67,11 @@ const SLogin = () => {
         try {
 
             const response = await api.post("/client/login", {
-                name: name,
+                name,
                 birthdate: fullSsn,
                 phone_num: fullPhone,
                 email: fullEmail
             });
-
-            console.log("🔥 로그인 응답:", response);
-
-            if (!response || !response.data) {
-                alert("서버 응답이 없습니다.");
-                return;
-            }
 
             const data = response.data;
 
@@ -88,48 +81,35 @@ const SLogin = () => {
             }
 
             localStorage.setItem("client_id", data.client_id);
-            
-             if (data.has_unfinished_video) {
+
+            if (data.has_unfinished_video) {
+
                 const wantsToContinue = window.confirm('아직 완료하지 않은 영상이 있습니다. 이어보시겠습니까?');
+
                 if (wantsToContinue) {
-                    // 1. 리덕스에 남은 영상 목록 채워넣기
-                    if (data.video_list && data.video_list.length > 0) {
+
+                    if (data.video_list?.length > 0) {
                         dispatch(addVideo(data.video_list));
                     }
-                    
-                    // 2. localStorage 대신 navigate의 state로 데이터를 숨겨서 전달!
-                    navigate(`/student/video/${data.category_id}`, { 
-                        state: { 
-                            isResume: true, 
+
+                    navigate(`/student/video/${data.category_id}`, {
+                        state: {
+                            isResume: true,
                             counseling_id: data.counseling_id,
                             report_ids: data.report_ids
-                        } 
+                        }
                     });
-                    return; 
-                } else {
-                    try {
-                        // 1. 백엔드에 기존 상담 세션(Counseling, ReportAiV) 삭제 요청
-                        await api.delete(`/client/counselling/${data.counseling_id}`);
-                        
-                        // 2. 혹시 남아있을지 모르는 로컬 데이터도 안전하게 초기화
-                        localStorage.removeItem("counseling_id");
-                        localStorage.removeItem("report_ids");
-                        dispatch(clearVideos()); // 리덕스 초기화
-                        
-                    } catch (err) {
-                        console.error("기존 기록 삭제 실패:", err);
-                        alert("기존 기록을 삭제하는 중 문제가 발생했습니다.");
-                        setIsLoading(false); // 에러 발생 시 로딩 풀어주기
-                        return; // 삭제에 실패하면 다음 페이지로 넘어가지 않도록 막음
-                    }
+
+                    return;
                 }
+
+                await api.delete(`/client/counselling/${data.counseling_id}`);
+                dispatch(clearVideos());
             }
+
             navigate("/student/category/big");
 
         } catch (error) {
-
-            console.log("🔥 로그인 전체 에러:", error);
-            console.log("🔥 서버응답:", error.response);
 
             alert(
                 error?.response?.data?.detail ||
@@ -139,36 +119,44 @@ const SLogin = () => {
         }
     };
     useEffect(() => {
-        const init = async () => {
-            sessionStorage.clear();
-            localStorage.clear();
-            dispatch(clearVideos());
 
-            try {
-                await api.get('/client/session/clear');
-            } catch (e) {
-                console.log('session clear error', e);
-            }
-        };
+        sessionStorage.clear();
 
-        init();
+        dispatch(clearVideos());
+
+        const need = localStorage.getItem("needLoginOnboarding");
+
+        if (need === "true") {
+            setTimeout(() => {
+                setShowOnboarding(true);
+                localStorage.removeItem("needLoginOnboarding");
+            }, 300);
+        }
+
     }, []);
+
     return (
-        <div className={style.container}>
-            <div className={style.card}>
-                <button className={style.backButton} onClick={handleBack} type="button">
-                    <div className={style.backCircle}>←</div>
-                    <span className={style.backText}>이전으로</span>
-                </button>
+        <>
+            {showOnboarding &&
+                <LoginOnboarding onClose={() => setShowOnboarding(false)} />
+            }
 
-                <div className={style.header}>
-                    <h1>환영합니다!</h1>
-                    <p>기본 정보를 입력해주세요</p>
-                </div>
+            <div className={style.container}>
+                <div className={style.card}>
 
-                <div className={style.formContainer}>
-                    {/* 이름 */}
-                    <div className={style.formGroup}>
+                    <button className={style.backButton} onClick={handleBack} type="button">
+                        <div className={style.backCircle}>←</div>
+                        <span className={style.backText}>이전으로</span>
+                    </button>
+
+                    <div className={style.header}>
+                        <h1>환영합니다!</h1>
+                        <p>기본 정보를 입력해주세요</p>
+                    </div>
+
+                   <div className={style.formContainer}>
+
+                    <div className={`${style.formGroup} onboard-name`}>
                         <label>이름</label>
                         <div className={style.inputRow}>
                             <input
@@ -182,62 +170,58 @@ const SLogin = () => {
                         </div>
                     </div>
 
-                    {/* 주민번호 */}
-                    <div className={style.formGroup}>
+                    <div className={`${style.formGroup} onboard-ssn`}>
                         <label>주민등록번호</label>
                         <div className={style.inputRow}>
-                            <input type="text" name="ssn1" maxLength="6" value={formData.ssn1} onChange={handleChange} placeholder="앞 6자리" style={{ flex: 2 }} />
+                            <input type="text" name="ssn1" maxLength="6" value={formData.ssn1} onChange={handleChange} />
                             <span>-</span>
-                            <input type="text" name="ssn2" maxLength="1" value={formData.ssn2} onChange={handleChange} style={{ width: '45px', textAlign: 'center' }} />
+                            <input type="text" name="ssn2" maxLength="1" value={formData.ssn2} onChange={handleChange} />
                             <span className={style.ssnMask}>******</span>
                         </div>
                     </div>
 
-                    {/* 핸드폰 */}
-                    <div className={style.formGroup}>
+                    <div className={`${style.formGroup} onboard-phone`}>
                         <label>핸드폰 번호</label>
                         <div className={style.inputRow}>
-                            <select name="phone1" value={formData.phone1} onChange={handleChange} style={{ width: '85px' }}>
+                            <select name="phone1" value={formData.phone1} onChange={handleChange}>
                                 <option value="010">010</option>
                                 <option value="011">011</option>
-                                <option value="012">012</option>
                             </select>
                             <span>-</span>
-                            <input type="text" name="phone2" maxLength="4" value={formData.phone2} onChange={handleChange} style={{ flex: 1, textAlign: 'center' }} />
+                            <input type="text" name="phone2" maxLength="4" value={formData.phone2} onChange={handleChange} />
                             <span>-</span>
-                            <input type="text" name="phone3" maxLength="4" value={formData.phone3} onChange={handleChange} style={{ flex: 1, textAlign: 'center' }} />
+                            <input type="text" name="phone3" maxLength="4" value={formData.phone3} onChange={handleChange} />
                         </div>
                     </div>
 
-                    {/* 이메일 */}
-                    <div className={style.formGroup}>
+                    <div className={`${style.formGroup} onboard-email`}>
                         <label>이메일</label>
                         <div className={style.inputRow}>
-                            <input type="text" name="emailId" value={formData.emailId} onChange={handleChange} placeholder="이메일" style={{ flex: 1 }} />
+                            <input type="text" name="emailId" value={formData.emailId} onChange={handleChange} />
                             <span>@</span>
-                            {formData.emailDomain === "custom" ? (
-                                <div style={{ flex: 1.2, display: 'flex', gap: '4px' }}>
-                                    <input type="text" name="customEmailDomain" value={formData.customEmailDomain} onChange={handleChange} placeholder="직접 입력" style={{ width: '100%' }} />
-                                    <button type="button" onClick={() => setFormData(p => ({ ...p, emailDomain: "" }))} className={style.resetBtn}>✕</button>
-                                </div>
-                            ) : (
-                                <select name="emailDomain" value={formData.emailDomain} onChange={handleChange} style={{ flex: 1.2 }}>
-                                    <option value="">선택하세요</option>
-                                    <option value="naver.com">naver.com</option>
-                                    <option value="gmail.com">gmail.com</option>
-                                    <option value="daum.net">daum.net</option>
-                                    <option value="custom">직접 입력</option>
-                                </select>
-                            )}
+                            <select name="emailDomain" value={formData.emailDomain} onChange={handleChange}>
+                                <option value="">선택</option>
+                                <option value="naver.com">naver.com</option>
+                                <option value="gmail.com">gmail.com</option>
+                                <option value="daum.net">daum.net</option>
+                            </select>
                         </div>
                     </div>
+
                 </div>
 
-                <button className={style.submitButton} type="button" onClick={handleStartDiagnosis}>
+                <button
+                    className={`${style.submitButton} onboard-start-btn`}
+                    type="button"
+                    onClick={handleStartDiagnosis}
+                >
                     <span className={style.submitText}>진단 시작하기</span>
                 </button>
+
+
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 
