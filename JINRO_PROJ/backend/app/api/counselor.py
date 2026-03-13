@@ -396,10 +396,18 @@ def get_final_report(counseling_id: int, db: Session = Depends(get_db)):
 @router.post("/report/final/save")
 def save_final_report(data: FinalReportSave, db: Session = Depends(get_db)):
     report = db.query(ReportFinal).filter(ReportFinal.counseling_id == data.counseling_id).first()
+    counseling = db.query(Counseling).filter(
+        Counseling.counseling_id == data.counseling_id
+    ).first()
+
     if report:
         report.final_comment = data.comment
     else:
         db.add(ReportFinal(counseling_id=data.counseling_id, final_comment=data.comment, complete_yn='N'))
+
+    if counseling and counseling.complete_yn == 2:
+        counseling.complete_yn = 3
+        
     db.commit()
     return {"success": True, "message": "리포트 저장 완료"}
 
@@ -407,10 +415,17 @@ def save_final_report(data: FinalReportSave, db: Session = Depends(get_db)):
 @router.post("/report/final/complete")
 def complete_final_report(data: FinalReportSave, db: Session = Depends(get_db)):
     report = db.query(ReportFinal).filter(ReportFinal.counseling_id == data.counseling_id).first()
+    counseling = db.query(Counseling).filter(
+        Counseling.counseling_id == data.counseling_id
+    ).first()
     if not report:
         raise HTTPException(status_code=404, detail="최종 리포트가 존재하지 않습니다.")
     report.final_comment = data.comment
     report.complete_yn   = 'Y'
+
+    if counseling and counseling.complete_yn == 2:
+            counseling.complete_yn = 3
+
     db.commit()
     return {"success": True, "message": "최종 리포트 작성 완료"}
 
