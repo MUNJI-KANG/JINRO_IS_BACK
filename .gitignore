@@ -46,6 +46,7 @@ dist-ssr/
 *.sln
 *.sw?
 videos
+test_video
 data
 audio_records
 temp_audio
@@ -57,4 +58,4 @@ audio_uploads
 *.pt
 *.h5
 *.ckpt
-test_video/
+
