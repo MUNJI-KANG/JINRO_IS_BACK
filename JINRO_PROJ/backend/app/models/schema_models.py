@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import Column, Integer, String, Text, DateTime, Date, ForeignKey, JSON, Enum
+from sqlalchemy import Column, Integer, String, Text, DateTime, Date, ForeignKey, JSON, Enum, Float
 from sqlalchemy.sql import func
 from app.db.database import Base 
 
@@ -103,19 +103,19 @@ class AiVideoAnalyze(Base):
     )
 
     attention_score = Column(
-        Integer,
+        Float,
         nullable=False,
         comment="집중도 점수(0~100)"
     )
 
     emotion_score = Column(
-        Integer,
+        Float,
         nullable=False,
         comment="감정 점수(0~100)"
     )
 
     final_score = Column(
-        Integer,
+        Float,
         nullable=False,
         comment="영상 최종 점수"
     )
