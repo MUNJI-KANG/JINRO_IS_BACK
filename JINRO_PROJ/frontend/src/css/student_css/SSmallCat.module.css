@@ -1,19 +1,14 @@
 .container {
     width: 100%;
-    margin: 40px 0;
-    padding: 40px;
     box-sizing: border-box;
-    font-family: 'Pretendard', sans-serif;
-    text-align: center;
-    background: var(--bg-main);
 }
 
 /* 제목 */
 
 .title {
-    font-size: 28px;
-    margin-bottom: 8px;
-    color: var(--text-main);
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
 }
 
 .subtitle {
@@ -88,7 +83,7 @@
 .cardGrid {
     display: grid;
     grid-template-columns: repeat(4, 1fr); /* 화면 전체 카드 */
-    gap: 24px;
+    gap: 18px;
     width: 100%;
 }
 
@@ -96,10 +91,14 @@
 
 .card {
     width: 100%;
+
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 12px;
+
     overflow: hidden;
+    padding: 30px;
+
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: var(--shadow);
@@ -125,10 +124,10 @@
     overflow: hidden;
 }
 
-.videoThumbnail {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.thumbnail {
+    width:100%;
+    height:100%;
+    object-fit:cover;
 }
 
 /* 카드 텍스트 */
@@ -211,23 +210,15 @@
     background: #dc2626;
 }
 
-/* 다음 버튼 */
+/* 이미 선택된 카드 */
+.alreadySelected {
 
-.nextButton {
-    margin-top: 30px;
-    background: #888;
-    color: white;
-    border: none;
-    padding: 12px 60px;
-    border-radius: 6px;
-    font-size: 14px;
-    cursor: pointer;
-}
+    opacity: 0.45;
 
-.activeNextButton {
-    background: var(--primary);
-}
+    border: 2px solid var(--primary);
 
-.activeNextButton:hover {
-    background: var(--primary-hover);
+    background: #e5e7eb;
+
+    cursor: not-allowed;
+
 }
