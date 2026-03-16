@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import "../../css/common_css/home.css";
 import HomeOnboarding from "../student/s_onboarding/HomeOnboarding.jsx";
+import mainLogo from "../../assets/logo/main_logo.png";
+import clientImg from "../../assets/logo/char1.png";
+import counselorImg from "../../assets/logo/char2.png";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -12,6 +15,7 @@ const Home = () => {
 
   const handleYes = () => {
 
+    localStorage.setItem("home_onboarding_done", "true");
     localStorage.removeItem("skip_all_onboarding");
 
     localStorage.setItem("needAgreementOnboarding", "true");
@@ -30,6 +34,22 @@ const Home = () => {
     setAsk(false);
   };
 
+  useEffect(() => {
+
+    const skip = localStorage.getItem("skip_all_onboarding");
+    const done = localStorage.getItem("home_onboarding_done");
+
+    if(skip === "true"){
+      setAsk(false);
+      return;
+    }
+
+    if(done === "true"){
+      setAsk(false);
+      return;
+    }
+
+  }, []);
   return (
     <div className={`home-container ${ask ? "modal-open" : ""}`}>
       {ask && (
@@ -53,8 +73,11 @@ const Home = () => {
       {onboard && <HomeOnboarding onClose={() => setOnboard(false)} />}
 
       <div className="header-section">
-        <div className="logo-placeholder">로고</div>
-        <h1 className="main-title">너, 내 진로가 되라</h1>
+        <img 
+          src={mainLogo}
+          alt="main logo"
+          className="main-logo"
+        />
       </div>
 
       <div className="cards-wrapper">
@@ -62,7 +85,11 @@ const Home = () => {
           className="card onboard-start-card"
           onClick={() => navigate("/student/agreement")}
         >
-          <div className="icon-placeholder"></div>
+          <img 
+            src={clientImg}
+            alt="client"
+            className="card-icon"
+          />
           <h2 className="card-title">내담자용</h2>
           <p className="card-desc">
             상담 영상을 시청하고
@@ -75,7 +102,11 @@ const Home = () => {
           className="card"
           onClick={() => navigate("/counselor/login")}
         >
-          <div className="icon-placeholder"></div>
+          <img 
+            src={counselorImg}
+            alt="counselor"
+            className="card-icon"
+          />
           <h2 className="card-title">상담사용</h2>
           <p className="card-desc">
             리포트를 확인하고

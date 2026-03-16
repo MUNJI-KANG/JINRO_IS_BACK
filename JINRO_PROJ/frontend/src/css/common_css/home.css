@@ -255,3 +255,35 @@
     flex-wrap:wrap;
   }
 }
+.main-logo{
+  width:340px;
+  margin-bottom:20px;
+  animation: floatLogo 3.5s ease-in-out infinite;
+}
+
+@keyframes floatLogo{
+  0%{ transform:translateY(0px);}
+  50%{ transform:translateY(-8px);}
+  100%{ transform:translateY(0px);}
+}
+
+
+.card-icon{
+  width:120px;
+  margin-bottom:16px;
+  transition:.25s;
+}
+
+.card:hover .card-icon{
+  transform:scale(1.08) translateY(-4px);
+}
+
+.card{
+  cursor:pointer;
+  transition:.25s;
+}
+
+.card:hover{
+  transform:translateY(-6px);
+  box-shadow:0 20px 40px rgba(0,0,0,.12);
+}

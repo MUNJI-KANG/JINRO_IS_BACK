@@ -91,15 +91,16 @@ function CatBigOnboarding({ onClose, onStepChange  }) {
     <>
       <div className="cat-onboard-layer"/>
 
-      <div
-        className="cat-onboard-spot"
-        style={{
-          top:rect.top-6,
-          left:rect.left-6,
-          width:rect.width+12,
-          height:rect.height+12
-        }}
-      />
+    <div
+      className="cat-onboard-spot"
+      style={{
+        top: Math.round(rect.top - 8),
+        left: Math.round(rect.left - 8),
+        width: Math.round(rect.width + 16),
+        height: Math.round(rect.height + 16),
+        borderRadius: "18px"
+      }}
+    />
 
       {step === 1 && (
         <div
@@ -134,7 +135,7 @@ function CatBigOnboarding({ onClose, onStepChange  }) {
           className="cat-onboard-guide"
           style={{
             position:"fixed",
-            bottom:40,
+            bottom:110,
             left:"50%",
             transform:"translateX(-50%)",
             width:520
@@ -145,6 +146,13 @@ function CatBigOnboarding({ onClose, onStepChange  }) {
           <div className="cat-onboard-desc">
             {config[step].text}
           </div>
+          <button
+            className="cat-onboard-btn"
+            onClick={next}
+            style={{marginTop:20}}
+          >
+            시작하기
+          </button>
 
           <div className="cat-demo-cart-box">
             {dummyVideos.map(v=>(
@@ -155,13 +163,6 @@ function CatBigOnboarding({ onClose, onStepChange  }) {
             ))}
           </div>
 
-          <button
-            className="cat-onboard-btn"
-            onClick={next}
-            style={{marginTop:20}}
-          >
-            시작하기
-          </button>
         </div>
       )}
     </>
