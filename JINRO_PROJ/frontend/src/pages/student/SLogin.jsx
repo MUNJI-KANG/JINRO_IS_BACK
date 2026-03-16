@@ -119,23 +119,33 @@ const SLogin = () => {
         }
     };
     useEffect(() => {
+        const resetLoginState = async () => {
+            try {
+                await api.get("/client/session/clear");
+            } catch (error) {
+                console.error("세션 초기화 실패:", error);
+            } finally {
+                sessionStorage.clear();
+                dispatch(clearVideos());
+                localStorage.removeItem("client_id");
+                localStorage.removeItem("counselingId");
+                localStorage.removeItem("reportIds");
 
-        if(localStorage.getItem("skip_all_onboarding")==="true") return;
+                if (localStorage.getItem("skip_all_onboarding") === "true") return;
 
-        sessionStorage.clear();
+                const need = localStorage.getItem("needLoginOnboarding");
 
-        dispatch(clearVideos());
+                if (need === "true") {
+                    setTimeout(() => {
+                        setShowOnboarding(true);
+                        localStorage.removeItem("needLoginOnboarding");
+                    }, 300);
+                }
+            }
+        };
 
-        const need = localStorage.getItem("needLoginOnboarding");
-
-        if (need === "true") {
-            setTimeout(() => {
-                setShowOnboarding(true);
-                localStorage.removeItem("needLoginOnboarding");
-            }, 300);
-        }
-
-    }, []);
+        resetLoginState();
+    }, [dispatch]);
 
     return (
         <>

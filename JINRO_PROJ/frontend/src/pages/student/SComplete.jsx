@@ -130,6 +130,8 @@ function SComplete() {
 
     const handleGoHome = () => {
         client_id = localStorage.getItem("client_id")
+        localStorage.setItem("visited","yes");
+        localStorage.setItem("home_onboarding_done","true");
         api.post('/client/complete/video', {
             counseling_id: counselingVal,
             client_id: client_id

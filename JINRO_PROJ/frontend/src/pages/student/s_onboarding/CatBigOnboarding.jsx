@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import "../../../css/student_css/s_onboarding/BigCatOnboarding.css";
 
-function CatBigOnboarding({ onClose, onStepChange  }) {
+function CatBigOnboarding({ onClose, onStepChange }) {
 
   const [step,setStep] = useState(1);
   const [rect,setRect] = useState(null);
@@ -17,11 +17,30 @@ function CatBigOnboarding({ onClose, onStepChange  }) {
     {id:2, subCategory:"정보통신"}
   ];
 
+  /* ⭐ body scroll 완전 고정 */
+  useEffect(()=>{
+
+    const scrollY = window.scrollY;
+
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+
+    return ()=>{
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      window.scrollTo(0,scrollY);
+    };
+
+  },[]);
+
   useEffect(()=>{
     onStepChange?.(step);
   },[step]);
-  
-  useEffect(() => {
+
+  /* 키보드 진행 */
+  useEffect(()=>{
 
     const handleKey = (e) => {
 
@@ -44,7 +63,10 @@ function CatBigOnboarding({ onClose, onStepChange  }) {
 
   }, [step]);
 
+  /* ⭐ spotlight tracking (step3에서는 중단) */
   useEffect(()=>{
+
+    if(step === 3) return;
 
     const update = () => {
 
@@ -85,27 +107,30 @@ function CatBigOnboarding({ onClose, onStepChange  }) {
     setStep(step+1);
   };
 
-  if(!rect) return null;
+  if(step !== 3 && !rect) return null;
 
   return (
     <>
       <div className="cat-onboard-layer"/>
 
-      <div
-        className="cat-onboard-spot"
-        style={{
-          top:rect.top-6,
-          left:rect.left-6,
-          width:rect.width+12,
-          height:rect.height+12
-        }}
-      />
+      {step !== 3 && (
+        <div
+          className="cat-onboard-spot"
+          style={{
+            top: Math.round(rect.top - 8),
+            left: Math.round(rect.left - 8),
+            width: Math.round(rect.width + 16),
+            height: Math.round(rect.height + 16),
+            borderRadius: "18px"
+          }}
+        />
+      )}
 
       {step === 1 && (
         <div
           className="cat-onboard-guide"
           style={{
-            top: rect.bottom + 40,
+            top: rect.bottom - 400,
             left: rect.left + rect.width/2 - 210
           }}
         >
@@ -134,9 +159,10 @@ function CatBigOnboarding({ onClose, onStepChange  }) {
           className="cat-onboard-guide"
           style={{
             position:"fixed",
-            bottom:40,
+            top:"57%",
+            bottom:500,
             left:"50%",
-            transform:"translateX(-50%)",
+            transform:"translate(-50%,-50%)",
             width:520
           }}
         >
@@ -145,6 +171,14 @@ function CatBigOnboarding({ onClose, onStepChange  }) {
           <div className="cat-onboard-desc">
             {config[step].text}
           </div>
+
+          <button
+            className="cat-onboard-btn"
+            onClick={next}
+            style={{marginTop:20}}
+          >
+            시작하기
+          </button>
 
           <div className="cat-demo-cart-box">
             {dummyVideos.map(v=>(
@@ -155,13 +189,6 @@ function CatBigOnboarding({ onClose, onStepChange  }) {
             ))}
           </div>
 
-          <button
-            className="cat-onboard-btn"
-            onClick={next}
-            style={{marginTop:20}}
-          >
-            시작하기
-          </button>
         </div>
       )}
     </>

@@ -30,9 +30,7 @@ def get_client_list():
     return {"message": "내담자 목록 조회 API 입니다."}
 
 
-@router.get("/{client_id}")
-def get_client_detail(client_id: int):
-    return {"message": f"{client_id}번 내담자 상세 정보 조회 API 입니다."}
+
 
 # 로그인
 @router.post("/login")
@@ -145,6 +143,11 @@ def login_or_create_client(client_data: ClientCreate, request: Request, db: Sess
         print("=== 로그인 에러 ===")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.get("/{client_id}")
+def get_client_detail(client_id: int):
+    return {"message": f"{client_id}번 내담자 상세 정보 조회 API 입니다."}
     
 @router.get("/list/{kind_id}")
 def get_videos_by_kind(kind_id: int, db: Session = Depends(get_db)):

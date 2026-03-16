@@ -1,99 +1,94 @@
+/* ===============================
+   DIM LAYER
+================================ */
 .login-onboard-layer{
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,.14);
+  background:rgba(0,0,0,.42);
   z-index:9000;
 }
 
+/* ===============================
+   SPOTLIGHT
+================================ */
 .login-onboard-spot{
   position:fixed;
   border-radius:18px;
 
+  background:rgba(255,255,255,.14);
+  backdrop-filter:brightness(1.22) saturate(1.08);
+
   box-shadow:
-    0 0 0 9999px rgba(0,0,0,.14),
-    0 0 0 3px var(--primary),
-    0 0 40px rgba(236,138,99,.35);
+    0 0 0 9999px rgba(0,0,0,.42),
+    0 0 0 4px #21FFD0,
+    0 0 120px rgba(33,255,208,.95),
+    0 0 200px rgba(33,255,208,.55);
 
   z-index:9001;
   pointer-events:none;
+
+  transition:
+    top .42s cubic-bezier(.22,.61,.36,1),
+    left .42s cubic-bezier(.22,.61,.36,1),
+    width .42s cubic-bezier(.22,.61,.36,1),
+    height .42s cubic-bezier(.22,.61,.36,1);
 }
 
+/* ===============================
+   GUIDE PANEL
+================================ */
 .login-onboard-guide{
   position:fixed;
-  width:420px;
   z-index:9002;
   color:white;
   text-align:center;
+  max-width:420px;
+
+  transition:
+    top .42s cubic-bezier(.22,.61,.36,1),
+    left .42s cubic-bezier(.22,.61,.36,1);
 }
 
+/* ===============================
+   TITLE
+================================ */
 .login-onboard-title{
-  font-size:34px;
+  font-size:42px;
   font-weight:900;
-  margin-bottom:12px;
+  margin-bottom:16px;
+  text-shadow:0 12px 40px rgba(0,0,0,.85);
 }
 
+/* ===============================
+   DESC
+================================ */
 .login-onboard-desc{
-  font-size:18px;
-  line-height:1.6;
-  margin-bottom:20px;
+  font-size:20px;
+  line-height:1.8;
+  margin-bottom:30px;
+  text-shadow:0 10px 30px rgba(0,0,0,.85);
 }
 
+/* ===============================
+   BUTTON
+================================ */
 .login-onboard-btn{
   border:none;
-  height:52px;
-  padding:0 26px;
-  border-radius:14px;
-  background:#ec8a63;
+  cursor:pointer;
+  height:58px;
+  padding:0 36px;
+  border-radius:18px;
+
+  background:var(--primary);
   color:white;
   font-size:18px;
-  font-weight:700;
-  cursor:pointer;
+  font-weight:800;
+
+  box-shadow:0 20px 50px rgba(0,0,0,.35);
+  transition:.28s;
 }
 
-/* spotlight pulse */
-.agree-onboard-spot,
-.login-onboard-spot{
-  position:fixed;
-  border-radius:18px;
-  z-index:9001;
-  pointer-events:none;
-  transition: all .35s cubic-bezier(.22,.61,.36,1);
-
-  box-shadow:
-    0 0 0 9999px rgba(0,0,0,.35),
-    0 0 0 3px var(--primary),
-    0 0 0 rgba(236,138,99,.0);
-
-  animation: onboardPulse 1.8s infinite;
-}
-
-@keyframes onboardPulse{
-  0%{
-    box-shadow:
-      0 0 0 9999px rgba(0,0,0,.35),
-      0 0 0 3px var(--primary),
-      0 0 0 0 rgba(236,138,99,.6);
-  }
-  70%{
-    box-shadow:
-      0 0 0 9999px rgba(0,0,0,.35),
-      0 0 0 3px var(--primary),
-      0 0 40px 20px rgba(236,138,99,.0);
-  }
-  100%{
-    box-shadow:
-      0 0 0 9999px rgba(0,0,0,.35),
-      0 0 0 3px var(--primary),
-      0 0 0 0 rgba(236,138,99,.0);
-  }
-}
-
-/* guide 부드럽게 이동 */
-.agree-onboard-guide,
-.login-onboard-guide{
-  position:fixed;
-  z-index:9002;
-  color:white;
-  text-align:center;
-  transition: all .35s cubic-bezier(.22,.61,.36,1);
+.login-onboard-btn:hover{
+  transform:translateY(-4px);
+  background:var(--primary-hover);
 }

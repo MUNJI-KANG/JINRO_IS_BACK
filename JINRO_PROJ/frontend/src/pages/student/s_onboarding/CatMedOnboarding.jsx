@@ -3,15 +3,26 @@ import "../../../css/student_css/s_onboarding/MedCatOnboarding.css";
 
 function CatMedOnboarding({ onClose }) {
 
-  const [step,setStep]=useState(1);
-  const [rect,setRect]=useState(null);
+  const [step,setStep] = useState(1);
+  const [rect,setRect] = useState(null);
 
   const config = {
     1:{ target:".cardGrid", text:"세부 분야를 선택합니다" },
     2:{ target:".progressBadge", text:"현재 선택한 영상 개수를 확인할 수 있습니다" }
   };
 
- useEffect(()=>{
+  const next = () => {
+
+    if(step === 2){
+      localStorage.setItem("med_cat_onboarding_done","true");
+      onClose();
+      return;
+    }
+
+    setStep(prev => prev + 1);
+  };
+
+  useEffect(()=>{
 
     let frame;
 
@@ -62,12 +73,13 @@ function CatMedOnboarding({ onClose }) {
       if(e.key==="Enter" || e.key===" "){
         e.preventDefault();
 
-        if(step===2){
+        if(step === 2){
+          localStorage.setItem("med_cat_onboarding_done","true");
           onClose();
           return;
         }
 
-        setStep(prev=>prev+1);
+        setStep(prev => prev + 1);
       }
 
     };
@@ -77,32 +89,29 @@ function CatMedOnboarding({ onClose }) {
 
   },[step]);
 
-  const next=()=>{
-    if(step===2) onClose();
-    else setStep(step+1);
-  };
-
   if(!rect) return null;
 
   return(
     <div className="onboard-overlay">
 
-      <div
-        className="onboard-spotlight"
-        style={{
-          top:rect.top-6,
-          left:rect.left-6,
-          width:rect.width+12,
-          height:rect.height+12
-        }}
-      />
+    <div
+      className="onboard-spotlight"
+      style={{
+        top: Math.round(rect.top - 8),
+        left: Math.round(rect.left - 8),
+        width: Math.round(rect.width + 16),
+        height: Math.round(rect.height + 16),
+        borderRadius: "18px"
+      }}
+    />
 
       <div
         className="onboard-box"
         style={{
-          top:rect.bottom+24,
-          left:Math.max(20, rect.left + rect.width/2 - 200),
-          width:400
+          top: rect.bottom + 24,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: 400
         }}
       >
         <h3>세부 분야 선택</h3>
@@ -111,6 +120,7 @@ function CatMedOnboarding({ onClose }) {
         <button className="onboard-next" onClick={next}>
           {step===2 ? "확인" : "다음"}
         </button>
+
       </div>
 
     </div>
