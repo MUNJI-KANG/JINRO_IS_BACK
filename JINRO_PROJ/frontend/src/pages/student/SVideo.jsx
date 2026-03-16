@@ -4,23 +4,33 @@ import { FaceMesh } from "@mediapipe/face_mesh";
 import { Camera } from "@mediapipe/camera_utils";
 
 import "../../css/student_css/SVideo.css";
-import api from '../../services/app'
-
+import api from "../../services/app";
 import SVideoOnboarding from "../student/s_onboarding/VideoOnboarding.jsx";
 
 function SVideo() {
-
   const navigate = useNavigate();
   const { categoryId } = useParams();
   const location = useLocation();
 
-  // const selectedVideos = useSelector((state) => state.cVideos); 현재 사용 안하는중
   const currentIndex = location.state?.currentIndex ?? 0;
+  const isResume = location.state?.isResume || false;
+  const currentCounselingId = location.state?.counseling_id || null;
+  const currentReportIds = location.state?.report_ids || [];
 
-  const [onboard,setOnboard] = useState(false);
-  const [onboardPhase,setOnboardPhase] = useState(1);
+  const [onboard, setOnboard] = useState(false);
+  const [onboardPhase, setOnboardPhase] = useState(1);
 
-  const [started, setStarted] = useState(false);
+  const [currentVideo, setCurrentVideo] = useState(null);
+  const [webcamReady, setWebcamReady] = useState(false);
+  const [webcamError, setWebcamError] = useState(false);
+  const [videoEnded, setVideoEnded] = useState(false);
+  const [started, setStarted] = useState(currentIndex > 0);
+  const [uploading, setUploading] = useState(false);
+
+  const [faceDetected, setFaceDetected] = useState(false);
+  const [isFacingFront, setIsFacingFront] = useState(false);
+  const [frontTime, setFrontTime] = useState(0);
+  const [readyToStart, setReadyToStart] = useState(false);
 
   const webcamRef = useRef(null);
   const previewVideoRef = useRef(null);
@@ -28,87 +38,71 @@ function SVideo() {
   const recordedChunks = useRef([]);
   const cameraRef = useRef(null);
   const streamRef = useRef(null);
-
-  const [currentVideo, setCurrentVideo] = useState(null);
-  const [webcamReady, setWebcamReady] = useState(false);
-  const [webcamError, setWebcamError] = useState(false);
-  const [videoEnded, setVideoEnded] = useState(false);
-
-  const [started, setStarted] = useState(currentIndex > 0);
-
-  const [faceDetected, setFaceDetected] = useState(false);
-  const [isFacingFront, setIsFacingFront] = useState(false);
-  const [frontTime, setFrontTime] = useState(0);
-  const [readyToStart, setReadyToStart] = useState(false);
+  const activeStreamRef = useRef(null);
 
   const frontStartTimeRef = useRef(null);
   const frontFrameCountRef = useRef(0);
+  const lostFaceCountRef = useRef(0);
+  const nonFrontCountRef = useRef(0);
   const isTriggeredRef = useRef(false);
+  const playerRef = useRef(null);
 
-  /* ⭐ 카메라 온보딩 */
-  useEffect(()=>{
-
+  /* 카메라 온보딩 */
+  useEffect(() => {
     const done = localStorage.getItem("svideo_cam_onboard_done");
-    if(done==="true") return;
+    if (done === "true") return;
 
-    const t = setTimeout(()=>{
+    const t = setTimeout(() => {
       setOnboard(true);
       setOnboardPhase(1);
-    },500);
+    }, 500);
 
-    return ()=>clearTimeout(t);
+    return () => clearTimeout(t);
+  }, []);
 
-  },[]);
-
-  useEffect(()=>{
-
-    if(!started) return;
+  /* 영상 온보딩 */
+  useEffect(() => {
+    if (!started) return;
 
     const done = localStorage.getItem("svideo_watch_onboard_done");
-    if(done === "true") return;
+    if (done === "true") return;
 
     let retry;
 
-    const run = ()=>{
-
+    const run = () => {
       const el = document.querySelector(".video-container");
 
-      if(!el){
-        retry = setTimeout(run,120);
+      if (!el) {
+        retry = setTimeout(run, 120);
         return;
       }
 
       const r = el.getBoundingClientRect();
 
-      if(r.width === 0 || r.height === 0){
-        retry = setTimeout(run,120);
+      if (r.width === 0 || r.height === 0) {
+        retry = setTimeout(run, 120);
         return;
       }
 
       setOnboardPhase(2);
       setOnboard(true);
-
     };
 
-    retry = setTimeout(run,300);
+    retry = setTimeout(run, 300);
 
-    return ()=> clearTimeout(retry);
+    return () => clearTimeout(retry);
+  }, [started, currentVideo]);
 
-  },[started,currentVideo]);
-
-  
+  /* 웹캠 초기화 */
   useEffect(() => {
-
     const init = async () => {
-
-    try {
-
+      try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
-          audio: true
+          audio: true,
         });
 
-        activeStream = stream;
+        activeStreamRef.current = stream;
 
         if (webcamRef.current) {
           webcamRef.current.srcObject = stream;
@@ -120,36 +114,30 @@ function SVideo() {
 
         setWebcamReady(true);
         setWebcamError(false);
-
       } catch (err) {
-
         console.error("카메라 연결 실패:", err);
         setWebcamError(true);
       }
-
     };
 
     init();
 
     return () => {
-
-      if (webcamRef.current && webcamRef.current.srcObject) {
-
-        const tracks = webcamRef.current.srcObject.getTracks();
-
-        tracks.forEach(track => track.stop());
-
-        webcamRef.current.srcObject = null;
-
-      }
-
-      if (activeStream) {
-        activeStream.getTracks().forEach((track) => track.stop());
-      }
-
       if (cameraRef.current) {
-        cameraRef.current.stop();
+        try {
+          cameraRef.current.stop();
+        } catch (e) {}
         cameraRef.current = null;
+      }
+
+      if (webcamRef.current?.srcObject) {
+        const tracks = webcamRef.current.srcObject.getTracks();
+        tracks.forEach((track) => track.stop());
+        webcamRef.current.srcObject = null;
+      }
+
+      if (previewVideoRef.current?.srcObject) {
+        previewVideoRef.current.srcObject = null;
       }
 
       if (streamRef.current) {
@@ -157,11 +145,21 @@ function SVideo() {
         streamRef.current = null;
       }
 
-    };
+      if (activeStreamRef.current) {
+        activeStreamRef.current.getTracks().forEach((track) => track.stop());
+        activeStreamRef.current = null;
+      }
 
+      if (playerRef.current?.destroy) {
+        try {
+          playerRef.current.destroy();
+        } catch (e) {}
+        playerRef.current = null;
+      }
+    };
   }, []);
 
-  // 화면에 보여주는 preview video에도 stream 다시 연결 ➡ preview가 늦게 렌더되어도 정상 표시됨.
+  /* preview video에 stream 재연결 */
   useEffect(() => {
     if (!webcamReady) return;
     if (!webcamRef.current?.srcObject) return;
@@ -172,10 +170,8 @@ function SVideo() {
 
   /* FaceMesh */
   useEffect(() => {
-
     if (!webcamReady || !webcamRef.current || started) return;
 
-    // 정면 감지 시작 시 상태 초기화
     frontStartTimeRef.current = null;
     frontFrameCountRef.current = 0;
     lostFaceCountRef.current = 0;
@@ -188,28 +184,24 @@ function SVideo() {
     setReadyToStart(false);
 
     const faceMesh = new FaceMesh({
-        locateFile: (file) =>
-          `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
-      });
-
-    faceMesh.setOptions({
-      maxNumFaces:1,
-      refineLandmarks:true,
-      minDetectionConfidence:.5,
-      minTrackingConfidence:.7
+      locateFile: (file) =>
+        `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
     });
 
-    faceMesh.onResults((results)=>{
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.7,
+    });
 
-      // 얼굴 없음 판정
+    faceMesh.onResults((results) => {
       if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
-
         setFaceDetected(false);
 
-        // 얼굴 잠깐 놓친 경우 바로 초기화하지 않음
-        lostFaceCountRef.current++;
+        lostFaceCountRef.current += 1;
 
-        if (lostFaceCountRef.current > 10) { // 10 frame ≈ 약 0.3~0.4초
+        if (lostFaceCountRef.current > 10) {
           setIsFacingFront(false);
           setFrontTime(0);
           setReadyToStart(false);
@@ -223,7 +215,10 @@ function SVideo() {
         return;
       }
 
-      const lm = results.multiFaceLandmarks[0];
+      lostFaceCountRef.current = 0;
+      nonFrontCountRef.current = 0;
+
+      const landmarks = results.multiFaceLandmarks[0];
       setFaceDetected(true);
 
       const nose = landmarks[1];
@@ -243,40 +238,33 @@ function SVideo() {
 
       if (faceWidth <= 0 || faceHeight <= 0) return;
 
-      // 1) 얼굴이 너무 작으면 무시
       const faceSizeOk = faceWidth > 0.18 && faceHeight > 0.25;
 
-      // 2) 코가 얼굴 중앙에 충분히 가까운지
       const noseOffset = (nose.x - leftCheek.x) / faceWidth;
       const yawFront = noseOffset > 0.42 && noseOffset < 0.58;
 
-      // 3) 코 위치로 아주 대충 상하 각도만 제한 (기존보다 덜 허술하게)
       const noseVerticalOffset = (nose.y - forehead.y) / faceHeight;
       const pitchFront = noseVerticalOffset > 0.38 && noseVerticalOffset < 0.68;
 
-      // 4) 눈 뜸 여부 확인
       const leftEyeOpen = Math.abs(leftEyeBottom.y - leftEyeTop.y);
       const rightEyeOpen = Math.abs(rightEyeBottom.y - rightEyeTop.y);
       const eyesOpen = leftEyeOpen > 0.012 && rightEyeOpen > 0.012;
 
-      // 최종 정면 판정
       const front = faceSizeOk && yawFront && pitchFront && eyesOpen;
 
       setIsFacingFront(front);
 
-      if(front){
+      if (front) {
+        frontFrameCountRef.current += 1;
 
-        frontFrameCountRef.current++;
-
-        if(frontFrameCountRef.current>=3){
-
-          if(!frontStartTimeRef.current)
+        if (frontFrameCountRef.current >= 3) {
+          if (!frontStartTimeRef.current) {
             frontStartTimeRef.current = Date.now();
+          }
 
-          const d = (Date.now()-frontStartTimeRef.current)/1000;
-          setFrontTime(d);
+          const duration = (Date.now() - frontStartTimeRef.current) / 1000;
+          setFrontTime(duration);
 
-          // ⭐ stuck 방지 코드
           if (duration > 8) {
             frontStartTimeRef.current = null;
             frontFrameCountRef.current = 0;
@@ -287,24 +275,21 @@ function SVideo() {
           }
 
           if (duration >= 3 && !isTriggeredRef.current) {
-            isTriggeredRef.current = true; // 플래그를 올려서 다음 프레임부터는 무시됨
+            isTriggeredRef.current = true;
             setReadyToStart(true);
 
-           setTimeout(() => {
-              if (!started) { // 중복 호출을 방지하기 위한 2중 안전장치.
+            setTimeout(() => {
+              if (!started) {
                 handleStart();
               }
             }, 500);
           }
         }
-
       } else {
-
         setIsFacingFront(false);
         frontFrameCountRef.current = 0;
 
-        // front가 아닌 상태가 계속 유지되면 강제 초기화
-        nonFrontCountRef.current++;
+        nonFrontCountRef.current += 1;
 
         if (nonFrontCountRef.current > 20) {
           frontStartTimeRef.current = null;
@@ -312,13 +297,15 @@ function SVideo() {
           setReadyToStart(false);
           nonFrontCountRef.current = 0;
         }
-
+      }
     });
 
-    const cam = new Camera(webcamRef.current,{
-      onFrame:async()=>await faceMesh.send({image:webcamRef.current}),
-      width:640,
-      height:480
+    const cam = new Camera(webcamRef.current, {
+      onFrame: async () => {
+        await faceMesh.send({ image: webcamRef.current });
+      },
+      width: 640,
+      height: 480,
     });
 
     cam.start();
@@ -330,57 +317,49 @@ function SVideo() {
       } catch (e) {}
 
       if (cameraRef.current) {
-        cameraRef.current.stop();
+        try {
+          cameraRef.current.stop();
+        } catch (e) {}
         cameraRef.current = null;
       }
     };
+  }, [webcamReady, started]);
 
-  },[webcamReady,started]);
-
-  // 두 번째 영상 자동 시작
+  /* 두 번째 영상 자동 시작 */
   useEffect(() => {
     if (!webcamReady) return;
     if (currentIndex === 0) return;
     if (!webcamRef.current?.srcObject) return;
+    if (started) return;
 
     startRecording();
     setStarted(true);
-  }, [webcamReady, currentIndex]);
+  }, [webcamReady, currentIndex, started]);
 
-  // 영상 가져오기
+  /* 영상 가져오기 */
   const fetchVideo = async () => {
-
     try {
-
       const res = await api.get(`/client/survey/${categoryId}`);
 
       if (res.data.success) {
         setCurrentVideo(res.data.data);
         setVideoEnded(false);
       }
-
     } catch (err) {
-
-      console.error(err);
-
+      console.error("영상 조회 실패:", err);
     }
-
   };
 
   useEffect(() => {
-
     if (started) {
       fetchVideo();
     }
-
   }, [started, categoryId]);
 
   const extractVideoId = (url) => {
-
     if (!url) return null;
 
     try {
-
       const parsed = new URL(url);
 
       if (parsed.hostname.includes("youtu.be")) {
@@ -392,222 +371,175 @@ function SVideo() {
       }
 
       return null;
-
     } catch {
-
       return null;
-
     }
-
   };
 
   const startRecording = () => {
-
     if (!webcamRef.current || !webcamRef.current.srcObject) {
       console.error("웹캠이 준비되지 않았습니다.");
       return;
     }
 
-    // 녹화 시작 전에 현재 카메라 스트림을 스스로 꺼버리는 위험한 코드라서 일단 주석처리 0316-11시21분
-    // if (streamRef.current) {
-    //   streamRef.current.getTracks().forEach((track) => track.stop());
-    //   streamRef.current = null;
-    // }
+    if (recorderRef.current && recorderRef.current.state === "recording") {
+      return;
+    }
 
     const stream = webcamRef.current.srcObject;
     streamRef.current = stream;
 
-    const rec = new MediaRecorder(stream,{mimeType:"video/webm"});
+    let rec;
+    try {
+      rec = new MediaRecorder(stream, { mimeType: "video/webm" });
+    } catch (e) {
+      rec = new MediaRecorder(stream);
+    }
+
     recorderRef.current = rec;
     recordedChunks.current = [];
 
-    rec.ondataavailable = e=>{
-      if(e.data.size>0) recordedChunks.current.push(e.data);
+    rec.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) {
+        recordedChunks.current.push(e.data);
+      }
     };
 
     rec.start(1000);
-
   };
 
-  const stopRecording = ()=> new Promise(res=>{
+  const stopRecording = () =>
+    new Promise((resolve) => {
+      if (!recorderRef.current) {
+        resolve(new Blob([], { type: "video/webm" }));
+        return;
+      }
 
-    recorderRef.current.onstop = ()=>{
-      res(new Blob(recordedChunks.current,{type:"video/webm"}));
-    };
+      if (recorderRef.current.state === "inactive") {
+        resolve(new Blob(recordedChunks.current, { type: "video/webm" }));
+        return;
+      }
+
+      recorderRef.current.onstop = () => {
+        resolve(new Blob(recordedChunks.current, { type: "video/webm" }));
+      };
 
       try {
         recorderRef.current.stop();
       } catch (e) {
-        console.error("녹화 중지 중 에러 (무시 가능):", e);
-        const blob = new Blob(recordedChunks.current, { type: "video/webm" });
-        resolve(blob);
+        console.error("녹화 중지 중 에러:", e);
+        resolve(new Blob(recordedChunks.current, { type: "video/webm" }));
       }
-
     });
 
-  };
-
-  const isResume = location.state?.isResume || false;
-  const currentCounselingId = location.state?.counseling_id || null;
-  const currentReportIds = location.state?.report_ids || []
-
   const handleStart = async () => {
-
     try {
-
       if (isResume) {
-
-        setStarted(true);
-
         if (currentCounselingId) {
-          localStorage.setItem("counselingId", currentCounselingId);
+          localStorage.setItem("counselingId", String(currentCounselingId));
         }
 
         if (currentReportIds.length > 0) {
           localStorage.setItem("reportIds", JSON.stringify(currentReportIds));
         }
-
-        if (webcamReady && webcamRef.current?.srcObject) {
-          startRecording();
-        }
-
-      } else {
-
-
-
-        setStarted(true);
-
-        if (webcamReady && webcamRef.current?.srcObject) {
-          startRecording();
-        }
-
       }
 
+      setStarted(true);
+
+      if (webcamReady && webcamRef.current?.srcObject) {
+        startRecording();
+      }
     } catch (err) {
-
       console.error("상담 생성/시작 실패:", err);
-
     }
-
   };
-  const handleGoSurvey = async () => {
 
-    if (uploading) return;   // ⭐ 중복 실행 방지
+  const goSurvey = async () => {
+    if (uploading) return;
     setUploading(true);
 
     try {
-
       const blob = await stopRecording();
 
-      if (webcamRef.current && webcamRef.current.srcObject) {
-        const tracks = webcamRef.current.srcObject.getTracks();
-        tracks.forEach(track => track.stop());
-        webcamRef.current.srcObject = null;
-      }
+      const form = new FormData();
+      form.append("file", blob, "video.webm");
 
-      // 이후 재진입 시 과거 stream 참조가 남는 것 방지
-      if (streamRef.current) {
-        streamRef.current = null;
-      }
+      const cid = localStorage.getItem("counselingId");
 
-      const reportIds = JSON.parse(localStorage.getItem("reportIds") || "[]");
-      const currentReportId = reportIds[currentIndex];
-
-      const formData = new FormData();
-      formData.append("file", blob, "example.webm");
-      formData.append("report_id", currentReportId);
-
-      const counselingId = localStorage.getItem("counselingId");
-
-      if (!counselingId) {
+      if (!cid) {
         console.error("counselingId 없음");
         setUploading(false);
         return;
       }
 
-      await api.post(
-        `/client/video/upload/${counselingId}`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" }
-        }
-      );
-
-      navigate(`/student/survey/${categoryId}`, {
-        state: { currentIndex: currentIndex }
+      await api.post(`/client/video/upload/${cid}`, form, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
+      navigate(`/student/survey/${categoryId}`, {
+        state: { currentIndex },
+      });
     } catch (err) {
-
       console.error("영상 업로드 실패:", err);
       setUploading(false);
-
     }
-
   };
 
   const videoId = extractVideoId(currentVideo?.url);
 
   useEffect(() => {
+    if (!started || !videoId) return;
 
-    if(!started || !videoId) return;
+    const createPlayer = () => {
+      if (playerRef.current?.destroy) {
+        try {
+          playerRef.current.destroy();
+        } catch (e) {}
+      }
 
-    const create = ()=>{
-
-      new window.YT.Player("youtube-player",{
-        events:{
-          onStateChange:e=>{
-            if(e.data===0) setVideoEnded(true);
-          }
-        }
+      playerRef.current = new window.YT.Player("youtube-player", {
+        events: {
+          onStateChange: (e) => {
+            if (e.data === 0) {
+              setVideoEnded(true);
+            }
+          },
+        },
       });
-
     };
 
-    if(!window.YT){
-      const tag = document.createElement("script");
-      tag.src="https://www.youtube.com/iframe_api";
-      document.body.appendChild(tag);
-      window.onYouTubeIframeAPIReady=create;
-    }else create();
+    if (!window.YT || !window.YT.Player) {
+      const existed = document.querySelector(
+        'script[src="https://www.youtube.com/iframe_api"]'
+      );
 
-  },[videoId,started]);
+      if (!existed) {
+        const tag = document.createElement("script");
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.body.appendChild(tag);
+      }
 
-  const goSurvey = async ()=>{
+      window.onYouTubeIframeAPIReady = createPlayer;
+    } else {
+      createPlayer();
+    }
 
-    if(uploading) return;
-    setUploading(true);
-
-    const blob = await stopRecording();
-
-    const form = new FormData();
-    form.append("file",blob,"video.webm");
-
-    const cid = localStorage.getItem("counselingId");
-
-    await api.post(`/client/video/upload/${cid}`,form,{
-      headers:{ "Content-Type":"multipart/form-data" }
-    });
-
-    navigate(`/student/survey/${categoryId}`);
-
-  };
+    return () => {
+      if (playerRef.current?.destroy) {
+        try {
+          playerRef.current.destroy();
+        } catch (e) {}
+        playerRef.current = null;
+      }
+    };
+  }, [videoId, started]);
 
   return (
-
     <div className="svideo-page">
-
       {onboard && (
         <SVideoOnboarding
           phase={onboardPhase}
-          onClose={()=>setOnboard(false)}
-        />
-      )}
-
-      {onboard && (
-        <SVideoOnboarding
-          phase={onboardPhase}
-          onClose={()=>setOnboard(false)}
+          onClose={() => setOnboard(false)}
         />
       )}
 
@@ -620,85 +552,57 @@ function SVideo() {
       />
 
       {!started && currentIndex === 0 && (
-
         <div className="webcam-check">
-
-          <div className="webcam-view">
-            <video ref={webcamRef} autoPlay playsInline muted/>
-          </div>
-
-          ) : (
-
-            <p className="webcam-guide">
-              상담 분석을 위해 웹캠이 사용됩니다.
-            </p>
-
-          )}
+          <p className="webcam-guide">
+            상담 분석을 위해 웹캠이 사용됩니다.
+          </p>
 
           <div className={`webcam-view ${webcamError ? "error-border" : ""}`}>
-            <video
-              ref={previewVideoRef}
-              autoPlay
-              playsInline
-              muted
-            />
+            <video ref={previewVideoRef} autoPlay playsInline muted />
           </div>
 
           {!readyToStart && (
             <div className="analysis-status">
-
               {!faceDetected && "얼굴을 화면에 맞춰 주세요"}
-
               {faceDetected && !isFacingFront && "정면을 바라봐 주세요"}
-
               {isFacingFront &&
                 `정면 유지 중... ${frontTime.toFixed(1)} / 3초`}
-
             </div>
           )}
 
           {readyToStart && (
-            <div className="analysis-status">
-              분석 준비 완료 ✔
-            </div>
+            <div className="analysis-status">분석 준비 완료 ✔</div>
           )}
-
-        </div>
-
-      )}
-
-      {started && !currentVideo && currentIndex > 0 && (
-        <div className="analysis-status">
-          다음 영상을 준비 중입니다...
         </div>
       )}
+
+      {started && !currentVideo && (
+        <div className="analysis-status">다음 영상을 준비 중입니다...</div>
+      )}
+
       {started && currentVideo && (
-
         <>
-        <div className="video-wrapper">
-          <div className="video-container">
-            <iframe
-              id="youtube-player"
-              src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1`}
-              title="yt"
-              allowFullScreen
-            />
+          <div className="video-wrapper">
+            <div className="video-container">
+              <iframe
+                id="youtube-player"
+                src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1`}
+                title="yt"
+                allowFullScreen
+              />
+            </div>
           </div>
-        </div>
 
           <button
-            className={`survey-btn ${videoEnded?"enabled":""}`}
-            disabled={!videoEnded}
+            className={`survey-btn ${videoEnded ? "enabled" : ""}`}
+            disabled={!videoEnded || uploading}
             onClick={goSurvey}
           >
-            설문하러가기
+            {uploading ? "업로드 중..." : "설문하러가기"}
           </button>
         </>
-
       )}
-
     </div>
-
   );
 }
 
