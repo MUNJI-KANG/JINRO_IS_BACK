@@ -39,7 +39,7 @@ app.add_middleware(
     secret_key=os.getenv("SESSION_SECRET_KEY") or "fallback-secret-key",
     session_cookie="session",
     same_site="lax",
-    https_only=False
+    https_only=True
 )
 
 VIDEO_DIR = os.path.normpath(os.path.join(BASE_DIR, "..", "..", "ai_server", "videos"))
