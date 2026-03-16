@@ -129,8 +129,10 @@ function SComplete() {
     }, []);
 
     const handleGoHome = () => {
+        client_id = localStorage.getItem("client_id")
         api.post('/client/complete/video', {
-            counseling_id: counselingVal
+            counseling_id: counselingVal,
+            client_id: client_id
         });
         navigate('/');
     }
