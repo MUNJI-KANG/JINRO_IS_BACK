@@ -1,0 +1,99 @@
+.login-onboard-layer{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.14);
+  z-index:9000;
+}
+
+.login-onboard-spot{
+  position:fixed;
+  border-radius:18px;
+
+  box-shadow:
+    0 0 0 9999px rgba(0,0,0,.14),
+    0 0 0 3px var(--primary),
+    0 0 40px rgba(236,138,99,.35);
+
+  z-index:9001;
+  pointer-events:none;
+}
+
+.login-onboard-guide{
+  position:fixed;
+  width:420px;
+  z-index:9002;
+  color:white;
+  text-align:center;
+}
+
+.login-onboard-title{
+  font-size:34px;
+  font-weight:900;
+  margin-bottom:12px;
+}
+
+.login-onboard-desc{
+  font-size:18px;
+  line-height:1.6;
+  margin-bottom:20px;
+}
+
+.login-onboard-btn{
+  border:none;
+  height:52px;
+  padding:0 26px;
+  border-radius:14px;
+  background:#ec8a63;
+  color:white;
+  font-size:18px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+/* spotlight pulse */
+.agree-onboard-spot,
+.login-onboard-spot{
+  position:fixed;
+  border-radius:18px;
+  z-index:9001;
+  pointer-events:none;
+  transition: all .35s cubic-bezier(.22,.61,.36,1);
+
+  box-shadow:
+    0 0 0 9999px rgba(0,0,0,.35),
+    0 0 0 3px var(--primary),
+    0 0 0 rgba(236,138,99,.0);
+
+  animation: onboardPulse 1.8s infinite;
+}
+
+@keyframes onboardPulse{
+  0%{
+    box-shadow:
+      0 0 0 9999px rgba(0,0,0,.35),
+      0 0 0 3px var(--primary),
+      0 0 0 0 rgba(236,138,99,.6);
+  }
+  70%{
+    box-shadow:
+      0 0 0 9999px rgba(0,0,0,.35),
+      0 0 0 3px var(--primary),
+      0 0 40px 20px rgba(236,138,99,.0);
+  }
+  100%{
+    box-shadow:
+      0 0 0 9999px rgba(0,0,0,.35),
+      0 0 0 3px var(--primary),
+      0 0 0 0 rgba(236,138,99,.0);
+  }
+}
+
+/* guide 부드럽게 이동 */
+.agree-onboard-guide,
+.login-onboard-guide{
+  position:fixed;
+  z-index:9002;
+  color:white;
+  text-align:center;
+  transition: all .35s cubic-bezier(.22,.61,.36,1);
+}
