@@ -301,14 +301,30 @@ function SVideo() {
 
   const goSurvey = async ()=>{
 
-    const blob = await stopRecording();
+    try{
 
-    const form = new FormData();
-    form.append("file",blob,"video.webm");
+      let blob = null;
 
-    await api.post("/client/video/upload/1",form,{
-      headers:{ "Content-Type":"multipart/form-data" }
-    });
+      if(
+        recorderRef.current &&
+        recorderRef.current.state &&
+        recorderRef.current.state !== "inactive"
+      ){
+        blob = await stopRecording();
+      }
+
+      if(blob){
+        const form = new FormData();
+        form.append("file",blob,"video.webm");
+
+        await api.post("/client/video/upload/1",form,{
+          headers:{ "Content-Type":"multipart/form-data" }
+        });
+      }
+
+    }catch(e){
+      console.log("upload skip:",e);
+    }
 
     navigate(`/student/survey/${categoryId}`);
   };
