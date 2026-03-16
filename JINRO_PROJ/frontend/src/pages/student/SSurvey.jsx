@@ -27,14 +27,21 @@ function SSurvey() {
     /* ⭐⭐⭐ Survey 온보딩 */
     useEffect(()=>{
 
+        // ⭐ 최초 진입 즉시 차단
         if(localStorage.getItem("skip_all_onboarding")==="true")
             return;
 
         const done = localStorage.getItem("ssurvey_onboard_done");
         if(done==="true") return;
 
-        const t = setTimeout(()=>{
+        let t = setTimeout(()=>{
+
+            // ⭐ 타이머 실행 시점 재확인 (중요)
+            if(localStorage.getItem("skip_all_onboarding")==="true")
+                return;
+
             setOnboard(true);
+
         },400);
 
         return ()=>clearTimeout(t);
