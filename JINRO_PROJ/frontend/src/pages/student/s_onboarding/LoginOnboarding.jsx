@@ -10,7 +10,8 @@ const steps = [
 ];
 
 const GUIDE_WIDTH = 420;
-const SPOT_PADDING = 14;
+const GUIDE_HEIGHT = 190;
+const SPOT_PADDING = 8;
 
 export default function LoginOnboarding({ onClose }) {
 
@@ -25,42 +26,65 @@ export default function LoginOnboarding({ onClose }) {
 
   useEffect(() => {
 
+    let frame;
+
     const update = () => {
 
       const el = document.querySelector(steps[index].target);
-      if (!el) return;
+
+      if (!el) {
+        frame = requestAnimationFrame(update);
+        return;
+      }
 
       const rect = el.getBoundingClientRect();
 
+      if (rect.width === 0 || rect.height === 0) {
+        frame = requestAnimationFrame(update);
+        return;
+      }
+
+      const vh = window.innerHeight;
+
       setSpotStyle({
-        top: rect.top - SPOT_PADDING,
-        left: rect.left - SPOT_PADDING,
-        width: rect.width + SPOT_PADDING * 2,
-        height: rect.height + SPOT_PADDING * 2
+        top: Math.round(rect.top - SPOT_PADDING),
+        left: Math.round(rect.left - SPOT_PADDING),
+        width: Math.round(rect.width + SPOT_PADDING * 2),
+        height: Math.round(rect.height + SPOT_PADDING * 2),
+        borderRadius: "18px"
       });
 
       let left = rect.right + 60;
-      let top = rect.top + rect.height / 2 - 90;
+      let top = rect.top + rect.height / 2 - GUIDE_HEIGHT / 2;
 
-      if (left + GUIDE_WIDTH > window.innerWidth) {
+      if (left + GUIDE_WIDTH > window.innerWidth - 20) {
         left = rect.left + rect.width / 2 - GUIDE_WIDTH / 2;
         top = rect.bottom + 40;
       }
 
+      if (top + GUIDE_HEIGHT > window.innerHeight - 20) {
+        top = rect.top - GUIDE_HEIGHT - 30;
+      }
+
+      if (top < 20) {
+        top = window.innerHeight / 2 - GUIDE_HEIGHT / 2;
+      }
+
       setGuideStyle({
-        left,
-        top,
+        left: Math.round(left),
+        top: Math.round(top),
         width: GUIDE_WIDTH
       });
+
     };
 
-    const t = setTimeout(update, 60);
+    frame = requestAnimationFrame(update);
 
     window.addEventListener("resize", update);
     window.addEventListener("scroll", update, true);
 
     return () => {
-      clearTimeout(t);
+      cancelAnimationFrame(frame);
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, true);
     };
@@ -84,13 +108,29 @@ export default function LoginOnboarding({ onClose }) {
   return (
     <>
       <div className="login-onboard-layer" />
-      <div className="login-onboard-spot" style={spotStyle} />
 
-      <div className="login-onboard-guide" style={guideStyle}>
-        <div className="login-onboard-title">{steps[index].title}</div>
-        <div className="login-onboard-desc">{steps[index].desc}</div>
+      <div
+        className="login-onboard-spot"
+        style={spotStyle}
+      />
 
-        <button className="login-onboard-btn" onClick={next}>
+      <div
+        className="login-onboard-guide"
+        style={guideStyle}
+      >
+        <div className="login-onboard-title">
+          {steps[index].title}
+        </div>
+
+        <div className="login-onboard-desc">
+          {steps[index].desc}
+        </div>
+
+        <button
+          className="login-onboard-btn"
+          onClick={next}
+          type="button"
+        >
           {index === steps.length - 1 ? "시작하기" : "다음"}
         </button>
       </div>

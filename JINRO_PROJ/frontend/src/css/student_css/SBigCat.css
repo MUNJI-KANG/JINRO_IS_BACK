@@ -300,3 +300,9 @@ box-shadow:0 4px 12px rgba(0,0,0,.08);
   height:140px;
   margin-top:40px;
 }
+
+.no-scroll{
+  overflow:hidden;
+  height:100vh;
+  touch-action:none;
+}

@@ -56,19 +56,20 @@ function SSmallCat() {
 
   }, [midId, navigate]);
 
-  /* ⭐⭐⭐ SMALL 온보딩 실행 로직 (단 하나만 존재해야 함) */
-
   useEffect(()=>{
 
-    console.log("SMALL 온보딩 체크");
 
-    if(localStorage.getItem("skip_all_onboarding")==="true") return;
+    const skip = localStorage.getItem("skip_all_onboarding");
+    const done = localStorage.getItem("small_cat_onboarding_done");
+
+    if(skip === "true") return;
+    if(done === "true") return;
 
     setTimeout(()=>{
         setOnboard(true);
     },600);
 
-    },[]);
+  },[]);
 
   const handleCardClick = (video) => {
 
@@ -107,7 +108,7 @@ function SSmallCat() {
         서로 다른 카테고리에서 3개의 영상을 선택하세요
       </p>
 
-      <div className={styles.progressBadge}>
+      <div className={`${styles.progressBadge} onboard-target-cart`}>
         🛒 선택한 영상: {select.length} / 3
       </div>
 
@@ -154,7 +155,7 @@ function SSmallCat() {
 
       {select.length > 0 && (
 
-        <div className="selected-video-container">
+        <div className="selected-video-container  onboard-target-cart">
 
           <h3>선택된 영상</h3>
 

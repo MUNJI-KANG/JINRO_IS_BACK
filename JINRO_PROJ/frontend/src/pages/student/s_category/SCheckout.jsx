@@ -83,30 +83,40 @@ function Checkout() {
 
   useEffect(()=>{
 
-    if(localStorage.getItem("skip_all_onboarding")==="true") return;
+    const skip = localStorage.getItem("skip_all_onboarding");
+    const done = localStorage.getItem("checkout_onboarding_done");
 
-    if(!localStorage.getItem("onboard_checkout")){
+    if(skip === "true") return;
+    if(done === "true") return;
+
+    const t = setTimeout(()=>{
       setOnboard(true);
-      localStorage.setItem("onboard_checkout","1");
-    }
+    },400);
+
+    return ()=> clearTimeout(t);
+
   },[]);
 
   return (
     <div className="cart-page">
-      
-      {onboard && <CheckoutOnboarding onClose={()=>setOnboard(false)} />}
+      {onboard && (<CheckoutOnboarding onClose={()=>{
+            localStorage.setItem("checkout_onboarding_done","true");
+            setOnboard(false);
+          }}
+        />
+      )}
         
       <div className="cart-container">
 
         <div className="cart-header">
           <h2>선택 내역</h2>
           <div className="total-count">
-            총 선택 <span>{selectedVideos.length}개</span>
+            총 선택 <span>{selectedVideos?.length || 0}개</span>
           </div>
         </div>
 
         <div className="video-list">
-          {selectedVideos.map((video, index) => (
+          {selectedVideos?.map((video, index) => (
             <div key={video.id} className="video-card">
               <div className="video-order">{index + 1}</div>
               <div className="video-thumb"></div>

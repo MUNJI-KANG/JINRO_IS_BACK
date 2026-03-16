@@ -2,74 +2,80 @@ import { useEffect, useState } from "react";
 import "../../../css/student_css/s_onboarding/HomeOnboarding.css";
 
 const GUIDE_WIDTH = 420;
-const SPOT_PADDING = 14;
 
 export default function HomeOnboarding({ onClose }) {
 
   const [spotStyle, setSpotStyle] = useState({});
   const [guideStyle, setGuideStyle] = useState({});
 
-  const updatePosition = () => {
-
-    const el = document.querySelector(".onboard-start-card");
-    if (!el) return;
-
-    const rect = el.getBoundingClientRect();
-    const vh = window.innerHeight;
-
-    const guideHeight = 190;
-
-    /* ⭐ spotlight */
-    setSpotStyle({
-      top: rect.top - SPOT_PADDING,
-      left: rect.left - SPOT_PADDING,
-      width: rect.width + SPOT_PADDING * 2,
-      height: rect.height + SPOT_PADDING * 2
-    });
-
-    /* ⭐ 기본 = 카드 좌측 */
-    let left = rect.left - GUIDE_WIDTH - 60;
-    let top = rect.top + rect.height / 2 - guideHeight / 2;
-
-    /* ⭐ 좌측 공간 부족 → 카드 아래 */
-    if (left < 20) {
-      left = rect.left + rect.width / 2 - GUIDE_WIDTH / 2;
-      top = rect.bottom + 40;
-    }
-
-    /* ⭐ 아래 넘침 → 카드 위 */
-    if (top + guideHeight > vh - 20) {
-      top = rect.top - guideHeight - 30;
-    }
-
-    /* ⭐ 위도 넘침 → 화면 중앙 */
-    if (top < 20) {
-      top = vh / 2 - guideHeight / 2;
-    }
-
-    setGuideStyle({
-      left,
-      top,
-      width: GUIDE_WIDTH
-    });
-  };
-
   useEffect(() => {
 
-    const t = setTimeout(updatePosition, 80);
+    let frame;
 
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
+    const update = () => {
+
+      const el = document.querySelector(".onboard-start-card");
+
+      if (!el) {
+        frame = requestAnimationFrame(update);
+        return;
+      }
+
+      const rect = el.getBoundingClientRect();
+
+      if (rect.width === 0 || rect.height === 0) {
+        frame = requestAnimationFrame(update);
+        return;
+      }
+
+      const vh = window.innerHeight;
+      const guideHeight = 190;
+
+      setSpotStyle({
+        top: Math.round(rect.top),
+        left: Math.round(rect.left),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+        borderRadius: "18px"
+      });
+
+      let left = rect.left - GUIDE_WIDTH - 60;
+      let top = rect.top + rect.height / 2 - guideHeight / 2;
+
+      if (left < 20) {
+        left = rect.left + rect.width / 2 - GUIDE_WIDTH / 2;
+        top = rect.bottom + 40;
+      }
+
+      if (top + guideHeight > vh - 20) {
+        top = rect.top - guideHeight - 30;
+      }
+
+      if (top < 20) {
+        top = vh / 2 - guideHeight / 2;
+      }
+
+      setGuideStyle({
+        left: Math.round(left),
+        top: Math.round(top),
+        width: GUIDE_WIDTH
+      });
+
+    };
+
+    frame = requestAnimationFrame(update);
+
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
 
     return () => {
-      clearTimeout(t);
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
     };
 
   }, []);
 
-  /* ⭐ Enter / Space 로 종료 */
   useEffect(() => {
 
     const key = (e) => {
@@ -82,7 +88,7 @@ export default function HomeOnboarding({ onClose }) {
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
 
-  }, []);
+  }, [onClose]);
 
   return (
     <>
