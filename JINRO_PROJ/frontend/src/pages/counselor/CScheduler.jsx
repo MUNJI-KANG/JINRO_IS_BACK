@@ -6,6 +6,8 @@ import interactionPlugin from "@fullcalendar/interaction";
 import "../../css/counselor_css/CScheduler.css";
 import api from "../../services/app.js"
 
+import ScheduleOnboarding from "../counselor/c_onboarding/ScheduleOnboarding.jsx"
+
 function getLocalYYYYMMDD(date = new Date()) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -14,6 +16,10 @@ function getLocalYYYYMMDD(date = new Date()) {
 }
 
 function CScheduler() {
+
+  const [showGuide, setShowGuide] = useState(false);
+
+
   const calendarRef = useRef(null);
   const dialogRef = useRef(null);
   const navigate = useNavigate();
@@ -296,8 +302,20 @@ function CScheduler() {
         )}
 
       </dialog>
+         <button
+            className="guide-btn"
+            onClick={() => setShowGuide(true)}
+          >
+            가이드 보기
+          </button>
+        {showGuide && (
+        <ScheduleOnboarding
+          onClose={() => setShowGuide(false)}
+        />
+)}
     </div>
   );
+  
 }
 
 export default CScheduler;
