@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { FaceMesh } from "@mediapipe/face_mesh";
 import { Camera } from "@mediapipe/camera_utils";
-import axios from "axios";
-import { useSelector } from "react-redux";
+// import { useSelector } from "react-redux";
 import "../../css/student_css/SVideo.css";
 import api from '../../services/app'
 
@@ -13,10 +12,11 @@ function SVideo() {
   const { categoryId } = useParams();
   const location = useLocation();
 
-  const selectedVideos = useSelector((state) => state.cVideos);
+  // const selectedVideos = useSelector((state) => state.cVideos); 현재 사용 안하는중
   const currentIndex = location.state?.currentIndex ?? 0;
 
   const webcamRef = useRef(null);
+  const previewVideoRef = useRef(null);
   const recorderRef = useRef(null);
   const recordedChunks = useRef([]);
   const cameraRef = useRef(null);
@@ -33,7 +33,7 @@ function SVideo() {
   const [webcamError, setWebcamError] = useState(false);
   const [videoEnded, setVideoEnded] = useState(false);
 
-  const [started, setStarted] = useState(false);
+  const [started, setStarted] = useState(currentIndex > 0);
 
   // ⭐ 추가 state
   const [faceDetected, setFaceDetected] = useState(false);
@@ -57,11 +57,17 @@ function SVideo() {
         });
 
         activeStream = stream;
+
         if (webcamRef.current) {
           webcamRef.current.srcObject = stream;
-          setWebcamReady(true);
-          setWebcamError(false);
         }
+
+        if (previewVideoRef.current) {
+          previewVideoRef.current.srcObject = stream;
+        }
+
+        setWebcamReady(true);
+        setWebcamError(false);
 
       } catch (err) {
 
@@ -105,15 +111,36 @@ function SVideo() {
 
   }, []);
 
+  // 화면에 보여주는 preview video에도 stream 다시 연결 ➡ preview가 늦게 렌더되어도 정상 표시됨.
+  useEffect(() => {
+    if (!webcamReady) return;
+    if (!webcamRef.current?.srcObject) return;
+    if (!previewVideoRef.current) return;
+
+    previewVideoRef.current.srcObject = webcamRef.current.srcObject;
+  }, [webcamReady, started, currentIndex]);
+
   // ⭐ FaceMesh 정면 인식 (추가)
   useEffect(() => {
 
     if (!webcamReady || !webcamRef.current || started) return;
 
+    // 정면 감지 시작 시 상태 초기화
+    frontStartTimeRef.current = null;
+    frontFrameCountRef.current = 0;
+    lostFaceCountRef.current = 0;
+    nonFrontCountRef.current = 0;
+    isTriggeredRef.current = false;
+
+    setFaceDetected(false);
+    setIsFacingFront(false);
+    setFrontTime(0);
+    setReadyToStart(false);
+
     const faceMesh = new FaceMesh({
-      locateFile: (file) =>
-        `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
-    });
+        locateFile: (file) =>
+          `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+      });
 
     faceMesh.setOptions({
       maxNumFaces: 1,
@@ -124,7 +151,8 @@ function SVideo() {
 
     faceMesh.onResults((results) => {
 
-      if (!results.multiFaceLandmarks) {
+      // 얼굴 없음 판정
+      if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
 
         setFaceDetected(false);
 
@@ -134,9 +162,12 @@ function SVideo() {
         if (lostFaceCountRef.current > 10) { // 10 frame ≈ 약 0.3~0.4초
           setIsFacingFront(false);
           setFrontTime(0);
+          setReadyToStart(false);
+
           frontStartTimeRef.current = null;
           frontFrameCountRef.current = 0;
-          lostFaceCountRef.current = 0;   // ⭐ 추가
+          nonFrontCountRef.current = 0;
+          lostFaceCountRef.current = 0;
         }
 
         return;
@@ -149,24 +180,40 @@ function SVideo() {
       setFaceDetected(true);
 
       const nose = landmarks[1];
-      const left = landmarks[234];
-      const right = landmarks[454];
+      const leftCheek = landmarks[234];
+      const rightCheek = landmarks[454];
 
-      const faceWidth = right.x - left.x;
+      const leftEyeTop = landmarks[159];
+      const leftEyeBottom = landmarks[145];
+      const rightEyeTop = landmarks[386];
+      const rightEyeBottom = landmarks[374];
 
-      if (faceWidth === 0) return;
+      const forehead = landmarks[10];
+      const chin = landmarks[152];
 
-      const noseOffset = (nose.x - left.x) / faceWidth;
+      const faceWidth = Math.abs(rightCheek.x - leftCheek.x);
+      const faceHeight = Math.abs(chin.y - forehead.y);
 
-      // 좌우 판정
-      const yawFront = noseOffset > 0.15 && noseOffset < 0.85;
+      if (faceWidth <= 0 || faceHeight <= 0) return;
 
-      // 상하 판정
-      const noseY = nose.y;
-      const pitchFront = noseY > 0.35 && noseY < 0.65;
+      // 1) 얼굴이 너무 작으면 무시
+      const faceSizeOk = faceWidth > 0.18 && faceHeight > 0.25;
+
+      // 2) 코가 얼굴 중앙에 충분히 가까운지
+      const noseOffset = (nose.x - leftCheek.x) / faceWidth;
+      const yawFront = noseOffset > 0.42 && noseOffset < 0.58;
+
+      // 3) 코 위치로 아주 대충 상하 각도만 제한 (기존보다 덜 허술하게)
+      const noseVerticalOffset = (nose.y - forehead.y) / faceHeight;
+      const pitchFront = noseVerticalOffset > 0.38 && noseVerticalOffset < 0.68;
+
+      // 4) 눈 뜸 여부 확인
+      const leftEyeOpen = Math.abs(leftEyeBottom.y - leftEyeTop.y);
+      const rightEyeOpen = Math.abs(rightEyeBottom.y - rightEyeTop.y);
+      const eyesOpen = leftEyeOpen > 0.012 && rightEyeOpen > 0.012;
 
       // 최종 정면 판정
-      const front = yawFront && pitchFront;
+      const front = faceSizeOk && yawFront && pitchFront && eyesOpen;
 
       setIsFacingFront(front);
 
@@ -188,7 +235,10 @@ function SVideo() {
           // ⭐ stuck 방지 코드
           if (duration > 8) {
             frontStartTimeRef.current = null;
+            frontFrameCountRef.current = 0;
+            nonFrontCountRef.current = 0;
             setFrontTime(0);
+            setReadyToStart(false);
             return;
           }
 
@@ -196,8 +246,10 @@ function SVideo() {
             isTriggeredRef.current = true; // 플래그를 올려서 다음 프레임부터는 무시됨
             setReadyToStart(true);
 
-            setTimeout(() => {
-              handleStart();
+           setTimeout(() => {
+              if (!started) { // 중복 호출을 방지하기 위한 2중 안전장치.
+                handleStart();
+              }
             }, 500);
           }
 
@@ -205,16 +257,16 @@ function SVideo() {
 
       } else {
 
+        setIsFacingFront(false);
         frontFrameCountRef.current = 0;
 
         // front가 아닌 상태가 계속 유지되면 강제 초기화
         nonFrontCountRef.current++;
 
         if (nonFrontCountRef.current > 20) {
-
           frontStartTimeRef.current = null;
           setFrontTime(0);
-
+          setReadyToStart(false);
           nonFrontCountRef.current = 0;
         }
 
@@ -240,34 +292,27 @@ function SVideo() {
     camera.start();
 
     return () => {
+      try {
+        faceMesh.close();
+      } catch (e) {}
 
-    try {
-      faceMesh.close();
-    } catch (e) {}
-
-    if (webcamRef.current && webcamRef.current.srcObject) {
-
-      const tracks = webcamRef.current.srcObject.getTracks();
-
-      tracks.forEach(track => track.stop());
-
-      webcamRef.current.srcObject = null;
-
-    }
-
-  };
+      if (cameraRef.current) {
+        cameraRef.current.stop();
+        cameraRef.current = null;
+      }
+    };
 
   }, [webcamReady, started]);
 
   // 두 번째 영상 자동 시작
   useEffect(() => {
+    if (!webcamReady) return;
+    if (currentIndex === 0) return;
+    if (!webcamRef.current?.srcObject) return;
 
-    if (currentIndex > 0 && webcamReady) {
-      startRecording();
-      setStarted(true);
-    }
-
-  }, [webcamReady]);
+    startRecording();
+    setStarted(true);
+  }, [webcamReady, currentIndex]);
 
   // 영상 가져오기
   const fetchVideo = async () => {
@@ -330,10 +375,11 @@ function SVideo() {
       return;
     }
 
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
+    // 녹화 시작 전에 현재 카메라 스트림을 스스로 꺼버리는 위험한 코드라서 일단 주석처리 0316-11시21분
+    // if (streamRef.current) {
+    //   streamRef.current.getTracks().forEach((track) => track.stop());
+    //   streamRef.current = null;
+    // }
 
     const stream = webcamRef.current.srcObject;
     streamRef.current = stream;
@@ -435,11 +481,14 @@ function SVideo() {
       const blob = await stopRecording();
 
       if (webcamRef.current && webcamRef.current.srcObject) {
-
         const tracks = webcamRef.current.srcObject.getTracks();
         tracks.forEach(track => track.stop());
         webcamRef.current.srcObject = null;
+      }
 
+      // 이후 재진입 시 과거 stream 참조가 남는 것 방지
+      if (streamRef.current) {
+        streamRef.current = null;
       }
 
       const reportIds = JSON.parse(localStorage.getItem("reportIds") || "[]");
@@ -453,6 +502,7 @@ function SVideo() {
 
       if (!counselingId) {
         console.error("counselingId 없음");
+        setUploading(false);
         return;
       }
 
@@ -525,7 +575,15 @@ function SVideo() {
 
     <div className="svideo-page">
 
-      {!started && (
+      <video
+        ref={webcamRef}
+        autoPlay
+        playsInline
+        muted
+        style={{ display: "none" }}
+      />
+
+      {!started && currentIndex === 0 && (
 
         <div className="webcam-check">
 
@@ -547,10 +605,14 @@ function SVideo() {
           )}
 
           <div className={`webcam-view ${webcamError ? "error-border" : ""}`}>
-            <video ref={webcamRef} autoPlay playsInline muted />
+            <video
+              ref={previewVideoRef}
+              autoPlay
+              playsInline
+              muted
+            />
           </div>
 
-          {/* ⭐ 추가 안내 */}
           {!readyToStart && (
             <div className="analysis-status">
 
@@ -570,18 +632,15 @@ function SVideo() {
             </div>
           )}
 
-          {/* <button
-            className="start-btn"
-            disabled={!webcamReady || webcamError || !readyToStart}
-            onClick={handleStart}
-          >
-            시작하기
-          </button> */}
-
         </div>
 
       )}
 
+      {started && !currentVideo && currentIndex > 0 && (
+        <div className="analysis-status">
+          다음 영상을 준비 중입니다...
+        </div>
+      )}
       {started && currentVideo && (
 
         <>

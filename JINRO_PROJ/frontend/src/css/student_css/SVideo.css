@@ -63,8 +63,8 @@
    웹캠 화면
 ================================= */
 .webcam-check video {
-  width: 90vw;
-  max-width: 1200px;
+  width: 60vw;
+  max-width: 1000px;
 
   aspect-ratio: 16 / 9;
 
