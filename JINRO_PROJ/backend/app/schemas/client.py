@@ -58,3 +58,7 @@ class AIAnalysisRequest(BaseModel):
 class CompleteRequest(BaseModel):
     counseling_id: str
 
+class CompleteVideoRequest(BaseModel):
+    counseling_id: int
+    client_id: int
+

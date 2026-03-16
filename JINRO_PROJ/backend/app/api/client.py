@@ -7,10 +7,12 @@ from datetime import datetime
 from fastapi import Request, APIRouter, Depends, HTTPException, UploadFile, File, Form
 from app.db.database import get_db
 from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV,ReportCon,ReportFinal, ReCommentEnum, AiVideoAnalyze
-from app.schemas.client import ClientCreate,CounselingCreateRequest,ReportCompleteRequest, SurveySubmitRequest, AIAnalysisRequest, CompleteRequest
+from app.schemas.client import ClientCreate,CounselingCreateRequest,ReportCompleteRequest, SurveySubmitRequest, AIAnalysisRequest, CompleteRequest, CompleteVideoRequest
 from app.services.survey_service import analyze_survey
 
 from sqlalchemy.orm import Session
+
+import requests
 
 
 
@@ -746,16 +748,18 @@ def get_survey_score(counseling_id: int, db: Session = Depends(get_db)):
     }
 
 @router.post("/complete/video")
-def complete_video(complete_request: CompleteRequest, db: Session = Depends(get_db)):
+async def complete_video(complete_request: CompleteVideoRequest, db: Session = Depends(get_db)):
 
     try:
         counseling = db.query(Counseling, ReportAiV).join(
             ReportAiV, Counseling.counseling_id == ReportAiV.counseling_id
         ).where(Counseling.counseling_id == complete_request.counseling_id).all()
 
+        client = db.query(Client).filter(Client.client_id == complete_request.client_id).first()
+
         data = {}
         if counseling:
-            for c, r in counseling:
+            for i, (co, r) in enumerate(counseling):
                 total_score = 0
                 if len(r.answer) > 0:
                     for sc in r.answer.values():
@@ -767,14 +771,38 @@ def complete_video(complete_request: CompleteRequest, db: Session = Depends(get_
                         data[f'{r.ai_v_erp_id}'] = {}
 
                     data[f'{r.ai_v_erp_id}']['survey'] = score
-        
+                
+                # 'Total_Frames_Analyzed'
+                # 'Frames_With_Face'
+                # 'Interested_Percentage'
+                # 'Not_Interested_Percentage'
+                res_interest = await requests.get(
+                    f"{AI_SERVER_BASE_URL}/ai/interest/analyze/{complete_request.counseling_id}/{client.c_id}/{i+1}",
+                    )
+                
+                data[f'{r.ai_v_erp_id}']['interest'] = res_interest.Interested_Percentage
+                
+                # "total_predictions"
+                # "focused_points"
+                # "unfocused_points"
+                # "focused_percentage"
+                # "unfocused_percentage"
+                res_engagement = await requests.get(
+                    f"{AI_SERVER_BASE_URL}/ai/engagement/analyze/{complete_request.counseling_id}/{client.c_id}/{i+1}",
+                    )
+                
+                data[f'{r.ai_v_erp_id}']['focused'] = res_engagement.focused_percentage
+            
+            
         
         for k, v in data.items():
+            final_score = (v['survey'] * 0.4) + (v['focused'] * 0.35) + (v['interest'] * 0.25)
             db.add(AiVideoAnalyze(
                 ai_v_erp_id=int(k),
-                attention_score=None,
-                emotion_score=None,
-                final_score=None,
+                attention_score=v['focused'],
+                emotion_score=v['interest'],
+                final_score=final_score,
+
                 survey_score=v['survey'],
                 ai_v_comment='',
                 raw_data={},
