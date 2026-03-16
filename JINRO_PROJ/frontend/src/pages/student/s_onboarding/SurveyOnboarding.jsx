@@ -15,12 +15,12 @@ function SSurveyOnboarding({ onClose }) {
     2:{
       target: ".survey-options",
       title: "문항 선택",
-      text: "가장 적합한 항목을 선택하세요."
+      text: "설문 조사 질문에 답변을 선택해주세요."
     },
     3:{
       target: ".survey-next-btn",
       title: "다음 문항 이동",
-      text: "선택 후 버튼을 눌러 다음 문항으로 이동합니다."
+      text: "설문조사 완료 후 다음 파트로 넘어갑니다."
     }
   };
 
