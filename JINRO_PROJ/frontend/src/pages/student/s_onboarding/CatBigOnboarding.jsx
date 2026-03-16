@@ -7,7 +7,7 @@ function CatBigOnboarding({ onClose, onStepChange }) {
   const [rect,setRect] = useState(null);
 
   const config = {
-    1:{ target:".category-grid", text:"관심있는 큰 분야를 먼저 선택합니다" },
+    1:{ target:".student-grid", text:"관심있는 큰 분야를 먼저 선택합니다" },
     2:{ target:".progress-badge-target", text:"영상은 최대 3개까지 선택할 수 있습니다" },
     3:{ target:".onboard-dummy-target", text:"선택된 영상은 이렇게 카트처럼 쌓입니다 ✕ 버튼으로 취소할 수 있습니다" }
   };
@@ -68,12 +68,23 @@ function CatBigOnboarding({ onClose, onStepChange }) {
 
     if(step === 3) return;
 
+    let frame;
+
     const update = () => {
 
       const el = document.querySelector(config[step].target);
-      if(!el) return;
+
+      if(!el){
+        frame = requestAnimationFrame(update);
+        return;
+      }
 
       const r = el.getBoundingClientRect();
+
+      if(r.width === 0 || r.height === 0){
+        frame = requestAnimationFrame(update);
+        return;
+      }
 
       setRect({
         top:r.top,
@@ -86,16 +97,9 @@ function CatBigOnboarding({ onClose, onStepChange }) {
 
     };
 
-    const t = setTimeout(update,120);
+    frame = requestAnimationFrame(update);
 
-    window.addEventListener("resize", update);
-    window.addEventListener("scroll", update,true);
-
-    return ()=>{
-      clearTimeout(t);
-      window.removeEventListener("resize", update);
-      window.removeEventListener("scroll", update,true);
-    };
+    return ()=> cancelAnimationFrame(frame);
 
   },[step]);
 
