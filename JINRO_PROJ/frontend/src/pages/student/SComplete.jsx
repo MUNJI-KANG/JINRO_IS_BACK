@@ -129,6 +129,9 @@ function SComplete() {
     }, []);
 
     const handleGoHome = () => {
+        localStorage.setItem("visited","yes");
+        localStorage.setItem("home_onboarding_done","true");
+
         api.post('/client/complete/video', {
             counseling_id: counselingVal
         });

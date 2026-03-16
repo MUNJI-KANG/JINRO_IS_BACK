@@ -49,6 +49,11 @@ function SVideo() {
 
   /* ⭐ 카메라 온보딩 */
   useEffect(()=>{
+
+    if(localStorage.getItem("skip_all_onboarding")==="true")
+      return;
+
+
     const done = localStorage.getItem("svideo_cam_onboard_done");
     if(done==="true") return;
 
@@ -62,6 +67,9 @@ function SVideo() {
 
   /* ⭐ 영상 온보딩 */
   useEffect(()=>{
+
+    if(localStorage.getItem("skip_all_onboarding")==="true")
+      return;
 
     if(!started) return;
 

@@ -20,6 +20,10 @@ export default function Landing() {
 
   const handleNo = () => {
     localStorage.setItem("visited","yes");
+
+    // ⭐ 전체 온보딩 스킵
+    localStorage.setItem("skip_all_onboarding","true");
+
     setAsk(false);
   };
 
