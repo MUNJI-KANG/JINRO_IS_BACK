@@ -413,3 +413,36 @@
   color: var(--primary-hover);
   transform: scale(1.1);
 }
+
+
+.guide-btn {
+
+  position: fixed;
+
+  right: 40px;
+  bottom: 40px;
+
+  z-index: 8000;
+
+  background: var(--primary);
+  color: #fff;
+
+  border: none;
+  border-radius: 50px;
+
+  padding: 14px 22px;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  box-shadow: 0 10px 25px rgba(0,0,0,.25);
+
+  transition: all .2s ease;
+}
+
+.guide-btn:hover {
+  transform: translateY(-2px);
+  background: var(--primary-hover);
+}

@@ -20,7 +20,7 @@ function CSchedulerOnboarding({ onClose }) {
     3:{
       target:".empty-box",
       title:"일정 상태",
-      text:"해당 날짜에 등록된 상담 일정이 없으면 이렇게 표시됩니다."
+      text:"해당 날짜에 등록된 상담 학생 리스트를 띄워줍니다. 클릭시 최종리포트로 이동합니다."
     }
   };
 
