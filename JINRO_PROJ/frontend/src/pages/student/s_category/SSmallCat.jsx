@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import styles from "../../../css/student_css/SSmallCat.module.css";
 import { useSelector, useDispatch } from "react-redux";
 import { addVideo, deleteVideo } from "../../../redux/cVideos";
+import StudentCategory from "../../common/StudentCategory";
+import styles from "../../../css/student_css/SSmallCat.module.css";
 import api from "../../../services/app";
 
 import CatSmallOnboarding from "../s_onboarding/CatSmallOnboarding.jsx";
@@ -20,6 +21,8 @@ function SSmallCat() {
   const [videos, setVideos] = useState([]);
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [onboard, setOnboard] = useState(false);
+
+  const isComplete = select.length === 3;
 
   const extractVideoId = (url) => {
     if (!url) return null;
@@ -96,111 +99,121 @@ function SSmallCat() {
   const handleDelete = (id) => dispatch(deleteVideo(id));
 
   return (
-    <div className={styles.container}>
+    <StudentCategory>
+      <div className="student-page">
 
-      {onboard && (
-        <CatSmallOnboarding onClose={() => setOnboard(false)} />
-      )}
+        {onboard && (
+          <CatSmallOnboarding onClose={() => setOnboard(false)} />
+        )}
 
-      <h1 className={styles.title}>분야 선택</h1>
+        <h1 className="student-title">분야 선택</h1>
 
-      <p className={styles.subtitle}>
-        서로 다른 카테고리에서 3개의 영상을 선택하세요
-      </p>
+        <p className="student-subtitle">
+          서로 다른 카테고리에서 3개의 영상을 선택하세요
+        </p>
 
-      <div className={`${styles.progressBadge} onboard-target-cart`}>
-        🛒 선택한 영상: {select.length} / 3
-      </div>
+        <div className={`student-progress onboard-target-cart`}>
+          🛒 선택한 영상: {select.length} / 3
+        </div>
 
-      <div className={styles.headerRow}>
-        <button
-          className={styles.backButton}
-          onClick={() => navigate(-1)}
-        >
-          ← 뒤로
-        </button>
-
-        <h2 className={styles.categoryTitle}>
-          {bigName} &gt; {midName}
-        </h2>
-      </div>
-
-      <div className={`${styles.cardGrid} onboard-target-card-grid`}>
-
-        {videos.map(video => (
-
-          <div
-            key={video.c_id}
-            className={`${styles.card} ${selectedVideo === video.c_id ? styles.activeCard : ""}`}
-            onClick={() => handleCardClick(video)}
+        <div className="student-header">
+          <button
+            className="student-back-btn"
+            onClick={() => navigate(-1)}
           >
+            ← 뒤로
+          </button>
 
-            <div className={styles.imageContainer}>
-              <img
-                src={`https://img.youtube.com/vi/${extractVideoId(video.url)}/hqdefault.jpg`}
-                className={styles.thumbnail}
-              />
-            </div>
+          <h2 className="student-category-title">
+            {bigName} &gt; {midName}
+          </h2>
+        </div>
 
-            <div className={styles.content}>
-              <strong className={styles.title}>{video.title}</strong>
-              <p className={styles.duration}>영상보기</p>
-            </div>
+        <div className={`${styles.cardGrid} onboard-target-card-grid small-card-grid`}>
 
-          </div>
+          {videos.map(video => {
 
-        ))}
+            const alreadySelected = select.some(v => v.id === video.c_id);
 
-      </div>
+            return (
 
-      {select.length > 0 && (
-
-        <div className="selected-video-container  onboard-target-cart">
-
-          <h3>선택된 영상</h3>
-
-          {select.map(video => (
-
-            <div key={video.id} className="selected-video-item">
-
-              <span>{video.subCategory}</span>
-
-              <button
-                className="delete-button"
-                onClick={() => handleDelete(video.id)}
+              <div
+                key={video.c_id}
+                className={`${styles.card} 
+                  ${selectedVideo === video.c_id ? styles.activeCard : ""}
+                  ${alreadySelected ? styles.alreadySelected : ""}
+                `}
+                onClick={() => {
+                  if (alreadySelected) return;
+                  handleCardClick(video);
+                }}
               >
-                ✕
-              </button>
 
-            </div>
+                <div className={styles.imageContainer}>
+                  <img
+                    src={`https://img.youtube.com/vi/${extractVideoId(video.url)}/hqdefault.jpg`}
+                    className={styles.thumbnail}
+                  />
+                </div>
 
-          ))}
+                <div className={styles.content}>
+                  <strong className={styles.title}>{video.title}</strong>
+                  <p className={styles.duration}>
+                    {alreadySelected ? "이미 선택됨" : "영상보기"}
+                  </p>
+                </div>
+
+              </div>
+
+            );
+
+          })}
 
         </div>
 
-      )}
+        {select.length > 0 && (
 
-      {select.length === 3 ? (
+          <div className="selected-video-container  onboard-target-cart">
+
+            <h3>선택된 영상</h3>
+
+            {select.map(video => (
+
+              <div key={video.id} className="selected-video-item">
+
+                <span>{video.subCategory}</span>
+
+                <button
+                  className="delete-button"
+                  onClick={() => handleDelete(video.id)}
+                >
+                  ✕
+                </button>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        )}
 
         <button
-          className={`${styles.nextButton} onboard-target-next`}
-          onClick={() => navigate("/student/category/checkout")}
+          className={`next-button ${isComplete ? "next-button-active" : ""}`}
+          onClick={() =>
+            isComplete
+              ? navigate("/student/category/checkout")
+              : navigate("/student/category/big")
+          }
         >
-          영상보기
+          {isComplete
+            ? "영상보기"
+            : `카테고리로 이동 (${select.length}/3)`}
         </button>
 
-      ) : (
-
-        <button
-          className={`${styles.nextButton} onboard-target-next`}
-          onClick={() => navigate("/student/category/big")}
-        >
-          카테고리로 이동 ({select.length}/3)
-        </button>
-
-      )}
-
-    </div>
+      </div>
+    
+    </StudentCategory>
   );
 }
 

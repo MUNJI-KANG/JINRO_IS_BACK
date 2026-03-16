@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useState } from "react";
-
+import StudentCategory from "../../common/StudentCategory";
 
 
 import "../../../css/student_css/SBigCat.css";
@@ -50,6 +50,8 @@ function SBigCat() {
 
   const [onboard, setOnboard] = useState(false);
 
+  const isComplete = selectedVideos.length === 3;
+
   useEffect(() => {
 
     if (localStorage.getItem("skip_all_onboarding") === "true") return;
@@ -70,96 +72,102 @@ function SBigCat() {
   };
 
   return (
-    <div className="student-category-page">
+    <StudentCategory>
+    
+      <div className="student-page">
 
-      {onboard && (
-        <CatBigOnboarding onClose={() => setOnboard(false)}
-        onStepChange={setOnboardStep}
-        />
-      )}
+        {onboard && (
+          <CatBigOnboarding onClose={() => setOnboard(false)}
+          onStepChange={setOnboardStep}
+          />
+        )}
 
-      <h2 className="page-title">카테고리 선택</h2>
-      <div className="progress-badge">
-        <span className="progress-badge-target">
-          🛒 선택한 영상 {selectedVideos.length} / 3
-        </span>
-     </div>  
+        <h2 className="student-title">카테고리 선택</h2>
+        <div className="student-progress">
+          <span className="progress-badge-target">
+            🛒 선택한 영상 {selectedVideos.length} / 3
+          </span>
+      </div>  
 
-      <div className="category-grid">
+        <div className="student-grid">
 
-        {categories.map((cat) => {
+          {categories.map((cat) => {
 
-          const Icon = cat.icon;
+            const Icon = cat.icon;
 
-          return (
-            <button
-              key={cat.id}
-              className="category-card"
-              onClick={() =>
-                navigate("/student/category/medium", {
-                  state: {
-                    bigId: cat.id,
-                    bigName: cat.name,
-                  },
-                })
-              }
-            >
-              <Icon className="category-icon" color="var(--primary)" />
+            return (
+              <button
+                key={cat.id}
+                className="student-card"
+                onClick={() =>
+                  navigate("/student/category/medium", {
+                    state: {
+                      bigId: cat.id,
+                      bigName: cat.name,
+                    },
+                  })
+                }
+              >
+                <Icon className="category-icon" color="var(--primary)" />
 
-              <div className="category-text">
-                {String(cat.id).padStart(2, "0")}. {cat.name}
+                <div className="category-text">
+                  {String(cat.id).padStart(2, "0")}. {cat.name}
+                </div>
+
+              </button>
+            );
+
+          })}
+
+        </div>
+        {onboard && onboardStep === 3 && (
+          <div className="selected-video-container onboard-dummy-target">
+          </div>
+        )}
+
+        {selectedVideos.length > 0 && (
+
+          <div className="selected-video-container">
+
+            <h3>선택된 영상</h3>
+
+            {selectedVideos.map((video) => (
+
+              <div key={video.id} className="selected-video-item">
+
+                <span>{video.subCategory}</span>
+
+                <button
+                  className="delete-button"
+                  onClick={() => handleDelete(video.id)}
+                >
+                  ✕
+                </button>
+
               </div>
 
-            </button>
-          );
+            ))}
 
-        })}
+          </div>
 
-      </div>
-      {onboard && onboardStep === 3 && (
-        <div className="selected-video-container onboard-dummy-target">
-        </div>
-      )}
-
-      {selectedVideos.length > 0 && (
-
-        <div className="selected-video-container">
-
-          <h3>선택된 영상</h3>
-
-          {selectedVideos.map((video) => (
-
-            <div key={video.id} className="selected-video-item">
-
-              <span>{video.subCategory}</span>
-
-              <button
-                className="delete-button"
-                onClick={() => handleDelete(video.id)}
-              >
-                ✕
-              </button>
-
-            </div>
-
-          ))}
-
-        </div>
-
-      )}
-
-      {selectedVideos.length === 3 && (
+        )}
 
         <button
-          className="next-button"
-          onClick={() => navigate("/student/category/checkout")}
+          className={`next-button ${isComplete ? "next-button-active" : ""}`}
+          onClick={() =>
+            isComplete
+              ? navigate("/student/category/checkout")
+              : navigate("/student/category/big")
+          }
         >
-          영상보기
-        </button>
+          {isComplete
+            ? "영상보기"
+            : `카테고리로 이동 (${selectedVideos.length}/3)`}
+      </button>
 
-      )}
+      </div>
 
-    </div>
+    </StudentCategory>
   );
 }
 

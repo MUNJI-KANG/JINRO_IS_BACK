@@ -231,8 +231,8 @@ def analyze_video_with_face_crop(video_path, model, transforms, class_names, dev
     overall_stats = {
         'Total_Frames_Analyzed': len(frame_data_list),
         'Frames_With_Face': valid_face_frames,
-        'Interested_Percentage(%)': round(percent_interested, 2),
-        'Not_Interested_Percentage(%)': round(percent_not_interested, 2)
+        'Interested_Percentage': round(percent_interested, 2),
+        'Not_Interested_Percentage': round(percent_not_interested, 2)
     }
     
     df_frames = pd.DataFrame(frame_data_list)

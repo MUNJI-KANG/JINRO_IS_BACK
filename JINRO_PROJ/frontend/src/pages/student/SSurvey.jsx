@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import axios from 'axios';
 import styles from '../../css/student_css/SSurvey.module.css';
-import api from '../../services/app'
-
+import api from '../../services/app';
+import SSurveyOnboarding from '../student/s_onboarding/SurveyOnboarding.jsx';
 
 function SSurvey() {
+
+    const [onboard,setOnboard] = useState(false);
 
     const { categoryId } = useParams();
     const location = useLocation();
@@ -15,14 +16,39 @@ function SSurvey() {
     const selectedVideos = useSelector((state) => state.cVideos);
     const { currentIndex = 0 } = location.state || {};
 
-    
     const [surveyInfo, setSurveyInfo] = useState(null);
     const [currentStep, setCurrentStep] = useState(0);
     const [answers, setAnswers] = useState({});
     const [loading, setLoading] = useState(true);
+
     const reduxCounselingId = useSelector((state) => state.counselingId);
     const counselingId = reduxCounselingId || localStorage.getItem('counselingId');
 
+    /* ⭐⭐⭐ Survey 온보딩 */
+    useEffect(()=>{
+
+        // ⭐ 최초 진입 즉시 차단
+        if(localStorage.getItem("skip_all_onboarding")==="true")
+            return;
+
+        const done = localStorage.getItem("ssurvey_onboard_done");
+        if(done==="true") return;
+
+        let t = setTimeout(()=>{
+
+            // ⭐ 타이머 실행 시점 재확인 (중요)
+            if(localStorage.getItem("skip_all_onboarding")==="true")
+                return;
+
+            setOnboard(true);
+
+        },400);
+
+        return ()=>clearTimeout(t);
+
+    },[]);
+
+    /* ⭐ 설문 fetch */
     useEffect(() => {
 
         const fetchSurvey = async () => {
@@ -68,10 +94,8 @@ function SSurvey() {
 
         try {
 
-            // ✅ 수정: survey/submit 대신 pComplete 호출
             const reportIds = JSON.parse(localStorage.getItem("reportIds") || "[]");
             const currentReportId = reportIds[currentIndex];
-            console.log(currentReportId)
 
             if (!currentReportId) {
                 console.error("report_id 없음");
@@ -104,8 +128,6 @@ function SSurvey() {
         }
     };
 
-
-
     const questions = React.useMemo(() => {
         if (!surveyInfo) return [];
         return typeof surveyInfo.survey === "string"
@@ -133,6 +155,12 @@ function SSurvey() {
     return (
         <div className={styles.surveyContainer}>
 
+            {onboard && (
+                <SSurveyOnboarding
+                    onClose={()=>setOnboard(false)}
+                />
+            )}
+
             <div className={styles.surveyCard}>
 
                 <button
@@ -156,7 +184,7 @@ function SSurvey() {
                     </span>
                 </div>
 
-                <div className={styles.progressWrapper}>
+                <div className={`${styles.progressWrapper} survey-progress`}>
                     <div
                         className={styles.progressBar}
                         style={{
@@ -169,14 +197,16 @@ function SSurvey() {
                     {questions[currentStep].questionText}
                 </h2>
 
-                <div className={styles.optionsList}>
+                <div className={`${styles.optionsList} survey-options`}>
 
                     {questions[currentStep].options.map((option, idx) => (
 
                         <div
                             key={idx}
                             className={`${styles.optionItem} ${
-                                answers[currentStep] === (4 - idx) ? styles.selected : ""
+                                answers[currentStep] === (4 - idx)
+                                    ? styles.selected
+                                    : ""
                             }`}
                             onClick={() =>
                                 setAnswers(prev => ({
@@ -201,7 +231,7 @@ function SSurvey() {
                 <div style={{ textAlign: "center", marginTop: "30px" }}>
 
                     <button
-                        className={styles.nextButton}
+                        className={`${styles.nextButton} survey-next-btn`}
                         onClick={handleNext}
                         disabled={answers[currentStep] === undefined}
                         style={{

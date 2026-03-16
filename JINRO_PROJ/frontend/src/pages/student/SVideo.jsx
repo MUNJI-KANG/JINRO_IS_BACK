@@ -49,19 +49,34 @@ function SVideo() {
 
   /* ⭐ 카메라 온보딩 */
   useEffect(()=>{
+
+    // ⭐ 최초 진입 즉시 막기
+    if(localStorage.getItem("skip_all_onboarding")==="true")
+      return;
+
     const done = localStorage.getItem("svideo_cam_onboard_done");
     if(done==="true") return;
 
-    const t = setTimeout(()=>{
+    let t = setTimeout(()=>{
+
+      // ⭐ 타이머 실행 시점에서도 다시 체크
+      if(localStorage.getItem("skip_all_onboarding")==="true")
+        return;
+
       setOnboard(true);
       setOnboardPhase(1);
+
     },500);
 
     return ()=>clearTimeout(t);
+
   },[]);
 
   /* ⭐ 영상 온보딩 */
-  useEffect(()=>{
+ useEffect(()=>{
+
+    if(localStorage.getItem("skip_all_onboarding")==="true")
+      return;
 
     if(!started) return;
 
@@ -71,6 +86,10 @@ function SVideo() {
     let retry;
 
     const run = ()=>{
+
+      if(localStorage.getItem("skip_all_onboarding")==="true")
+        return;
+
       const el = document.querySelector(".video-container");
       if(!el){
         retry = setTimeout(run,120);
@@ -274,41 +293,111 @@ function SVideo() {
   });
 
   /* ⭐ 유튜브 */
-  const videoId = currentVideo?.url?.split("v=")[1];
+  const getYoutubeId = (url)=>{
+    if(!url) return null;
+
+    if(url.includes("youtu.be/"))
+      return url.split("youtu.be/")[1].split("?")[0];
+
+    if(url.includes("v="))
+      return url.split("v=")[1].split("&")[0];
+
+    return null;
+  };
+
+  const videoId = getYoutubeId(currentVideo?.url);
 
   useEffect(()=>{
 
     if(!started || !videoId) return;
 
-    const create = ()=>{
+    let destroyed = false;
+
+    const createPlayer = ()=>{
+
+      if(destroyed) return;
+
+      // 기존 player 있으면 제거
+      if(playerRef.current){
+        try{
+          playerRef.current.destroy();
+        }catch{}
+      }
+
       playerRef.current = new window.YT.Player("youtube-player",{
+        width:"100%",
+        height:"100%",
+        videoId: videoId,
+        playerVars:{
+          autoplay:1,
+          rel:0,
+          modestbranding:1
+        },
         events:{
-          onStateChange:e=>{
-            if(e.data===0) setVideoEnded(true);
+          onReady:(e)=>{
+            console.log("YT ready");
+          },
+          onStateChange:(e)=>{
+            if(e.data === window.YT.PlayerState.ENDED){
+              console.log("영상 종료 감지");
+              setVideoEnded(true);
+            }
           }
         }
       });
+
     };
 
+    // YT script load
     if(!window.YT){
-      const tag = document.createElement("script");
-      tag.src="https://www.youtube.com/iframe_api";
-      document.body.appendChild(tag);
-      window.onYouTubeIframeAPIReady=create;
-    }else create();
 
-  },[videoId,started]);
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.body.appendChild(tag);
+
+      window.onYouTubeIframeAPIReady = createPlayer;
+
+    }else{
+      createPlayer();
+    }
+
+    return ()=>{
+      destroyed = true;
+      if(playerRef.current){
+        try{
+          playerRef.current.destroy();
+        }catch{}
+      }
+    };
+
+  },[started, videoId]);
 
   const goSurvey = async ()=>{
 
-    const blob = await stopRecording();
+    try{
 
-    const form = new FormData();
-    form.append("file",blob,"video.webm");
+      let blob = null;
 
-    await api.post("/client/video/upload/1",form,{
-      headers:{ "Content-Type":"multipart/form-data" }
-    });
+      if(
+        recorderRef.current &&
+        recorderRef.current.state &&
+        recorderRef.current.state !== "inactive"
+      ){
+        blob = await stopRecording();
+      }
+
+      if(blob){
+        const form = new FormData();
+        form.append("file",blob,"video.webm");
+
+        await api.post("/client/video/upload/1",form,{
+          headers:{ "Content-Type":"multipart/form-data" }
+        });
+      }
+
+    }catch(e){
+      console.log("upload skip:",e);
+    }
 
     navigate(`/student/survey/${categoryId}`);
   };
@@ -347,13 +436,8 @@ function SVideo() {
       {started && currentVideo && (
         <>
           <div className="video-container">
-            <iframe
-              id="youtube-player"
-              src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1`}
-              allowFullScreen
-            />
+            <div id="youtube-player"/>
           </div>
-
           <button
             className={`survey-btn ${videoEnded?"enabled":""}`}
             disabled={!videoEnded}
