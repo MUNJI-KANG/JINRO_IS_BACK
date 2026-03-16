@@ -239,6 +239,7 @@ const CFinal = () => {
 
                 setClientInfo({
                     c_id: data.data.client?.c_id || '',
+                    name: data.data.client?.name || '',
                     phone_num: data.data.client?.phone_num || '',
                     email: data.data.client?.email || '',
                     birthdate: data.data.client?.birthdate || ''
@@ -414,14 +415,17 @@ const CFinal = () => {
                 </div>
             )}
 
-            <div className="pdf-action-bar" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '15px' }}>
-                <button className="btn-sub" onClick={() => generatePDF('preview')}>
-                    PDF 미리보기
-                </button>
-                <button className="btn-main" onClick={() => generatePDF('download')}>
-                    PDF 다운로드
-                </button>
-            </div>
+            {/* 💡 isComplete가 true일 때만 PDF 버튼 모음이 나타나도록 조건부 렌더링 추가! */}
+            {isComplete && (
+                <div className="pdf-action-bar" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '15px' }}>
+                    <button className="btn-sub" onClick={() => generatePDF('preview')}>
+                        PDF 미리보기
+                    </button>
+                    <button className="btn-main" onClick={() => generatePDF('download')}>
+                        PDF 다운로드
+                    </button>
+                </div>
+            )}
 
             {/* 1페이지: AI 분석 */}
             <div ref={aiPageRef} className="pdf-export-container" style={{ padding: '20px', backgroundColor: '#fff' }}>
@@ -599,10 +603,7 @@ const CFinal = () => {
                             />
                         ) : (
                             <div
-                                className="report-text-display report-text-view"
-                                style={{
-                                    cursor: isComplete ? 'default' : 'text'
-                                }}
+                                className={`report-text-display report-text-view ${isComplete ? 'completed' : ''}`}
                                 onClick={() => {
                                     if (!isComplete) setIsEditingPersonality(true);
                                 }}
@@ -626,10 +627,7 @@ const CFinal = () => {
                             />
                         ) : (
                             <div
-                                className="report-text-display report-text-view report-text-view-large"
-                                style={{
-                                    cursor: isComplete ? 'default' : 'text'
-                                }}
+                                className={`report-text-display report-text-view report-text-view-large ${isComplete ? 'completed' : ''}`}
                                 onClick={() => {
                                     if (!isComplete) setIsEditingCareer(true);
                                 }}
@@ -676,10 +674,7 @@ const CFinal = () => {
                                 />
                             ) : (
                                 <div
-                                    className="report-text-display report-text-view"
-                                    style={{
-                                        cursor: isComplete ? 'default' : 'text'
-                                    }}
+                                    className={`report-text-display report-text-view ${isComplete ? 'completed' : ''}`}
                                     onClick={() => {
                                         if (!isComplete) setIsEditingFinalComment(true);
                                     }}
