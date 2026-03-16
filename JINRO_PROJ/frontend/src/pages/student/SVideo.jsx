@@ -53,7 +53,7 @@ function SVideo() {
 
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
-          audio: false
+          audio: true
         });
 
         activeStream = stream;
