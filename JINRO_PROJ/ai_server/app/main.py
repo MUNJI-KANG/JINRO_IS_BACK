@@ -8,7 +8,8 @@ load_dotenv(ENV_PATH)
 from fastapi import FastAPI
 from app.api import ai, data_ai
 
-app = FastAPI(title="AI_SERVER")
+app = FastAPI(title="AI_SERVER",
+              root_path="/ai")
 
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
