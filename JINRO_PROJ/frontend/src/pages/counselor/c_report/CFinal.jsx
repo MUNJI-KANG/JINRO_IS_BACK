@@ -27,6 +27,7 @@ const CFinal = () => {
     const counselorPageRef = useRef(null);
     const [pdfUrl, setPdfUrl] = useState(null);
     const [showPreview, setShowPreview] = useState(false);
+    const [isPdfRendering, setIsPdfRendering] = useState(false);
 
     // 상담 데이터 관련 상태
     const [focusData, setFocusData] = useState([]);
@@ -55,39 +56,42 @@ const CFinal = () => {
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
 
-    const modalStyle = {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 9999
+    // PDF 정보(client 정보 + 선택한 카테고리 정보)
+    const [clientInfo, setClientInfo] = useState({
+        c_id: '',
+        name: '',
+        phone_num: '',
+        email: '',
+        birthdate: ''
+    });
+
+    const [reportCategory, setReportCategory] = useState([]);
+
+
+    const formatBirthdate = (birthdate) => {
+        if (!birthdate) return '-';
+
+        if (typeof birthdate === 'string') {
+            return birthdate.slice(0, 10);
+        }
+
+        try {
+            return new Date(birthdate).toISOString().slice(0, 10);
+        } catch {
+            return '-';
+        }
     };
 
-    const textViewStyle = {
-        minHeight: '150px',
-        whiteSpace: 'pre-wrap',
-        border: '1px solid #eee',
-        padding: '15px',
-        borderRadius: '8px',
-        backgroundColor: '#fff',
-        lineHeight: 1.6
-    };
-
-    const textareaStyle = {
-        width: '100%',
-        minHeight: '150px',
-        padding: '15px',
-        border: '1px solid #ddd',
-        borderRadius: '8px',
-        resize: 'vertical',
-        boxSizing: 'border-box',
-        font: 'inherit',
-        lineHeight: 1.6
+    const formatCategory = (category) => {
+        if (Array.isArray(category) && category.length > 0) {
+            return category.map((item, index) => (
+                // 한 줄로 나열하되, 각 항목 사이에 16px 정도의 여백(띄어쓰기)을 줍니다.
+                <span key={index} style={{ marginRight: '16px' }}>
+                    {index + 1}. {item}
+                </span>
+            ));
+        }
+        return category || '-';
     };
 
     // ---------------------------------------------------------
@@ -149,14 +153,16 @@ const CFinal = () => {
         setIsEditingPersonality(false);
         setIsEditingCareer(false);
         setIsEditingFinalComment(false);
+        setIsPdfRendering(true);
 
         setTimeout(async () => {
             await buildPdf(action);
 
+            setIsPdfRendering(false);
             setIsEditingPersonality(prevEditing.personality);
             setIsEditingCareer(prevEditing.career);
             setIsEditingFinalComment(prevEditing.final);
-        }, 50);
+        }, 100);
     };
 
     // ---------------------------------------------------------
@@ -216,6 +222,34 @@ const CFinal = () => {
             clearInterval(timerRef.current);
         };
     }, []);
+
+    // PDF에서 필요한 정보들 얻기
+    useEffect(() => {
+        if (!clientId || !counselingId) return;
+
+        api.get('/counselor/report/pdf-info', {
+            params: {
+                clientId,
+                counselingId
+            }
+        })
+            .then(res => res.data)
+            .then(data => {
+                if (!data.success || !data.data) return;
+
+                setClientInfo({
+                    c_id: data.data.client?.c_id || '',
+                    phone_num: data.data.client?.phone_num || '',
+                    email: data.data.client?.email || '',
+                    birthdate: data.data.client?.birthdate || ''
+                });
+
+                setReportCategory(
+                    Array.isArray(data.data.category) ? data.data.category : []
+                );
+            })
+            .catch(err => console.error('PDF 정보 조회 실패', err));
+    }, [clientId, counselingId]);
 
     const handleSave = async (e) => {
         e.preventDefault();
@@ -362,7 +396,7 @@ const CFinal = () => {
     return (
         <>
             {showPreview && (
-                <div className="pdf-preview-modal" style={modalStyle}>
+                <div className="pdf-preview-modal">
                     <div style={{ background: '#fff', padding: '20px', borderRadius: '12px', width: '85%', height: '90%', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
                             <h3 style={{ margin: 0 }}>리포트 미리보기</h3>
@@ -391,8 +425,20 @@ const CFinal = () => {
 
             {/* 1페이지: AI 분석 */}
             <div ref={aiPageRef} className="pdf-export-container" style={{ padding: '20px', backgroundColor: '#fff' }}>
-                <h2 className="student-info-title">{studentName}의 진로 상담 최종 리포트</h2>
 
+                <h2 className="student-info-title">{studentName}의 진로 상담 최종 리포트</h2>
+                {isPdfRendering && (
+                    <div className="pdf-info-box">
+                        <h3 style={{ marginTop: 0, marginBottom: '10px' }}>학생 기본 정보</h3>
+                        <div><strong>학생번호:</strong> {clientInfo.c_id || '-'}</div>
+                        <div><strong>전화번호:</strong> {clientInfo.phone_num || '-'}</div>
+                        <div><strong>이메일:</strong> {clientInfo.email || '-'}</div>
+                        <div><strong>생년월일:</strong> {formatBirthdate(clientInfo.birthdate)}</div>
+                        <div style={{ gridColumn: '1 / -1', wordBreak: 'keep-all' }}>
+                            <strong>선택 카테고리:</strong> {formatCategory(reportCategory)}
+                        </div>
+                    </div>
+                )}
                 <h3 className="section-title">AI 분석</h3>
 
                 <div className="report-top-grid">
@@ -544,8 +590,7 @@ const CFinal = () => {
 
                         {isEditingPersonality && !isComplete ? (
                             <textarea
-                                className="analysis-textarea"
-                                style={textareaStyle}
+                                className="analysis-textarea report-textarea-common"
                                 placeholder="학생 성향에 대한 상담사의 분석을 작성해주세요."
                                 value={personalityComment}
                                 onChange={(e) => setPersonalityComment(e.target.value)}
@@ -554,9 +599,8 @@ const CFinal = () => {
                             />
                         ) : (
                             <div
-                                className="report-text-display"
+                                className="report-text-display report-text-view"
                                 style={{
-                                    ...textViewStyle,
                                     cursor: isComplete ? 'default' : 'text'
                                 }}
                                 onClick={() => {
@@ -573,8 +617,7 @@ const CFinal = () => {
 
                         {isEditingCareer && !isComplete ? (
                             <textarea
-                                className="analysis-textarea"
-                                style={textareaStyle}
+                                className="analysis-textarea report-textarea-common"
                                 placeholder="추천 진로에 대한 상담사의 의견을 작성해주세요."
                                 value={careerComment}
                                 onChange={(e) => setCareerComment(e.target.value)}
@@ -583,9 +626,8 @@ const CFinal = () => {
                             />
                         ) : (
                             <div
-                                className="report-text-display"
+                                className="report-text-display report-text-view report-text-view-large"
                                 style={{
-                                    ...textViewStyle,
                                     cursor: isComplete ? 'default' : 'text'
                                 }}
                                 onClick={() => {
@@ -625,7 +667,7 @@ const CFinal = () => {
                             {isEditingFinalComment && !isComplete ? (
                                 <textarea
                                     id="finalComment"
-                                    style={{ ...textareaStyle, minHeight: '180px' }}
+                                    className="report-textarea-common report-textarea-large"
                                     placeholder="학생과의 상담 내용을 입력해주세요."
                                     value={finalComment}
                                     onChange={(e) => setFinalComment(e.target.value)}
@@ -634,10 +676,8 @@ const CFinal = () => {
                                 />
                             ) : (
                                 <div
-                                    className="report-text-display"
+                                    className="report-text-display report-text-view"
                                     style={{
-                                        ...textViewStyle,
-                                        minHeight: '180px',
                                         cursor: isComplete ? 'default' : 'text'
                                     }}
                                     onClick={() => {

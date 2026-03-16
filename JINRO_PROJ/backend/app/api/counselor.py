@@ -975,3 +975,31 @@ def get_local_videos(counseling_id: int):
         "success": True,
         "data": files
     }
+
+
+# 최종리포트 PDF에 보여줄 정보추가(client 정보와 선택한 카테고리 정보)
+@router.get("/report/pdf-info")
+def get_pdf_info(clientId: int, counselingId: int, db: Session = Depends(get_db)):
+    client = db.query(Client).filter(Client.client_id == clientId).first()
+
+    reports = (
+        db.query(ReportAiV.category)
+        .filter(ReportAiV.counseling_id == counselingId)
+        .distinct()
+        .all()
+    )
+
+    categories = [row[0] for row in reports]
+
+    return {
+        "success": True,
+        "data": {
+            "client": {
+                "c_id": client.c_id if client else "",
+                "phone_num": client.phone_num if client else "",
+                "email": client.email if client else "",
+                "birthdate": client.birthdate if client else ""
+            },
+            "category": categories
+        }
+    }

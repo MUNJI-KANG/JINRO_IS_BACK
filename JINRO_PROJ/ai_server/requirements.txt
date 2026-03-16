@@ -14,3 +14,4 @@ ollama
 email-validator
 faster_whisper
 openai
+torchvision==0.25.0
