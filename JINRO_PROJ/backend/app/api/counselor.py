@@ -747,10 +747,29 @@ def get_student_consultations(client_id: int, db: Session = Depends(get_db)):
 
 
 # ===============================
-# 🔹 상담사 정보 조회 / 수정
+# 🔹 상담사 정보 조회
 # ===============================
+@router.get("/{counselor_id}")
+def get_counselor(counselor_id: int, db: Session = Depends(get_db)):
 
+    counselor_obj = db.query(Counselor).filter(
+        Counselor.counselor_id == counselor_id
+    ).first()
 
+    if not counselor_obj:
+        return {
+            "success": False,
+            "message": "존재하지 않는 상담사입니다."
+        }
+
+    return {
+        "success": True,
+        "data": {
+            "name": counselor_obj.name,
+            "phone": counselor_obj.phone_num,
+            "email": counselor_obj.email
+        }
+    }
 
 @router.put("/{counselor_id}")
 def update_counselor(counselor_id: int, request: CounselorModifyInfo, db: Session = Depends(get_db)):

@@ -19,7 +19,7 @@ function CInfoEdit() {
           `/counselor/${counselorId}`
         );
 
-        const data = await response.data;
+        const data = response.data;
 
         if (data.success) {
           setFormData({
