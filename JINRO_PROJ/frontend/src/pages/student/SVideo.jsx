@@ -50,23 +50,30 @@ function SVideo() {
   /* ⭐ 카메라 온보딩 */
   useEffect(()=>{
 
+    // ⭐ 최초 진입 즉시 막기
     if(localStorage.getItem("skip_all_onboarding")==="true")
       return;
-
 
     const done = localStorage.getItem("svideo_cam_onboard_done");
     if(done==="true") return;
 
-    const t = setTimeout(()=>{
+    let t = setTimeout(()=>{
+
+      // ⭐ 타이머 실행 시점에서도 다시 체크
+      if(localStorage.getItem("skip_all_onboarding")==="true")
+        return;
+
       setOnboard(true);
       setOnboardPhase(1);
+
     },500);
 
     return ()=>clearTimeout(t);
+
   },[]);
 
   /* ⭐ 영상 온보딩 */
-  useEffect(()=>{
+ useEffect(()=>{
 
     if(localStorage.getItem("skip_all_onboarding")==="true")
       return;
@@ -79,6 +86,10 @@ function SVideo() {
     let retry;
 
     const run = ()=>{
+
+      if(localStorage.getItem("skip_all_onboarding")==="true")
+        return;
+
       const el = document.querySelector(".video-container");
       if(!el){
         retry = setTimeout(run,120);
