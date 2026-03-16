@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { FaceMesh } from "@mediapipe/face_mesh";
 import { Camera } from "@mediapipe/camera_utils";
-// import { useSelector } from "react-redux";
+
 import "../../css/student_css/SVideo.css";
 import api from '../../services/app'
+
+import SVideoOnboarding from "../student/s_onboarding/VideoOnboarding.jsx";
 
 function SVideo() {
 
@@ -15,18 +17,17 @@ function SVideo() {
   // const selectedVideos = useSelector((state) => state.cVideos); 현재 사용 안하는중
   const currentIndex = location.state?.currentIndex ?? 0;
 
+  const [onboard,setOnboard] = useState(false);
+  const [onboardPhase,setOnboardPhase] = useState(1);
+
+  const [started, setStarted] = useState(false);
+
   const webcamRef = useRef(null);
   const previewVideoRef = useRef(null);
   const recorderRef = useRef(null);
   const recordedChunks = useRef([]);
   const cameraRef = useRef(null);
   const streamRef = useRef(null);
-
-  const frontStartTimeRef = useRef(null);
-  const frontFrameCountRef = useRef(0); // 프레임 누적 필요
-  const lostFaceCountRef = useRef(0); // 프레임 누적 필요
-  const nonFrontCountRef = useRef(0);
-  const isTriggeredRef = useRef(false); // 녹화중복 방지
 
   const [currentVideo, setCurrentVideo] = useState(null);
   const [webcamReady, setWebcamReady] = useState(false);
@@ -35,19 +36,70 @@ function SVideo() {
 
   const [started, setStarted] = useState(currentIndex > 0);
 
-  // ⭐ 추가 state
   const [faceDetected, setFaceDetected] = useState(false);
   const [isFacingFront, setIsFacingFront] = useState(false);
   const [frontTime, setFrontTime] = useState(0);
   const [readyToStart, setReadyToStart] = useState(false);
 
-  const [uploading, setUploading] = useState(false); // 파일 저장 중복 방지
+  const frontStartTimeRef = useRef(null);
+  const frontFrameCountRef = useRef(0);
+  const isTriggeredRef = useRef(false);
 
-  // 웹캠 초기화
+  /* ⭐ 카메라 온보딩 */
+  useEffect(()=>{
+
+    const done = localStorage.getItem("svideo_cam_onboard_done");
+    if(done==="true") return;
+
+    const t = setTimeout(()=>{
+      setOnboard(true);
+      setOnboardPhase(1);
+    },500);
+
+    return ()=>clearTimeout(t);
+
+  },[]);
+
+  useEffect(()=>{
+
+    if(!started) return;
+
+    const done = localStorage.getItem("svideo_watch_onboard_done");
+    if(done === "true") return;
+
+    let retry;
+
+    const run = ()=>{
+
+      const el = document.querySelector(".video-container");
+
+      if(!el){
+        retry = setTimeout(run,120);
+        return;
+      }
+
+      const r = el.getBoundingClientRect();
+
+      if(r.width === 0 || r.height === 0){
+        retry = setTimeout(run,120);
+        return;
+      }
+
+      setOnboardPhase(2);
+      setOnboard(true);
+
+    };
+
+    retry = setTimeout(run,300);
+
+    return ()=> clearTimeout(retry);
+
+  },[started,currentVideo]);
+
+  
   useEffect(() => {
-    let activeStream = null;
 
-  const initWebcam = async () => {
+    const init = async () => {
 
     try {
 
@@ -73,13 +125,11 @@ function SVideo() {
 
         console.error("카메라 연결 실패:", err);
         setWebcamError(true);
-        setWebcamReady(false);
-
       }
 
     };
 
-    initWebcam();
+    init();
 
     return () => {
 
@@ -120,7 +170,7 @@ function SVideo() {
     previewVideoRef.current.srcObject = webcamRef.current.srcObject;
   }, [webcamReady, started, currentIndex]);
 
-  // ⭐ FaceMesh 정면 인식 (추가)
+  /* FaceMesh */
   useEffect(() => {
 
     if (!webcamReady || !webcamRef.current || started) return;
@@ -143,13 +193,13 @@ function SVideo() {
       });
 
     faceMesh.setOptions({
-      maxNumFaces: 1,
-      refineLandmarks: true,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.7,
+      maxNumFaces:1,
+      refineLandmarks:true,
+      minDetectionConfidence:.5,
+      minTrackingConfidence:.7
     });
 
-    faceMesh.onResults((results) => {
+    faceMesh.onResults((results)=>{
 
       // 얼굴 없음 판정
       if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
@@ -173,10 +223,7 @@ function SVideo() {
         return;
       }
 
-      lostFaceCountRef.current = 0;
-
-      const landmarks = results.multiFaceLandmarks[0];
-
+      const lm = results.multiFaceLandmarks[0];
       setFaceDetected(true);
 
       const nose = landmarks[1];
@@ -217,20 +264,17 @@ function SVideo() {
 
       setIsFacingFront(front);
 
-      if (front) {
+      if(front){
 
-        nonFrontCountRef.current = 0;
         frontFrameCountRef.current++;
 
-        if (frontFrameCountRef.current >= 3) {
+        if(frontFrameCountRef.current>=3){
 
-          if (!frontStartTimeRef.current) {
+          if(!frontStartTimeRef.current)
             frontStartTimeRef.current = Date.now();
-          }
 
-          const duration = (Date.now() - frontStartTimeRef.current) / 1000;
-
-          setFrontTime(duration);
+          const d = (Date.now()-frontStartTimeRef.current)/1000;
+          setFrontTime(d);
 
           // ⭐ stuck 방지 코드
           if (duration > 8) {
@@ -252,7 +296,6 @@ function SVideo() {
               }
             }, 500);
           }
-
         }
 
       } else {
@@ -270,26 +313,16 @@ function SVideo() {
           nonFrontCountRef.current = 0;
         }
 
-      }
     });
 
-    const videoElement = webcamRef.current;
-
-    const camera = new Camera(videoElement, {
-      onFrame: async () => {
-        await faceMesh.send({ image: videoElement });
-      },
-      width: 640,
-      height: 480,
+    const cam = new Camera(webcamRef.current,{
+      onFrame:async()=>await faceMesh.send({image:webcamRef.current}),
+      width:640,
+      height:480
     });
 
-    if (cameraRef.current) {
-      cameraRef.current.stop();
-      cameraRef.current = null;
-    }
-
-    cameraRef.current = camera;
-    camera.start();
+    cam.start();
+    cameraRef.current = cam;
 
     return () => {
       try {
@@ -302,7 +335,7 @@ function SVideo() {
       }
     };
 
-  }, [webcamReady, started]);
+  },[webcamReady,started]);
 
   // 두 번째 영상 자동 시작
   useEffect(() => {
@@ -383,38 +416,24 @@ function SVideo() {
 
     const stream = webcamRef.current.srcObject;
     streamRef.current = stream;
-    const mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
 
-    recorderRef.current = mediaRecorder;
+    const rec = new MediaRecorder(stream,{mimeType:"video/webm"});
+    recorderRef.current = rec;
     recordedChunks.current = [];
 
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) recordedChunks.current.push(e.data);
+    rec.ondataavailable = e=>{
+      if(e.data.size>0) recordedChunks.current.push(e.data);
     };
 
-    mediaRecorder.start(1000);
+    rec.start(1000);
 
   };
 
-  const stopRecording = () => {
+  const stopRecording = ()=> new Promise(res=>{
 
-    return new Promise((resolve) => {
-
-      if (!recorderRef.current) {
-        resolve(new Blob([], { type: "video/webm" }));
-        return;
-      }
-
-      if (recorderRef.current.state === "inactive") {
-        const blob = new Blob(recordedChunks.current, { type: "video/webm" });
-        resolve(blob);
-        return;
-      }
-
-      recorderRef.current.onstop = () => {
-        const blob = new Blob(recordedChunks.current, { type: "video/webm" });
-        resolve(blob);
-      };
+    recorderRef.current.onstop = ()=>{
+      res(new Blob(recordedChunks.current,{type:"video/webm"}));
+    };
 
       try {
         recorderRef.current.stop();
@@ -531,49 +550,66 @@ function SVideo() {
 
   useEffect(() => {
 
-    if (!started || !videoId) return;
+    if(!started || !videoId) return;
 
-    setVideoEnded(false);
+    const create = ()=>{
 
-    const createPlayer = () => {
-
-      new window.YT.Player("youtube-player", {
-
-        events: {
-
-          onStateChange: (event) => {
-
-            if (event.data === window.YT.PlayerState.ENDED) {
-              setVideoEnded(true);
-            }
-
+      new window.YT.Player("youtube-player",{
+        events:{
+          onStateChange:e=>{
+            if(e.data===0) setVideoEnded(true);
           }
-
         }
-
       });
 
     };
 
-    if (!window.YT) {
-
+    if(!window.YT){
       const tag = document.createElement("script");
-      tag.src = "https://www.youtube.com/iframe_api";
+      tag.src="https://www.youtube.com/iframe_api";
       document.body.appendChild(tag);
+      window.onYouTubeIframeAPIReady=create;
+    }else create();
 
-      window.onYouTubeIframeAPIReady = createPlayer;
+  },[videoId,started]);
 
-    } else {
+  const goSurvey = async ()=>{
 
-      createPlayer();
+    if(uploading) return;
+    setUploading(true);
 
-    }
+    const blob = await stopRecording();
 
-  }, [videoId, started]);
+    const form = new FormData();
+    form.append("file",blob,"video.webm");
+
+    const cid = localStorage.getItem("counselingId");
+
+    await api.post(`/client/video/upload/${cid}`,form,{
+      headers:{ "Content-Type":"multipart/form-data" }
+    });
+
+    navigate(`/student/survey/${categoryId}`);
+
+  };
 
   return (
 
     <div className="svideo-page">
+
+      {onboard && (
+        <SVideoOnboarding
+          phase={onboardPhase}
+          onClose={()=>setOnboard(false)}
+        />
+      )}
+
+      {onboard && (
+        <SVideoOnboarding
+          phase={onboardPhase}
+          onClose={()=>setOnboard(false)}
+        />
+      )}
 
       <video
         ref={webcamRef}
@@ -587,14 +623,9 @@ function SVideo() {
 
         <div className="webcam-check">
 
-          <h2>웹캠 상태 확인</h2>
-
-          {webcamError ? (
-
-            <div className="webcam-error-msg">
-              ⚠️ 카메라를 찾을 수 없거나 권한이 거부되었습니다. <br />
-              설정을 확인하고 새로고침 해주세요.
-            </div>
+          <div className="webcam-view">
+            <video ref={webcamRef} autoPlay playsInline muted/>
+          </div>
 
           ) : (
 
@@ -644,46 +675,24 @@ function SVideo() {
       {started && currentVideo && (
 
         <>
-
-          <div className="analysis-status">
-            실시간 분석 중...
+        <div className="video-wrapper">
+          <div className="video-container">
+            <iframe
+              id="youtube-player"
+              src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1`}
+              title="yt"
+              allowFullScreen
+            />
           </div>
+        </div>
 
-          <div className="video-wrapper">
-
-            <div className="video-container">
-
-              {videoId && (
-
-                <iframe
-                  id="youtube-player"
-                  src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1`}
-                  title="YouTube Player"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-
-              )}
-
-            </div>
-
-            <h3>{currentVideo.title}</h3>
-
-          </div>
-
-          <div className="svideo-bottom">
-
-            <button
-              className={`survey-btn ${videoEnded ? "enabled" : ""}`}
-              onClick={handleGoSurvey}
-              disabled={!videoEnded || uploading}
-            >
-              {uploading ? "업로드 중..." : "설문하러 가기"}
-            </button>
-
-          </div>
-
+          <button
+            className={`survey-btn ${videoEnded?"enabled":""}`}
+            disabled={!videoEnded}
+            onClick={goSurvey}
+          >
+            설문하러가기
+          </button>
         </>
 
       )}
@@ -691,7 +700,6 @@ function SVideo() {
     </div>
 
   );
-
 }
 
 export default SVideo;
