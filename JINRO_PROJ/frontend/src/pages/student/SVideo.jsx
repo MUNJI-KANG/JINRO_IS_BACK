@@ -274,30 +274,84 @@ function SVideo() {
   });
 
   /* ⭐ 유튜브 */
-  const videoId = currentVideo?.url?.split("v=")[1];
+  const getYoutubeId = (url)=>{
+    if(!url) return null;
+
+    if(url.includes("youtu.be/"))
+      return url.split("youtu.be/")[1].split("?")[0];
+
+    if(url.includes("v="))
+      return url.split("v=")[1].split("&")[0];
+
+    return null;
+  };
+
+  const videoId = getYoutubeId(currentVideo?.url);
 
   useEffect(()=>{
 
     if(!started || !videoId) return;
 
-    const create = ()=>{
+    let destroyed = false;
+
+    const createPlayer = ()=>{
+
+      if(destroyed) return;
+
+      // 기존 player 있으면 제거
+      if(playerRef.current){
+        try{
+          playerRef.current.destroy();
+        }catch{}
+      }
+
       playerRef.current = new window.YT.Player("youtube-player",{
+        width:"100%",
+        height:"100%",
+        videoId: videoId,
+        playerVars:{
+          autoplay:1,
+          rel:0,
+          modestbranding:1
+        },
         events:{
-          onStateChange:e=>{
-            if(e.data===0) setVideoEnded(true);
+          onReady:(e)=>{
+            console.log("YT ready");
+          },
+          onStateChange:(e)=>{
+            if(e.data === window.YT.PlayerState.ENDED){
+              console.log("영상 종료 감지");
+              setVideoEnded(true);
+            }
           }
         }
       });
+
     };
 
+    // YT script load
     if(!window.YT){
-      const tag = document.createElement("script");
-      tag.src="https://www.youtube.com/iframe_api";
-      document.body.appendChild(tag);
-      window.onYouTubeIframeAPIReady=create;
-    }else create();
 
-  },[videoId,started]);
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.body.appendChild(tag);
+
+      window.onYouTubeIframeAPIReady = createPlayer;
+
+    }else{
+      createPlayer();
+    }
+
+    return ()=>{
+      destroyed = true;
+      if(playerRef.current){
+        try{
+          playerRef.current.destroy();
+        }catch{}
+      }
+    };
+
+  },[started, videoId]);
 
   const goSurvey = async ()=>{
 
@@ -363,13 +417,8 @@ function SVideo() {
       {started && currentVideo && (
         <>
           <div className="video-container">
-            <iframe
-              id="youtube-player"
-              src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1`}
-              allowFullScreen
-            />
+            <div id="youtube-player"/>
           </div>
-
           <button
             className={`survey-btn ${videoEnded?"enabled":""}`}
             disabled={!videoEnded}
