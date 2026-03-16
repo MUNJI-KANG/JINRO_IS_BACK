@@ -35,6 +35,24 @@ function SVideoOnboarding({ phase, onClose }) {
     setStep(prev=>prev+1);
   };
 
+  /* ⭐ 키보드 이동 */
+  useEffect(()=>{
+
+    const handleKey = (e)=>{
+
+      if(e.key==="Enter" || e.key===" "){
+        e.preventDefault();
+        next();
+      }
+
+    };
+
+    window.addEventListener("keydown",handleKey);
+
+    return ()=> window.removeEventListener("keydown",handleKey);
+
+  },[step,phase]);
+
   useEffect(()=>{
 
     let frame;
@@ -85,12 +103,12 @@ function SVideoOnboarding({ phase, onClose }) {
           <div
             className="svideo-onboard-box"
             style={{
-            top:
+              top:
                 rect.top > window.innerHeight / 2
-                ? rect.top - 250   // 대상이 아래쪽 → 박스 위로
-                : rect.bottom - 400, // 대상이 위쪽 → 박스 아래로
-            left: "50%",
-            transform: "translateX(-50%)"
+                  ? rect.top - 250
+                  : rect.bottom - 400,
+              left: "50%",
+              transform: "translateX(-50%)"
             }}
           >
             <h3>{config[step].title}</h3>

@@ -3,8 +3,8 @@ import "../../../css/student_css/s_onboarding/SmallCatOnboarding.css";
 
 function CatSmallOnboarding({ onClose }) {
 
-  const [step,setStep]=useState(1);
-  const [rect,setRect]=useState(null);
+  const [step,setStep] = useState(1);
+  const [rect,setRect] = useState(null);
 
   const config = {
     1:{
@@ -24,9 +24,29 @@ function CatSmallOnboarding({ onClose }) {
     }
   };
 
+  /* ⭐ body scroll 고정 */
   useEffect(()=>{
 
-    const handleKey=(e)=>{
+    const scrollY = window.scrollY;
+
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+
+    return ()=>{
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      window.scrollTo(0,scrollY);
+    };
+
+  },[]);
+
+  /* 키보드 진행 */
+  useEffect(()=>{
+
+    const handleKey = (e)=>{
+
       if(e.key==="Enter" || e.key===" "){
         e.preventDefault();
 
@@ -38,6 +58,7 @@ function CatSmallOnboarding({ onClose }) {
 
         setStep(prev=>prev+1);
       }
+
     };
 
     window.addEventListener("keydown",handleKey);
@@ -45,25 +66,15 @@ function CatSmallOnboarding({ onClose }) {
 
   },[step]);
 
+  /* spotlight tracking */
   useEffect(()=>{
-
-    let frame;
 
     const update = ()=>{
 
       const el = document.querySelector(config[step].target);
-
-      if(!el){
-        frame = requestAnimationFrame(update);
-        return;
-      }
+      if(!el) return;
 
       const r = el.getBoundingClientRect();
-
-      if(r.width===0 || r.height===0){
-        frame = requestAnimationFrame(update);
-        return;
-      }
 
       setRect({
         top:r.top,
@@ -76,13 +87,13 @@ function CatSmallOnboarding({ onClose }) {
 
     };
 
-    frame = requestAnimationFrame(update);
+    const t = setTimeout(update,120);
 
     window.addEventListener("resize",update);
     window.addEventListener("scroll",update,true);
 
     return ()=>{
-      cancelAnimationFrame(frame);
+      clearTimeout(t);
       window.removeEventListener("resize",update);
       window.removeEventListener("scroll",update,true);
     };
@@ -115,21 +126,62 @@ function CatSmallOnboarding({ onClose }) {
         }}
       />
 
-      <div
-        className="onboard-box"
-        style={{
-          top: rect.bottom+60,
-          left:"50%",
-          transform:"translateX(-50%)"
-        }}
-      >
-        <h3>{config[step].title}</h3>
-        <p>{config[step].text}</p>
+      {/* ⭐ step1 */}
+      {step === 1 && (
+        <div
+          className="onboard-box"
+          style={{
+            top: rect.bottom + 20,
+            left:"50%",
+            transform:"translateX(-50%)"
+          }}
+        >
+          <h3>{config[step].title}</h3>
+          <p>{config[step].text}</p>
 
-        <button className="onboard-next" onClick={next}>
-          {step===3 ? "확인" : "다음"}
-        </button>
-      </div>
+          <button className="onboard-next" onClick={next}>
+            다음
+          </button>
+        </div>
+      )}
+
+      {/* ⭐ step2 */}
+      {step === 2 && (
+        <div
+          className="onboard-box"
+          style={{
+            top: rect.top + rect.height/2 + 50,
+            left: rect.right - 300
+          }}
+        >
+          <h3>{config[step].title}</h3>
+          <p>{config[step].text}</p>
+
+          <button className="onboard-next" onClick={next}>
+            다음
+          </button>
+        </div>
+      )}
+
+      {/* ⭐ step3 */}
+      {step === 3 && (
+        <div
+          className="onboard-box"
+          style={{
+            position:"fixed",
+            top:"55%",
+            left:"50%",
+            transform:"translate(-50%,-50%)"
+          }}
+        >
+          <h3>{config[step].title}</h3>
+          <p>{config[step].text}</p>
+
+          <button className="onboard-next" onClick={next}>
+            확인
+          </button>
+        </div>
+      )}
 
     </div>
   );
