@@ -642,33 +642,34 @@ async def receive_ai_analysis(data: AIAnalysisRequest, db: Session = Depends(get
 
     
 
-@router.post("/complete-client")
-async def complete_counseling(req_data: CompleteRequest, db: Session = Depends(get_db)):
+# 비교용 냅뒀으면 해요 ㅋㅋㅋㅋ
+# @router.post("/complete-client")
+# async def complete_counseling(req_data: CompleteRequest, db: Session = Depends(get_db)):
 
-    counseling = db.query(Counseling).filter(
-        Counseling.counseling_id == req_data.counseling_id
-    ).first()
+#     counseling = db.query(Counseling).filter(
+#         Counseling.counseling_id == req_data.counseling_id
+#     ).first()
 
-    if not counseling:
-        raise HTTPException(status_code=404, detail="상담 없음")
+#     if not counseling:
+#         raise HTTPException(status_code=404, detail="상담 없음")
 
-    client = db.query(Client).filter(
-        Client.client_id == counseling.client_id
-    ).first()
+#     client = db.query(Client).filter(
+#         Client.client_id == counseling.client_id
+#     ).first()
 
-    payload = {
-        "counseling_id": req_data.counseling_id,
-        "client_id": client.c_id
-    }
+#     payload = {
+#         "counseling_id": req_data.counseling_id,
+#         "client_id": client.c_id
+#     }
 
-    async with httpx.AsyncClient() as client_http:
-        await client_http.post(
-            f"{AI_SERVER_BASE_URL}/focus-rule/start-analysis",
-            json=payload,
-            timeout=10
-        )
+#     async with httpx.AsyncClient() as client_http:
+#         await client_http.post(
+#             f"{AI_SERVER_BASE_URL}/focus-rule/start-analysis",
+#             json=payload,
+#             timeout=10
+#         )
 
-    return {"success": True}
+#     return {"success": True}
     
 
 @router.get("/session/clear")

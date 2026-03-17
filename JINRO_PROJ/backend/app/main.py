@@ -20,9 +20,12 @@ os.makedirs(LOG_DIR_PATH, exist_ok=True)
 BACKEND_LOG_FILE = os.getenv("BACKEND_LOG_FILE", "backend_error.log")
 full_log_path = os.path.join(LOG_DIR_PATH, BACKEND_LOG_FILE)
 
-# 3. 로깅 설정 (날짜 기반: .env 설정값 반영)
+
+LOG_LEVEL_STR = os.getenv("LOG_LEVEL", "ERROR").upper()
+LOG_LEVEL = getattr(logging, LOG_LEVEL_STR, logging.INFO)
+
 logging.basicConfig(
-    level=logging.ERROR,
+    level=LOG_LEVEL,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[
         TimedRotatingFileHandler(
@@ -43,13 +46,14 @@ from app.api import client, counselor
 
 try:
     Base.metadata.create_all(bind=engine)
+    logger.info("MySQL DB 테이블 연동 성공") # DB 연결 성공 시 INFO 로그 출력
 except Exception as e:
     logger.error(f"DB 테이블 생성 실패: {e}")
 
 app = FastAPI(title="JINRO_IS_BACK API")
 
 # CORS 및 미들웨어 설정
-frontend_origins_env = os.getenv("FRONTEND_URL", "")
+frontend_origins_env = os.getenv("FRONTEND_URL", "http://127.0.0.1:5173")
 origins = [origin.strip() for origin in frontend_origins_env.split(",") if origin.strip()]
 
 app.add_middleware(
@@ -62,7 +66,7 @@ app.add_middleware(
 
 app.add_middleware(
     SessionMiddleware,
-    secret_key=os.getenv("SESSION_SECRET_KEY") or "fallback-secret-key",
+    secret_key=os.getenv("SESSION_SECRET_KEY", "fallback-secret-key"),
     session_cookie="session",
     same_site="lax",
     https_only=False
@@ -74,7 +78,12 @@ app.mount("/videos", StaticFiles(directory=VIDEO_DIR), name="videos")
 
 @app.get("/")
 def read_root():
-    return {"message": "백엔드 서버 정상 작동 중", "log_path": full_log_path}
+    logger.info("백엔드 서버 Root endpoint 요청됨")
+    return {
+        "message": "백엔드 서버 정상 작동 중", 
+        "log_level": LOG_LEVEL_STR,
+        "log_path": full_log_path
+    }
 
 app.include_router(client.router)
 app.include_router(counselor.router)

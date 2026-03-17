@@ -98,10 +98,10 @@ function SComplete() {
                     return;
                 }
 
-                // ⭐ 2. post 요청의 body에 실어서 보냅니다.
-                const response = await api.post('/client/complete-client', {
-                    counseling_id: counselingId
-                });
+                // // ⭐ 2. post 요청의 body에 실어서 보냅니다.
+                // const response = await api.post('/client/complete-client', {
+                //     counseling_id: counselingId
+                // });
 
                 console.log("빽단에 분석 요청 완료:", response.data);
                 // 3. 사용이 끝났으니 localStorage 정리
