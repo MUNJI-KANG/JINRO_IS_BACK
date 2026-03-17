@@ -12,14 +12,19 @@ const Home = ({ startOnboarding }) => {
   const navigate = useNavigate();
 
   const handleClientStart = () => {
-    localStorage.removeItem("student_onboarding_flow");
-    localStorage.removeItem("skip_all_onboarding");
+    const isGlobalOnboarding =
+      localStorage.getItem("student_onboarding_flow") === "true";
+
+    if (!isGlobalOnboarding) {
+      localStorage.removeItem("student_onboarding_flow");
+      localStorage.removeItem("skip_all_onboarding");
+    }
+
     navigate("/student/agreement");
   };
 
   const handleGuide = () => {
     startOnboarding();
-    navigate("/student/agreement");
   };
 
   return (

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { matchPath, useLocation } from "react-router-dom";
+import { matchPath, useLocation, useNavigate } from "react-router-dom";
 import { FLOW } from "./onbordingflow";
 
 const SPOTLIGHT_PADDING = 14;
@@ -11,6 +11,7 @@ const findRouteIndex = (pathname) =>
 
 export default function GlobalOnboardingEngine({ onFinish }) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [routeIndex, setRouteIndex] = useState(() =>
     Math.max(findRouteIndex(location.pathname), 0)
@@ -202,8 +203,14 @@ export default function GlobalOnboardingEngine({ onFinish }) {
       return;
     }
 
+    if (step?.finishTo) {
+      navigate(step.finishTo);
+      finishFlow();
+      return;
+    }
+
     finishFlow();
-  }, [finishFlow, nextEnabled, routeConfig?.steps?.length, runningAction, step, stepIndex]);
+  }, [finishFlow, navigate, nextEnabled, routeConfig?.steps?.length, runningAction, step, stepIndex]);
 
   const handleButtonClick = useCallback(() => {
     if (step?.requireClick && !pointerIntentRef.current) {
@@ -282,6 +289,7 @@ export default function GlobalOnboardingEngine({ onFinish }) {
   }, [location.pathname, stepIndex, resolvedTitle, resolvedTarget]);
 
   const guideStyle = useMemo(() => {
+    const isHomeStartRoute = routeConfig?.route === "/";
     const isRightPanelRoute =
       routeConfig?.route === "/student/agreement" ||
       routeConfig?.route === "/student/login";
@@ -289,6 +297,22 @@ export default function GlobalOnboardingEngine({ onFinish }) {
     const panelHeight = guideSize.height;
     const maxLeft = Math.max(GUIDE_MARGIN, window.innerWidth - panelWidth - GUIDE_MARGIN);
     const maxTop = Math.max(GUIDE_MARGIN, window.innerHeight - panelHeight - GUIDE_MARGIN);
+
+    if (isHomeStartRoute && targetRect && window.innerWidth >= 1024) {
+      const gap = 24;
+      const dynamicTop = targetRect.top + targetRect.height / 2 - panelHeight / 2;
+      let left = targetRect.left - panelWidth - gap;
+
+      if (left < GUIDE_MARGIN) {
+        left = targetRect.left + targetRect.width + gap;
+      }
+
+      return {
+        left: clamp(left, GUIDE_MARGIN, maxLeft),
+        top: clamp(dynamicTop, GUIDE_MARGIN, maxTop),
+        transform: "none",
+      };
+    }
 
     if (isRightPanelRoute && targetRect && window.innerWidth >= 1024) {
       const gap = 18;

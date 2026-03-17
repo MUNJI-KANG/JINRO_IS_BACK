@@ -174,10 +174,6 @@ function SVideo() {
           if (duration >= 3 && !isTriggeredRef.current) {
             isTriggeredRef.current = true;
             setReadyToStart(true);
-
-            setTimeout(() => {
-              handleStart();
-            }, 500);
           }
         }
       } else {
@@ -422,7 +418,7 @@ function SVideo() {
             <div className="analysis-status">분석 준비가 완료되었습니다.</div>
           )}
 
-          {isGlobalOnboarding && (
+          {readyToStart && (
             <div className="svideo-bottom">
               <button
                 className="survey-btn global-video-start enabled"

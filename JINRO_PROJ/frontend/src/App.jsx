@@ -56,6 +56,8 @@ function App() {
 
   const startGlobalOnboarding = () => {
     localStorage.setItem("student_onboarding_flow", "true");
+    localStorage.removeItem("visited");
+    localStorage.removeItem("videoStarted");
     setGlobalOnboarding(true);
   };
 

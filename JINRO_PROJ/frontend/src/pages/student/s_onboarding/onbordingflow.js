@@ -1,5 +1,6 @@
 const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 const DEMO_BIG_CATEGORY_ID = "14";
+const DEMO_MED_CATEGORY_ID = "1401";
 
 const waitFor = async (predicate, timeout = 4500, interval = 120) => {
   const start = Date.now();
@@ -106,6 +107,30 @@ const selectDemoBigCategory = async () => {
   return clickRotating(".global-big-card", "onboarding_big_idx");
 };
 
+const selectDemoMediumCategory = async () => {
+  const clicked = await clickByDataAttr(
+    ".global-med-card",
+    "data-mid-id",
+    DEMO_MED_CATEGORY_ID
+  );
+
+  if (clicked) {
+    return true;
+  }
+
+  const cards = await waitFor(
+    () => Array.from(document.querySelectorAll(".global-med-card")),
+    4500
+  );
+
+  if (!cards || cards.length === 0) {
+    return false;
+  }
+
+  cards[0].click();
+  return true;
+};
+
 const fillName = async () => {
   const nameInput = await waitFor(() => getElement('input[name="name"]'));
   const done = fillIfEmpty(nameInput, "홍길동");
@@ -208,7 +233,18 @@ const continueToCheckoutFromSmall = async () => {
     return false;
   }
 
-  return clickWhenReady(".global-category-next");
+  const nextButton = await waitFor(
+    () => document.querySelector(".global-category-next.next-button-active"),
+    2500,
+    100
+  );
+
+  if (!nextButton || nextButton.disabled) {
+    return false;
+  }
+
+  nextButton.click();
+  return true;
 };
 
 const prepareSurveyForSubmit = async () => {
@@ -246,6 +282,18 @@ const prepareSurveyForSubmit = async () => {
 };
 
 export const FLOW = [
+  {
+    route: "/",
+    steps: [
+      {
+        target: ".onboard-start-card",
+        title: "내담자용 버튼",
+        text: "내담자 카드를 선택하여 '너, 내 진로가 되라'를 경험해보세요.",
+        action: async () => clickWhenReady(".onboard-start-card"),
+        pauseUntilRouteChange: true,
+      },
+    ],
+  },
   {
     route: "/student/agreement",
     steps: [
@@ -325,7 +373,7 @@ export const FLOW = [
         target: ".cardGrid",
         title: "중분류 카테고리",
         text: "선택된 직무 안에서 세부 분야를 고르는 카드 영역입니다.",
-        action: async () => clickRotating(".global-med-card", "onboarding_med_idx"),
+        action: selectDemoMediumCategory,
         pauseUntilRouteChange: true,
       },
     ],
@@ -419,6 +467,7 @@ export const FLOW = [
         title: "홈으로 돌아가기 버튼",
         text: "진단 흐름을 마친 뒤 메인 화면으로 돌아가는 버튼입니다.",
         buttonLabel: "온보딩 마치기",
+        finishTo: "/",
       },
     ],
   },

@@ -89,26 +89,6 @@ const SLogin = () => {
       localStorage.setItem("client_id", data.client_id);
 
       if (data.has_unfinished_video) {
-        const wantsToContinue = window.confirm(
-          "아직 완료되지 않은 영상이 있습니다. 이어서 진행할까요?"
-        );
-
-        if (wantsToContinue) {
-          if (data.video_list?.length > 0) {
-            dispatch(addVideo(data.video_list));
-          }
-
-          navigate(`/student/video/${data.category_id}`, {
-            state: {
-              isResume: true,
-              counseling_id: data.counseling_id,
-              report_ids: data.report_ids,
-            },
-          });
-
-          return;
-        }
-
         await api.delete(`/client/counselling/${data.counseling_id}`);
         dispatch(clearVideos());
       }
