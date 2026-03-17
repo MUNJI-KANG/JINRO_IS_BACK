@@ -299,6 +299,10 @@ const CFinal = () => {
             console.error('작성 완료 실패:', err);
             alert('작성 완료 중 오류가 발생했습니다.');
         }
+
+        if (recordState === 'recording' || recordState === 'paused') {
+            await stopRecording();
+        }
     };
 
     const formatTime = (sec) => {
@@ -655,22 +659,40 @@ const CFinal = () => {
                         <div className="report-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <p style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>상담 기록 및 종합 리포트</p>
 
-                            <div className="record-control" data-html2canvas-ignore="true">
-                                {recordState === 'idle' && <button className="btn-record" onClick={startRecording}>🎤 녹음 시작</button>}
-                                {recordState === 'recording' && (
-                                    <div className="record-box">
-                                        <span className="rec-text">녹음중 <span className="rec-dot">●</span> {formatTime(recordTime)}</span>
-                                        <button className="btn-record small" onClick={pauseRecording}>중지</button>
-                                    </div>
-                                )}
-                                {recordState === 'paused' && (
-                                    <div className="record-box">
-                                        <span>일시정지 {formatTime(recordTime)}</span>
-                                        <button className="btn-record small" onClick={resumeRecording}>재시작</button>
-                                        <button className="btn-record small" onClick={stopRecording}>종료</button>
-                                    </div>
-                                )}
-                            </div>
+                            {!isComplete && (
+                                <div className="record-control" data-html2canvas-ignore="true">
+
+                                    {recordState === 'idle' && (
+                                        <button className="btn-record" onClick={startRecording}>
+                                            🎤 녹음 시작
+                                        </button>
+                                    )}
+
+                                    {recordState === 'recording' && (
+                                        <div className="record-box">
+                                            <span className="rec-text">
+                                                녹음중 <span className="rec-dot">●</span> {formatTime(recordTime)}
+                                            </span>
+                                            <button className="btn-record small" onClick={pauseRecording}>
+                                                중지
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {recordState === 'paused' && (
+                                        <div className="record-box">
+                                            <span>일시정지 {formatTime(recordTime)}</span>
+                                            <button className="btn-record small" onClick={resumeRecording}>
+                                                재시작
+                                            </button>
+                                            <button className="btn-record small" onClick={stopRecording}>
+                                                종료
+                                            </button>
+                                        </div>
+                                    )}
+
+                                </div>
+                            )}
                         </div>
 
                         <div className="final-report-content">
