@@ -8,7 +8,7 @@ from app.schemas.ai import (
 from app.services.stt_service import speech_to_text
 from app.services.summary_service import summarize_text
 from app.services.interest_analyze import analyze_video_with_face_crop
-from app.services.focuse_service import focuse_analyze_video
+from app.services.focuse_service import analyze_video_to_json
 from datetime import datetime
 import shutil
 import os
@@ -22,6 +22,7 @@ from typing import Dict, Any
 import cv2
 import tensorflow as tf
 import numpy as np
+import tf_keras as keras
 
 
 
@@ -242,151 +243,34 @@ async def ai_upload_video(
         raise HTTPException(status_code=500, detail=str(e))
     
 @router.get("/interest/analyze/{counseling_id}/{c_id}/{idx}", summary="흥미분석")
-def interest_analyze():
+def interest_analyze(counseling_id:int, c_id:str, idx:int):
     # 4. 테스트 실행
-    sample_video_path = os.path.join(UPLOAD_VIDEO, "26", f"ewfwfsfsf.mp4")
+    sample_video_path = os.path.join(UPLOAD_VIDEO, counseling_id, f"{c_id}_{idx}.webm")
 
     # frame_skip=5 인자를 명시적으로 전달 (기본값이 5이므로 생략해도 됩니다)
     # 'Total_Frames_Analyzed'
     # 'Frames_With_Face'
     # 'Interested_Percentage'
     # 'Not_Interested_Percentage'
-    df_results, stats = analyze_video_with_face_crop(sample_video_path, model, test_transforms, class_names, device, face_detector, frame_skip=5, margin_ratio=0.4)
+    df_results, stats = analyze_video_with_face_crop(sample_video_path, model, test_transforms, class_names, device, face_detector, frame_skip=5, margin_ratio=0.3)
 
     return stats
 
+# {counseling_id}/{c_id}/{idx}
 @router.get("/engagement/analyze/{counseling_id}/{c_id}/{idx}", summary="집중분석")
-def interest_analyze():
-    sample_video_path = os.path.join(UPLOAD_VIDEO, "26", f"ewfwfsfsf.mp4")
-    model_p = os.path.join(DOWNLOAD_MODEL, 'best_focus_model_pytorch_v4.pth')
-
-    # "total_predictions"
-    # "focused_points"
-    # "unfocused_points"
-    # "focused_percentage"
-    # "unfocused_percentage"
-    stats = focuse_analyze_video(sample_video_path, model_p)
-
-    return stats
-
-# -----------------------------
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(os.path.dirname(CURRENT_DIR)) # 최상위 ai_server 폴더
-print("현재경로", PROJECT_ROOT)
-MODEL_PATH = os.path.join(PROJECT_ROOT, 'app', 'model', 'focus.keras')
-
-try:
-    print(f"모델 로딩 중... 경로: {MODEL_PATH}")
-    focus_model = tf.keras.models.load_model(MODEL_PATH)
-    print("모델 로딩 완료!")
-except Exception as e:
-    print(f"모델 로딩 실패: {e}")
-    focus_model = None
-
-# -----------------------------
-# 2. 비디오 분석 함수 (핵심 로직)
-# -----------------------------
-def analyze_video_focus_dl(video_path: str, focus_model, face_detector, padding_ratio=0.2, frame_interval=5) -> Dict[str, Any]:
-    cap = cv2.VideoCapture(video_path)
-    if not cap.isOpened():
-        raise ValueError(f"영상을 열 수 없습니다: {video_path}")
-
-    frame_idx = 0
-    total_analyzed_frames = 0
-    total_focus_score_sum = 0
-    total_unfocus_score_sum = 0
-
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-            
-        if frame_idx % frame_interval == 0:
-            image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            ih, iw, _ = image_rgb.shape
-            
-            results = face_detector.process(image_rgb)
-            
-            if results.detections:
-                detection = results.detections[0]
-                bboxC = detection.location_data.relative_bounding_box
-                
-                x, y = int(bboxC.xmin * iw), int(bboxC.ymin * ih)
-                w, h = int(bboxC.width * iw), int(bboxC.height * ih)
-                
-                # 마진(Padding) 적용
-                pad_w, pad_h = int(w * padding_ratio), int(h * padding_ratio)
-                
-                new_left, new_top = max(0, x - pad_w), max(0, y - pad_h)
-                new_right, new_bottom = min(iw, x + w + pad_w), min(ih, y + h + pad_h)
-                
-                cropped_face = image_rgb[new_top:new_bottom, new_left:new_right]
-                
-                if cropped_face.size > 0:
-                    processed_face = cv2.resize(cropped_face, (224, 224))
-                    processed_face = processed_face / 255.0
-                    processed_face = np.expand_dims(processed_face, axis=0) 
-                    
-                    # 모델 예측
-                    pred = focus_model.predict(processed_face, verbose=0)[0][0]
-                    
-                    if pred >= 0.5:
-                        total_focus_score_sum += 1
-                    else:
-                        total_unfocus_score_sum += 1
-                        
-                    total_analyzed_frames += 1
-        
-        frame_idx += 1
-        
-    cap.release()
-    
-    # 백분율 계산
-    focus_percentage = 0.0
-    unfocus_percentage = 0.0
-    if total_analyzed_frames > 0:
-        focus_percentage = (total_focus_score_sum / total_analyzed_frames) * 100
-        unfocus_percentage = (total_unfocus_score_sum / total_analyzed_frames) * 100
-        
-    return {
-        "total_analyzed_frames": total_analyzed_frames,
-        "total_focus_frames": total_focus_score_sum,
-        "total_unfocus_frames": total_unfocus_score_sum,
-        "focus_percentage": round(focus_percentage, 2),
-        "unfocus_percentage": round(unfocus_percentage, 2)
-    }
-
-# -----------------------------
-# 3. 파일 업로드용 API 엔드포인트
-# -----------------------------
-@router.post("/upload-and-analyze")
-async def test_focus_with_upload(file: UploadFile = File(...)):
-    if focus_model is None:
-        raise HTTPException(status_code=500, detail="서버에 딥러닝 모델이 로드되지 않았습니다.")
-
-    # 1. 업로드된 파일을 임시 저장할 경로 설정 (최상위 폴더에 temp_video.webm 등으로 저장)
-    temp_file_path = os.path.join(PROJECT_ROOT, f"temp_{file.filename}")
-    
+def engagement_analyze(counseling_id:int, c_id:str, idx:int):
     try:
-        # 2. 파일 저장
-        with open(temp_file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-            
-        # 3. MediaPipe 얼굴 인식기 준비 및 분석 실행
-        with mp.solutions.face_detection.FaceDetection(model_selection=0, min_detection_confidence=0.5) as face_detector:
-            result = analyze_video_focus_dl(temp_file_path, focus_model, face_detector)
-            
-        # 4. 분석 결과 반환
-        return {
-            "status": "success",
-            "filename": file.filename,
-            "result": result
-        }
-        
+        sample_video_path = os.path.join(UPLOAD_VIDEO, counseling_id, f"{c_id}_{idx}.webm")
+        model_p = os.path.join(BASE_DIR, '..', 'model', 'best_focus_model_frame.pth')
+
+        # "total_predictions"
+        # "focused_points"
+        # "unfocused_points"
+        # "focused_percentage"
+        # "unfocused_percentage"
+        stats = analyze_video_to_json(sample_video_path, model_p)
+
+        return stats
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"영상 처리 중 오류 발생: {str(e)}")
-        
-    finally:
-        # 5. [중요] 처리가 끝난 후 임시 파일 삭제하여 용량 확보
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
+            raise HTTPException(status_code=500, detail=str(e))

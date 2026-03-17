@@ -756,14 +756,14 @@ async def complete_video(complete_request: CompleteVideoRequest, db: Session = D
         if counseling:
             for i, (co, r) in enumerate(counseling):
                 total_score = 0
+                if f"{r.ai_v_erp_id}" not in data:
+                        data[f'{r.ai_v_erp_id}'] = {}
+
                 if len(r.answer) > 0:
                     for sc in r.answer.values():
                         total_score += sc + 1
                     
                     score = ((total_score - len(r.answer)) / ((len(r.answer) * 5) - len(r.answer))) * 100
-
-                    if f"{r.ai_v_erp_id}" not in data:
-                        data[f'{r.ai_v_erp_id}'] = {}
 
                     data[f'{r.ai_v_erp_id}']['survey'] = score
                 
@@ -771,22 +771,30 @@ async def complete_video(complete_request: CompleteVideoRequest, db: Session = D
                 # 'Frames_With_Face'
                 # 'Interested_Percentage'
                 # 'Not_Interested_Percentage'
-                # res_interest = await requests.get(
-                #     f"{AI_SERVER_BASE_URL}/ai/interest/analyze/{complete_request.counseling_id}/{client.c_id}/{i+1}",
-                #     )
-                
-                # data[f'{r.ai_v_erp_id}']['interest'] = res_interest.Interested_Percentage
-                
-                # # "total_predictions"
-                # # "focused_points"
-                # # "unfocused_points"
-                # # "focused_percentage"
-                # # "unfocused_percentage"
-                # res_engagement = await requests.get(
-                #     f"{AI_SERVER_BASE_URL}/ai/engagement/analyze/{complete_request.counseling_id}/{client.c_id}/{i+1}",
-                #     )
-                
-                # data[f'{r.ai_v_erp_id}']['focused'] = res_engagement.focused_percentage
+                async with httpx.AsyncClient() as cl:
+                    response = await cl.get(
+                        f"{AI_SERVER_BASE_URL}/ai/interest/analyze/{complete_request.counseling_id}/{client.c_id}/{i+1}",
+                        timeout=600.0,  # 600초 대기 (필요에 따라 조절)
+                        )
+                    
+                    res_interest = response.json()
+                    data[f'{r.ai_v_erp_id}']['interest'] = res_interest["Interested_Percentage"]
+            
+
+                # "status"
+                # "total_extracted_frames"
+                # "focus_score"
+                # "unfocus_score"
+                # "focus_rate"
+                # "unfocus_rate"
+                async with httpx.AsyncClient() as cl:
+                    response = await cl.get(
+                        f"{AI_SERVER_BASE_URL}/ai/engagement/analyze/{complete_request.counseling_id}/{client.c_id}/{i+1}",
+                        timeout=600.0,  # 600초 대기 (필요에 따라 조절)
+                        )
+                    
+                    res_engagement = response.json()
+                    data[f'{r.ai_v_erp_id}']['focused'] = res_engagement["focus_rate"]
             
             
         

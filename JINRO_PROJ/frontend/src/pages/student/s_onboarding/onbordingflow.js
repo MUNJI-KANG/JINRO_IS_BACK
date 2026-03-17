@@ -247,10 +247,15 @@ const continueToCheckoutFromSmall = async () => {
   return true;
 };
 
-const prepareSurveyForSubmit = async () => {
+const answerSurveyAndSubmit = async () => {
   const maxLoops = 20;
+  const initialPath = window.location.pathname;
 
   for (let i = 0; i < maxLoops; i += 1) {
+    if (window.location.pathname !== initialPath) {
+      return true;
+    }
+
     const firstOption = await waitFor(() => getElement(".global-survey-option"));
     const nextButton = getElement(".global-survey-next");
 
@@ -271,6 +276,7 @@ const prepareSurveyForSubmit = async () => {
     }
 
     if (isSubmitStep) {
+      nextButton.click();
       return true;
     }
 
@@ -440,21 +446,10 @@ export const FLOW = [
     route: "/student/survey/:categoryId",
     steps: [
       {
-        target: ".survey-progress",
-        title: "설문 진행도",
-        text: "현재 설문 진행 상태를 표시하는 진행 바 영역입니다.",
-      },
-      {
         target: ".survey-options",
         title: "설문 응답 영역",
-        text: "문항별 선택지를 고르는 응답 카드 영역입니다.",
-        action: prepareSurveyForSubmit,
-      },
-      {
-        target: ".global-survey-next",
-        title: "결과 제출 버튼",
-        text: "설문 응답을 제출하고 완료 화면으로 넘어가는 버튼입니다.",
-        action: async () => clickWhenReady(".global-survey-next"),
+        text: "문항별 선택지를 고르는 응답 카드 영역입니다. 온보딩에서는 첫 응답부터 결과 제출까지 한 번에 이어집니다.",
+        action: answerSurveyAndSubmit,
         pauseUntilRouteChange: true,
       },
     ],
