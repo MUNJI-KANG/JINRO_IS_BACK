@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from 'react-redux';
-import { useEffect, useState } from "react";
 import StudentCategory from "../../common/StudentCategory";
 
 
@@ -12,8 +11,7 @@ import {
   Shirt, Zap, Cpu, Wheat, TreeDeciduous, Plug, Leaf,
 } from "lucide-react";
 
-import { addVideo, deleteVideo } from '../../../redux/cVideos';
-import CatBigOnboarding from "../s_onboarding/CatBigOnboarding.jsx";
+import { deleteVideo } from '../../../redux/cVideos';
 
 const categories = [
   { id: 1, name: "사업관리", icon: Briefcase },
@@ -43,29 +41,11 @@ const categories = [
 ];
 
 function SBigCat() {
-  const [onboardStep, setOnboardStep] = useState(1);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const selectedVideos = useSelector((state) => state.cVideos);
 
-  const [onboard, setOnboard] = useState(false);
-
   const isComplete = selectedVideos.length === 3;
-
-  useEffect(() => {
-
-    if (localStorage.getItem("skip_all_onboarding") === "true") return;
-
-    if (!localStorage.getItem("onboard_big")) {
-
-      setTimeout(() => {
-        setOnboard(true);
-      }, 500);
-
-      localStorage.setItem("onboard_big", "1");
-    }
-
-  }, []);
 
   const handleDelete = (id) => {
     dispatch(deleteVideo(id));
@@ -76,11 +56,6 @@ function SBigCat() {
     
       <div className="student-page">
 
-        {onboard && (
-          <CatBigOnboarding onClose={() => setOnboard(false)}
-          onStepChange={setOnboardStep}
-          />
-        )}
 
         <h2 className="student-title">카테고리 선택</h2>
         <div className="student-progress">
@@ -98,7 +73,8 @@ function SBigCat() {
             return (
               <button
                 key={cat.id}
-                className="student-card"
+                className="student-card global-big-card"
+                data-big-id={cat.id}
                 onClick={() =>
                   navigate("/student/category/medium", {
                     state: {
@@ -120,11 +96,6 @@ function SBigCat() {
           })}
 
         </div>
-        {onboard && onboardStep === 3 && (
-          <div className="selected-video-container onboard-dummy-target">
-          </div>
-        )}
-
         {selectedVideos.length > 0 && (
 
           <div className="selected-video-container">
@@ -153,7 +124,7 @@ function SBigCat() {
         )}
 
         <button
-          className={`next-button ${isComplete ? "next-button-active" : ""}`}
+          className={`next-button global-category-next ${isComplete ? "next-button-active" : ""}`}
           onClick={() =>
             isComplete
               ? navigate("/student/category/checkout")

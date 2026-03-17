@@ -1,8 +1,7 @@
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { deleteVideo } from "../../../redux/cVideos";
-import CatMedOnboarding from "../s_onboarding/CatMedOnboarding.jsx";
 import StudentCategory from "../../common/StudentCategory";
 import styles from "../../../css/student_css/SMedCat.module.css";
 
@@ -148,8 +147,6 @@ function SMedCat() {
   const { bigId, bigName } = location.state || {};
   const safeBigId = Number(bigId);
 
-  const [onboard,setOnboard]=useState(false);
-
   const isComplete = selectedVideos.length === 3;
 
   useEffect(()=>{
@@ -178,28 +175,11 @@ function SMedCat() {
   const handleBack = ()=>navigate(-1);
 
   /* ⭐ BIG 온보딩 흐름 이어받기 */
-  useEffect(()=>{
-
-    if(sessionStorage.getItem("flow_med_onboard")==="true"){
-      setOnboard(true);
-      sessionStorage.removeItem("flow_med_onboard");
-      return;
-    }
-
-    if(localStorage.getItem("skip_all_onboarding")==="true") return;
-
-    if(!localStorage.getItem("onboard_med")){
-      setTimeout(()=>setOnboard(true),400);
-      localStorage.setItem("onboard_med","1");
-    }
-
-  },[]);
 
   return (
     <StudentCategory>
       <div className="student-page">
 
-        {onboard && <CatMedOnboarding onClose={()=>setOnboard(false)} />}
 
         <h1 className="student-title">분야 선택</h1>
 
@@ -225,7 +205,8 @@ function SMedCat() {
           {midCategories.map(mid=>(
             <div
               key={mid.id}
-              className={styles.card}
+              className={`${styles.card} global-med-card`}
+              data-mid-id={mid.id}
               onClick={()=>handleCardClick(mid)}
             >
               {mid.name}
@@ -253,7 +234,7 @@ function SMedCat() {
         )}
 
         <button
-          className={`next-button ${isComplete ? "next-button-active" : ""}`}
+          className={`next-button global-category-next ${isComplete ? "next-button-active" : ""}`}
           onClick={() =>
             isComplete
               ? navigate("/student/category/checkout")

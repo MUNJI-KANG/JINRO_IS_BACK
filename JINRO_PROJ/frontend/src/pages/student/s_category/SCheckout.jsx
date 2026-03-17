@@ -4,8 +4,6 @@ import { useNavigate } from "react-router-dom";
 import "../../../css/student_css/Checkout.css";
 import api from "../../../services/app.js";
 
-import CheckoutOnboarding from "../s_onboarding/CheckoutOnboarding.jsx"
-
 function Checkout() {
 
   const navigate = useNavigate();
@@ -79,33 +77,8 @@ function Checkout() {
     }
   };
 
-  const [onboard,setOnboard]=useState(false);
-
-  useEffect(()=>{
-
-    const skip = localStorage.getItem("skip_all_onboarding");
-    const done = localStorage.getItem("checkout_onboarding_done");
-
-    if(skip === "true") return;
-    if(done === "true") return;
-
-    const t = setTimeout(()=>{
-      setOnboard(true);
-    },400);
-
-    return ()=> clearTimeout(t);
-
-  },[]);
-
   return (
     <div className="cart-page">
-      {onboard && (<CheckoutOnboarding onClose={()=>{
-            localStorage.setItem("checkout_onboarding_done","true");
-            setOnboard(false);
-          }}
-        />
-      )}
-        
       <div className="cart-container">
 
         <div className="cart-header">
@@ -137,7 +110,7 @@ function Checkout() {
           </button>
 
           <button
-            className="cart-btn primary"
+            className="cart-btn primary global-checkout-start"
             onClick={handleStartVideo}
           >
             영상 시청 시작

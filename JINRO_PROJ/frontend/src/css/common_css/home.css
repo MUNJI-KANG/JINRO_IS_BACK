@@ -287,3 +287,50 @@
   transform:translateY(-6px);
   box-shadow:0 20px 40px rgba(0,0,0,.12);
 }
+
+.home-guide-wrap{
+  position:fixed;
+  right:40px;
+  bottom:40px;
+  z-index:5000;
+}
+
+.home-guide-char{
+  width:90px;
+  cursor:pointer;
+  animation:floatGuide 2.4s ease-in-out infinite;
+}
+
+.home-guide-char img{
+  width:100%;
+}
+
+.home-guide-bubble{
+  position:absolute;
+  right:60px;
+  bottom:70px;
+  width:180px;
+}
+
+.home-guide-bubble img{
+  width:100%;
+}
+
+.home-guide-bubble-text{
+  position:absolute;
+  top:28px;
+  left:20px;
+  right:20px;
+  font-size:13px;
+  font-weight:600;
+  text-align:center;
+  line-height:1.3;
+  color:var(--text-main);
+}
+
+@keyframes floatGuide{
+  0%{ transform:translateY(0px)}
+  50%{ transform:translateY(-10px)}
+  100%{ transform:translateY(0px)}
+}
+
