@@ -63,7 +63,7 @@ def analyze_video_to_json(video_path, model_path, debug_dir='test_img', stride=5
     # 4. 디버그 폴더 초기화
     if os.path.exists(debug_dir):
         shutil.rmtree(debug_dir)
-    os.makedirs(debug_dir, exist_ok=True)
+    # os.makedirs(debug_dir, exist_ok=True)
 
     # 5. 비디오 열기
     cap = cv2.VideoCapture(video_path)
@@ -133,8 +133,8 @@ def analyze_video_to_json(video_path, model_path, debug_dir='test_img', stride=5
                 # 🚨 디버깅용 원본 색상 이미지 저장
                 # 파일명 예시: frame_0015_focused_prob85.2.jpg
                 raw_tensor = raw_transform(face_pil)
-                save_path = os.path.join(debug_dir, f"frame_{frame_idx:04d}_{status}_prob{focus_prob:.1f}.jpg")
-                vutils.save_image(raw_tensor, save_path)
+                # save_path = os.path.join(debug_dir, f"frame_{frame_idx:04d}_{status}_prob{focus_prob:.1f}.jpg")
+                # vutils.save_image(raw_tensor, save_path)
 
             frame_idx += 1
 

@@ -204,9 +204,9 @@ def analyze_video_with_face_crop(video_path, model, transforms, class_names, dev
                     
                 valid_face_frames += 1
 
-                os.makedirs('test_img', exist_ok=True)
-                save_path = os.path.join('test_img', f"frame_{current_frame:04d}_{final_pred}.jpg")
-                pil_image.save(save_path)
+                # os.makedirs('test_img', exist_ok=True)
+                # save_path = os.path.join('test_img', f"frame_{current_frame:04d}_{final_pred}.jpg")
+                # pil_image.save(save_path)
                 
             else:
                 final_pred = 'No Face Detected'
