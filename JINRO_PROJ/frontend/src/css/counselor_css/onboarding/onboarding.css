@@ -1,7 +1,7 @@
 /* =========================================
    DIM LAYER
 ========================================= */
-.sched-onboard-layer{
+.onboard-layer{
   position:fixed;
   inset:0;
   background:rgba(0,0,0,.42);
@@ -11,7 +11,7 @@
 /* =========================================
    SPOTLIGHT
 ========================================= */
-.sched-onboard-spot{
+.onboard-spot{
   position:fixed;
   border-radius:18px;
 
@@ -35,9 +35,9 @@
 }
 
 /* =========================================
-   GUIDE PANEL
+   GUIDE
 ========================================= */
-.sched-onboard-guide{
+.onboard-guide{
   position:fixed;
   z-index:9002;
   color:white;
@@ -52,7 +52,7 @@
 /* =========================================
    TITLE
 ========================================= */
-.sched-onboard-title{
+.onboard-title{
   font-size:42px;
   font-weight:900;
   margin-bottom:16px;
@@ -62,7 +62,7 @@
 /* =========================================
    DESC
 ========================================= */
-.sched-onboard-desc{
+.onboard-desc{
   font-size:20px;
   line-height:1.8;
   margin-bottom:30px;
@@ -72,7 +72,7 @@
 /* =========================================
    BUTTON
 ========================================= */
-.sched-onboard-btn{
+.onboard-btn{
   border:none;
   cursor:pointer;
   height:58px;
@@ -88,7 +88,7 @@
   transition:.28s;
 }
 
-.sched-onboard-btn:hover{
+.onboard-btn:hover{
   transform:translateY(-4px);
   background:var(--primary-hover);
 }

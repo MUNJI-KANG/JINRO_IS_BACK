@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../css/counselor_css/CStudentList.css";
-import api from '../../services/app'
+import api from "../../services/app";
+
+import StudentListOnboarding from "./c_onboarding/StudentListOnboarding.jsx";
 
 function sumUnread(list = []) {
   return list.reduce((acc, c) => acc + (c.unread || 0), 0);
@@ -11,6 +13,8 @@ export default function CStudentList() {
   const dialogRef = useRef(null);
   const navigate = useNavigate();
 
+  const [showGuide, setShowGuide] = useState(false);
+
   const [students, setStudents] = useState([]);
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState({
@@ -19,16 +23,13 @@ export default function CStudentList() {
   });
 
   /* ===============================
-     🔹 학생 목록 DB 조회
+     학생 목록 DB 조회
   =============================== */
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        const response = await api.get(
-          "/counselor/students"
-        );
-
-        const data = await response.data;
+        const response = await api.get("/counselor/students");
+        const data = response.data;
 
         if (data.success) {
           const mappedStudents = data.data.map((s) => ({
@@ -51,13 +52,12 @@ export default function CStudentList() {
     fetchStudents();
   }, []);
 
-  const currentStudent = students.find(
-    (s) => s.id === modal.studentId
-  );
+  const currentStudent = students.find((s) => s.id === modal.studentId);
 
   const filteredStudents = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return students;
+
     return students.filter(
       (s) =>
         s.name.toLowerCase().includes(q) ||
@@ -69,8 +69,11 @@ export default function CStudentList() {
     const dialog = dialogRef.current;
     if (!dialog) return;
 
-    if (modal.isOpen) dialog.showModal();
-    else if (dialog.open) dialog.close();
+    if (modal.isOpen) {
+      if (!dialog.open) dialog.showModal();
+    } else if (dialog.open) {
+      dialog.close();
+    }
   }, [modal.isOpen]);
 
   const openStudentModal = async (student) => {
@@ -78,12 +81,11 @@ export default function CStudentList() {
       isOpen: true,
       studentId: student.id,
     });
+
     try {
-      // 해당 학생(client_id)의 상담 기록을 백엔드에서 가져옵니다
       const response = await api.get(`/counselor/consultations/${student.id}`);
-      
+
       if (response.data.success) {
-        // 가져온 데이터를 해당 학생의 consultations 배열에 통째로 덮어씌웁니다
         setStudents((prev) =>
           prev.map((s) =>
             s.id === student.id
@@ -111,9 +113,7 @@ export default function CStudentList() {
           ? {
               ...s,
               consultations: s.consultations.map((c) =>
-                c.id === consultation.id
-                  ? { ...c, unread: 0 }
-                  : c
+                c.id === consultation.id ? { ...c, unread: 0 } : c
               ),
             }
           : s
@@ -122,11 +122,10 @@ export default function CStudentList() {
 
     closeModal();
 
-    // navigate("/counselor/report/final");
     navigate(`/counselor/report/final/${modal.studentId}/${consultation.id}`, {
       state: {
-        studentName: currentStudent.name
-      }
+        studentName: currentStudent?.name,
+      },
     });
   };
 
@@ -177,14 +176,29 @@ export default function CStudentList() {
         })}
       </div>
 
+      {/* 바깥 화면용 가이드 버튼 */}
+      <button
+        type="button"
+        className="guide-btn"
+        onClick={() => setShowGuide(true)}
+      >
+        가이드 보기
+      </button>
+
+      {/* 모달 닫혀 있을 때 온보딩은 바깥에서 렌더 */}
+      {showGuide && !modal.isOpen && (
+        <StudentListOnboarding
+          onClose={() => setShowGuide(false)}
+          modalOpen={modal.isOpen}
+        />
+      )}
+
       <dialog
         ref={dialogRef}
         className="consult-dialog"
-
         onClick={(e) => {
           if (e.target === dialogRef.current) closeModal();
         }}
-
         onClose={() => {
           setModal({
             isOpen: false,
@@ -194,40 +208,50 @@ export default function CStudentList() {
       >
         {currentStudent && (
           <div className="consult-dialog-inner">
+            {/* 모달 열려 있을 때 온보딩은 dialog 내부에서 렌더 */}
+            {showGuide && modal.isOpen && (
+              <StudentListOnboarding
+                onClose={() => setShowGuide(false)}
+                modalOpen={modal.isOpen}
+              />
+            )}
+
             <div className="consult-dialog-header">
-              <button className="consult-back" onClick={closeModal}>
+              <button
+                type="button"
+                className="consult-back"
+                onClick={closeModal}
+              >
                 ← 이전으로
               </button>
+
             </div>
 
             <h2 className="consult-title-center">
-              {currentStudent.name} 상담 기록 (
-              {currentStudent.consultations.length}회)
+              {currentStudent.name} 상담 기록 ({currentStudent.consultations.length}회)
             </h2>
 
             <div className="consult-list">
               {currentStudent.consultations.map((c) => (
                 <div
                   key={c.id}
-                  className={`consult-card ${c.final === 'N' ? 'disabled' : ''}`}
+                  className={`consult-card ${c.final === "N" ? "disabled" : ""}`}
                   onClick={() => {
-                    if (c.final === 'N') {
+                    if (c.final === "N") {
                       alert("아직 최종 리포트가 생성되지 않아 열람할 수 없습니다.");
-                      return; // 함수 실행 종료 (페이지 이동 안 됨)
+                      return;
                     }
                     goToFinalReport(c);
                   }}
-                  style={{ 
-                    cursor: c.final === 'N' ? "not-allowed" : "pointer",
-                    opacity: c.final === 'N' ? 0.5 : 1,
-                    backgroundColor: c.final === 'N' ? "#f9f9f9" : "#fff"
+                  style={{
+                    cursor: c.final === "N" ? "not-allowed" : "pointer",
+                    opacity: c.final === "N" ? 0.5 : 1,
+                    backgroundColor: c.final === "N" ? "#f9f9f9" : "#fff",
                   }}
                 >
                   <div className="consult-card-left">
                     <div className="consult-card-title-row">
-                      <div className="consult-card-title">
-                        {c.title}
-                      </div>
+                      <div className="consult-card-title">{c.title}</div>
 
                       {c.unread > 0 && (
                         <div className="consult-badge">
@@ -236,20 +260,19 @@ export default function CStudentList() {
                       )}
                     </div>
 
-                    <div className="consult-card-desc">
-                      {c.description}
-                    </div>
+                    <div className="consult-card-desc">{c.description}</div>
                   </div>
 
                   <div className="consult-card-right">
-                    {c.final_report_yn == 'Y' && (
-                      <div className="consult-card-date" style={{ color: "blue", fontWeight: "bold" }}>
+                    {c.final_report_yn === "Y" && (
+                      <div
+                        className="consult-card-date"
+                        style={{ color: "blue", fontWeight: "bold" }}
+                      >
                         상담완료
                       </div>
                     )}
-                    <div className="consult-card-date">
-                      {c.date}
-                    </div>
+                    <div className="consult-card-date">{c.date}</div>
                   </div>
                 </div>
               ))}

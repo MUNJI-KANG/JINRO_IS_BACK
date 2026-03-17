@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
 import "../../css/counselor_css/CInfoEdit.css";
-import api from '../../services/app'
+import api from "../../services/app";
+
+import InfoEditOnboarding from "./c_onboarding/InfoEditOnboarding.jsx";
 
 function CInfoEdit() {
+
+  const [showGuide,setShowGuide] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -50,7 +55,6 @@ function CInfoEdit() {
 
     try {
       await api.put(`/counselor/${counselorId}`, formData);
-
       alert("정보가 저장되었습니다.");
     } catch (error) {
       console.error("수정 실패:", error);
@@ -98,6 +102,22 @@ function CInfoEdit() {
           </button>
         </div>
       </div>
+
+      
+      <button
+        className="guide-btn"
+        onClick={() => setShowGuide(true)}
+      >
+        가이드 보기
+      </button>
+
+      
+      {showGuide && (
+        <InfoEditOnboarding
+          onClose={() => setShowGuide(false)}
+        />
+      )}
+
     </div>
   );
 }
