@@ -424,7 +424,7 @@ function SVideo() {
                 className="survey-btn global-video-start enabled"
                 onClick={handleStart}
               >
-                영상 시청으로 보기
+                영상 시청
               </button>
             </div>
           )}
