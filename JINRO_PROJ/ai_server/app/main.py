@@ -44,7 +44,11 @@ logger = logging.getLogger(__name__)
 # 4. FastAPI 앱 정의 및 라우터 임포트
 from app.api import ai, data_ai
 
-app = FastAPI(title="AI_SERVER",)
+app = FastAPI(title="AI_SERVER",
+    servers=[
+        {"url": "/ai"}
+    ]
+)
 
 # 파일 업로드 폴더 (.env에 없으므로 기본값 'uploads' 사용)
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
