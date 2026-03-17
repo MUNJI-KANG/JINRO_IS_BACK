@@ -90,7 +90,7 @@ class ReportAiV(Base):
     complete_yn = Column(String(1), default='N', nullable=False, comment='최종작성여부')
     re_comment = Column(Enum(ReCommentEnum), comment='분석여부')
 
-class AiVideoAnalyze(Base):
+class AiAnalyze(Base):
     __tablename__ = "AI_ANALYZE"
 
     analyze_id = Column(Integer, primary_key=True, autoincrement=True, comment="PK")

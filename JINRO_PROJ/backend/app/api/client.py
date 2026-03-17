@@ -5,7 +5,7 @@ import httpx
 from datetime import datetime
 from fastapi import Request, APIRouter, Depends, HTTPException, UploadFile, File, Form
 from app.db.database import get_db
-from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV,ReportCon,ReportFinal, ReCommentEnum, AiVideoAnalyze
+from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV,ReportCon,ReportFinal, ReCommentEnum, AiAnalyze
 from app.schemas.client import ClientCreate,CounselingCreateRequest,ReportCompleteRequest, SurveySubmitRequest, AIAnalysisRequest, CompleteRequest, CompleteVideoRequest
 from app.services.survey_service import analyze_survey
 
@@ -796,7 +796,7 @@ async def complete_video(complete_request: CompleteVideoRequest, db: Session = D
         
         for k, v in data.items():
             final_score = (v['survey'] * 0.4) + (v['focused'] * 0.35) + (v['interest'] * 0.25)
-            db.add(AiVideoAnalyze(
+            db.add(AiAnalyze(
                 ai_v_erp_id=int(k),
                 attention_score=v['focused'],
                 emotion_score=v['interest'],
