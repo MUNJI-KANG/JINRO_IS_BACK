@@ -132,7 +132,6 @@ function SComplete() {
         console.log(localStorage.getItem("client_id"))
         let client_id = localStorage.getItem("client_id")
         localStorage.setItem("visited","yes");
-        localStorage.setItem("home_onboarding_done","true");
         api.post('/client/complete/video', {
             counseling_id: counselingVal,
             client_id: client_id
@@ -141,14 +140,14 @@ function SComplete() {
     }
 
     return (
-        <main className={styles.container}>
+        <main className={`${styles.container} global-complete-card`}>
             <div className={styles.iconWrapper}><div className={styles.checkIcon}></div></div>
             <h1 className={styles.title}>모든 상담이 완료되었습니다!</h1>
             <p className={styles.description}>
                 오늘 참여해주신 소중한 상담 데이터 분석이 끝났습니다.<br />
                 <span className={styles.highlight}>이제 당신의 마음 리포트를 확인해 보세요.</span>
             </p>
-            <button className={styles.homeButton} onClick={handleGoHome}>
+            <button className={`${styles.homeButton} global-complete-home`} onClick={handleGoHome}>
                 홈으로 돌아가기
             </button>
         </main>

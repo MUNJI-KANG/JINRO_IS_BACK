@@ -1,19 +1,22 @@
 /* ===============================
-   DIM LAYER
+   GLOBAL ONBOARD DIM
 ================================ */
-.login-onboard-layer{
+.global-dim{
   position:fixed;
   inset:0;
   background:rgba(0,0,0,.42);
-  z-index:9000;
+  z-index:9990;
 }
 
+
 /* ===============================
-   SPOTLIGHT
+   GLOBAL SPOTLIGHT
 ================================ */
-.login-onboard-spot{
+.global-spot{
   position:fixed;
   border-radius:18px;
+  z-index:9991;
+  pointer-events:none;
 
   background:rgba(255,255,255,.14);
   backdrop-filter:brightness(1.22) saturate(1.08);
@@ -24,9 +27,6 @@
     0 0 120px rgba(33,255,208,.95),
     0 0 200px rgba(33,255,208,.55);
 
-  z-index:9001;
-  pointer-events:none;
-
   transition:
     top .42s cubic-bezier(.22,.61,.36,1),
     left .42s cubic-bezier(.22,.61,.36,1),
@@ -34,45 +34,54 @@
     height .42s cubic-bezier(.22,.61,.36,1);
 }
 
+
 /* ===============================
-   GUIDE PANEL
+   GLOBAL GUIDE
 ================================ */
-.login-onboard-guide{
+.global-guide{
   position:fixed;
-  z-index:9002;
+  width:min(420px, calc(100vw - 32px));
+  max-height:calc(100vh - 32px);
+  overflow-y:auto;
+  z-index:9992;
   color:white;
   text-align:center;
-  max-width:420px;
 
+  animation: onboardFade .35s ease;
   transition:
-    top .42s cubic-bezier(.22,.61,.36,1),
-    left .42s cubic-bezier(.22,.61,.36,1);
+    top .32s cubic-bezier(.22,.61,.36,1),
+    left .32s cubic-bezier(.22,.61,.36,1),
+    right .32s cubic-bezier(.22,.61,.36,1);
 }
+
 
 /* ===============================
    TITLE
 ================================ */
-.login-onboard-title{
+.global-guide h3{
   font-size:42px;
   font-weight:900;
   margin-bottom:16px;
   text-shadow:0 12px 40px rgba(0,0,0,.85);
 }
 
+
 /* ===============================
    DESC
 ================================ */
-.login-onboard-desc{
+.global-guide p{
   font-size:20px;
   line-height:1.8;
-  margin-bottom:30px;
+  margin-bottom:28px;
   text-shadow:0 10px 30px rgba(0,0,0,.85);
+  white-space:pre-line;
 }
+
 
 /* ===============================
    BUTTON
 ================================ */
-.login-onboard-btn{
+.global-guide button{
   border:none;
   cursor:pointer;
   height:58px;
@@ -88,7 +97,32 @@
   transition:.28s;
 }
 
-.login-onboard-btn:hover{
+.global-guide button:hover{
   transform:translateY(-4px);
   background:var(--primary-hover);
+}
+
+
+/* ===============================
+   FADE
+================================ */
+@keyframes onboardFade{
+  from{
+    opacity:0;
+    transform:translateY(20px);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+
+/* ===============================
+   BODY LOCK
+================================ */
+.onboarding-lock{
+  overflow:hidden;
+  height:100vh;
+  touch-action:none;
 }

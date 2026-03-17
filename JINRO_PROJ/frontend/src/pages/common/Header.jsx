@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import mainLogo from "../../assets/logo/main_logo.png";
 
 function Header() {
   const navigate = useNavigate();
@@ -21,7 +22,9 @@ function Header() {
 
   return (
     <header className="header">
-      <div className="logo-box" onClick={handleLogo}>로고</div>
+      <div className="logo-box" onClick={handleLogo}>
+        <img src={mainLogo} alt="logo" className="logo-img" />
+      </div>
       <div className="logout-btn" onClick={handleLogout}>
         로그아웃
       </div>

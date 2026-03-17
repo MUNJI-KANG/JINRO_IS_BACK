@@ -38,17 +38,57 @@ import SSmallCat from "./pages/student/s_category/SSmallCat";
 import STest from "./pages/student/STest"
 import STest2 from "./pages/student/STest_copy"
 
+import { useEffect, useState } from "react";
+import GlobalOnboarding from "./pages/student/s_onboarding/GlobalOnboardingEngine.jsx";
+import "./css/student_css/s_onboarding/GlobalOnboarding.css";
+
+
 function App() {
+
+  const [globalOnboarding, setGlobalOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (window.location.pathname === "/") {
+      localStorage.removeItem("student_onboarding_flow");
+      localStorage.removeItem("skip_all_onboarding");
+    }
+  }, []);
+
+  const startGlobalOnboarding = () => {
+    localStorage.setItem("student_onboarding_flow", "true");
+    localStorage.removeItem("visited");
+    localStorage.removeItem("videoStarted");
+    setGlobalOnboarding(true);
+  };
+
+  const finishGlobalOnboarding = () => {
+    localStorage.removeItem("student_onboarding_flow");
+    setGlobalOnboarding(false);
+  };
+
+
   return (
     <BrowserRouter>
+      {globalOnboarding && (
+        <GlobalOnboarding
+          onFinish={finishGlobalOnboarding}
+        />
+      )}
+
+
       <Routes>
 
         {/* counselor 로그인 (레이아웃 없이) */}
         <Route path="/counselor/login" element={<CLogin />} />
 
-        <Route index element={<Home />} />
 
         {/* 공통 레이아웃 */}
+       <Route
+          index
+          element={
+            <Home startOnboarding={startGlobalOnboarding} />
+          }
+        />
         <Route path="/" element={<Layout />}>
           {/* 로그인 후 진입시 바로 scheduler 화면 보여줌 */}
           <Route path="counselor/scheduler" element={<CScheduler />} />
@@ -84,6 +124,8 @@ function App() {
 
         <Route path="/student/test" element={<STest />} />
         <Route path="/student/test_copy" element={<STest2 />} />
+
+
       </Routes>
     </BrowserRouter>
 

@@ -700,7 +700,7 @@ const CFinal = () => {
             </div>
 
             {!isComplete && (
-                <div className="report-buttons" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px' }} data-html2canvas-ignore="true">
+                <div className="report-buttons" data-html2canvas-ignore="true">
                     <button type="button" className="btn-sub" onClick={handleSave}>수정 저장</button>
                     <button type="button" className="btn-main" onClick={handleComplete}>최종 작성 완료</button>
                 </div>

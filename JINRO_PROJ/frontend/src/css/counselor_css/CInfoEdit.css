@@ -6,6 +6,7 @@
 
 .cinfoedit-container .content-title{
   margin-bottom: 100px;
+  margin-left: 70px;
 }
 
 .cinfoedit-form {
@@ -107,7 +108,7 @@
 
   transform: translateY(-1px);
 
-  box-shadow: var(--shadow);
+  box-shadow: none;
 }
 
 .guide-btn {

@@ -1,49 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../css/student_css/SAgreement.css";
-import AgreementOnboarding from "../student/s_onboarding/AgreementOnboarding.jsx";
 
 function SAgreement() {
 
   const [agree1, setAgree1] = useState(false);
   const [agree2, setAgree2] = useState(false);
 
-  const [showOnboarding, setShowOnboarding] = useState(false);
-
   const navigate = useNavigate();
   const allAgreed = agree1 && agree2;
 
-  useEffect(() => {
-
-    const need = localStorage.getItem("needAgreementOnboarding");
-
-    if (need === "true") {
-      setTimeout(() => {
-        setShowOnboarding(true);
-      }, 200);
-
-      localStorage.removeItem("needAgreementOnboarding");
-    }
-
-  }, []);
-
-  const handleOnboardingClose = () => {
-
-    if(localStorage.getItem("skip_all_onboarding")==="true") return;
-
-    localStorage.setItem("needLoginOnboarding", "true");
-
-    setShowOnboarding(false);
-  };
-
   return (
     <div className="agreement-page">
-
-      {showOnboarding &&
-        <AgreementOnboarding
-          onClose={handleOnboardingClose}
-        />
-      }
 
       <div className="agreement-container">
 

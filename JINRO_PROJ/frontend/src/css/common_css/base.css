@@ -36,10 +36,14 @@
 }
 
 .logo-box {
-  border: 1px solid var(--text-main);
-  padding: 5px 15px;
-  font-weight: bold;
+  display: flex;
+  align-items: center;
   cursor: pointer;
+}
+
+.logo-img {
+  height: 80px;
+  object-fit: contain;
 }
 
 .logout-btn {

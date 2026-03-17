@@ -248,8 +248,10 @@
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+
   margin-top: 30px;
   padding-bottom: 40px;
+  padding-right: 25px;
 }
 
 .btn-main, .btn-sub {
