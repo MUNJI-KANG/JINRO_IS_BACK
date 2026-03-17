@@ -274,19 +274,31 @@ const CFinal = () => {
         e.preventDefault();
         if (!counselingId) return alert('ID가 없습니다.');
 
-        await api.post('/counselor/report/final/complete', {
-            counseling_id: counselingId,
-            personality_comment: personalityComment,
-            career_comment: careerComment,
-            final_comment: finalComment
-        });
+        // ✅ 1. 사용자 확인
+        const isConfirm = window.confirm(
+            "최종 작성을 완료하시겠습니까?\n\n작성 완료 후에는 수정이 불가능하며,\n리포트는 조회 전용으로 전환됩니다."
+        );
 
-        setIsEditingPersonality(false);
-        setIsEditingCareer(false);
-        setIsEditingFinalComment(false);
-        setIsComplete(true);
+        if (!isConfirm) return; // ❗ 취소하면 종료
 
-        alert('작성 완료되었습니다.');
+        try {
+            await api.post('/counselor/report/final/complete', {
+                counseling_id: counselingId,
+                personality_comment: personalityComment,
+                career_comment: careerComment,
+                final_comment: finalComment
+            });
+
+            setIsEditingPersonality(false);
+            setIsEditingCareer(false);
+            setIsEditingFinalComment(false);
+            setIsComplete(true);
+
+            alert('최종 작성이 완료되었습니다.');
+        } catch (err) {
+            console.error('작성 완료 실패:', err);
+            alert('작성 완료 중 오류가 발생했습니다.');
+        }
     };
 
     const formatTime = (sec) => {
@@ -690,7 +702,7 @@ const CFinal = () => {
             {!isComplete && (
                 <div className="report-buttons" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px' }} data-html2canvas-ignore="true">
                     <button type="button" className="btn-sub" onClick={handleSave}>수정 저장</button>
-                    <button type="button" className="btn-main" onClick={handleComplete}>작성 완료</button>
+                    <button type="button" className="btn-main" onClick={handleComplete}>최종 작성 완료</button>
                 </div>
             )}
         </>
