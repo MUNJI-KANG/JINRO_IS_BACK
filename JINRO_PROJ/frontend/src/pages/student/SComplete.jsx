@@ -135,7 +135,7 @@ function SComplete() {
         api.post('/client/complete/video', {
             counseling_id: counselingVal,
             client_id: client_id
-        });
+        }).catch(err => console.log(err))
         navigate('/');
     }
 
