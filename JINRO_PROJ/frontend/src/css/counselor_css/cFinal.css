@@ -301,20 +301,20 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #fff5f5;
+  background: #f0fdf4;             
   padding: 6px 16px;
   border-radius: 8px;
-  border: 1px solid #fed7d7;
+  border: 1px solid #bbf7d0;        
 }
 
 .rec-text {
   font-weight: 600;
-  color: #e53e3e;
+  color: #16a34a;                
   font-size: 14px;
 }
 
 .rec-dot {
-  color: #e53e3e;
+  color: #16a34a;
   animation: blink 1s infinite;
 }
 
