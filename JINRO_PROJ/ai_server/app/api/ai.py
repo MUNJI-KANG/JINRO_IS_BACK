@@ -245,7 +245,7 @@ async def ai_upload_video(
 @router.get("/interest/analyze/{counseling_id}/{c_id}/{idx}", summary="흥미분석")
 def interest_analyze(counseling_id:int, c_id:str, idx:int):
     # 4. 테스트 실행
-    sample_video_path = os.path.join(UPLOAD_VIDEO, counseling_id, f"{c_id}_{idx}.webm")
+    sample_video_path = os.path.join(UPLOAD_VIDEO, str(counseling_id), f"{c_id}_{idx}.webm")
 
     # frame_skip=5 인자를 명시적으로 전달 (기본값이 5이므로 생략해도 됩니다)
     # 'Total_Frames_Analyzed'
@@ -260,7 +260,7 @@ def interest_analyze(counseling_id:int, c_id:str, idx:int):
 @router.get("/engagement/analyze/{counseling_id}/{c_id}/{idx}", summary="집중분석")
 def engagement_analyze(counseling_id:int, c_id:str, idx:int):
     try:
-        sample_video_path = os.path.join(UPLOAD_VIDEO, counseling_id, f"{c_id}_{idx}.webm")
+        sample_video_path = os.path.join(UPLOAD_VIDEO, str(counseling_id), f"{c_id}_{idx}.webm")
         model_p = os.path.join(BASE_DIR, '..', 'model', 'best_focus_model_frame.pth')
 
         # "total_predictions"
