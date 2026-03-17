@@ -775,22 +775,22 @@ async def complete_video(complete_request: CompleteVideoRequest, db: Session = D
                 # 'Frames_With_Face'
                 # 'Interested_Percentage'
                 # 'Not_Interested_Percentage'
-                res_interest = await requests.get(
-                    f"{AI_SERVER_BASE_URL}/ai/interest/analyze/{complete_request.counseling_id}/{client.c_id}/{i+1}",
-                    )
+                # res_interest = await requests.get(
+                #     f"{AI_SERVER_BASE_URL}/ai/interest/analyze/{complete_request.counseling_id}/{client.c_id}/{i+1}",
+                #     )
                 
-                data[f'{r.ai_v_erp_id}']['interest'] = res_interest.Interested_Percentage
+                # data[f'{r.ai_v_erp_id}']['interest'] = res_interest.Interested_Percentage
                 
-                # "total_predictions"
-                # "focused_points"
-                # "unfocused_points"
-                # "focused_percentage"
-                # "unfocused_percentage"
-                res_engagement = await requests.get(
-                    f"{AI_SERVER_BASE_URL}/ai/engagement/analyze/{complete_request.counseling_id}/{client.c_id}/{i+1}",
-                    )
+                # # "total_predictions"
+                # # "focused_points"
+                # # "unfocused_points"
+                # # "focused_percentage"
+                # # "unfocused_percentage"
+                # res_engagement = await requests.get(
+                #     f"{AI_SERVER_BASE_URL}/ai/engagement/analyze/{complete_request.counseling_id}/{client.c_id}/{i+1}",
+                #     )
                 
-                data[f'{r.ai_v_erp_id}']['focused'] = res_engagement.focused_percentage
+                # data[f'{r.ai_v_erp_id}']['focused'] = res_engagement.focused_percentage
             
             
         

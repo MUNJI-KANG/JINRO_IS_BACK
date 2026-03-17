@@ -405,45 +405,48 @@ def get_final_comment(counseling_id: int, db: Session = Depends(get_db)):
         "complete": report.complete_yn
     }
 
-
+import traceback
 # 분야별 비교표(?)
 @router.get("/report/final/{counseling_id}")
 def get_final_report(counseling_id: int, db: Session = Depends(get_db)):
-
-    rows = (
-        db.query(
-            ReportAiV.ai_v_erp_id,
-            ReportAiV.category,
-            AiAnalyze.attention_score,
-            AiAnalyze.emotion_score,
-            AiAnalyze.survey_score,
-            AiAnalyze.final_score
+    try:
+        rows = (
+            db.query(
+                ReportAiV.ai_v_erp_id,
+                ReportAiV.category,
+                AiAnalyze.attention_score,
+                AiAnalyze.emotion_score,
+                AiAnalyze.survey_score,
+                AiAnalyze.final_score
+            )
+            .join(
+                AiAnalyze,
+                AiAnalyze.ai_v_erp_id == ReportAiV.ai_v_erp_id
+            )
+            .filter(ReportAiV.counseling_id == counseling_id)
+            .order_by(ReportAiV.update_date.asc())
+            .all()
         )
-        .join(
-            AiAnalyze,
-            AiAnalyze.ai_v_erp_id == ReportAiV.ai_v_erp_id
-        )
-        .filter(ReportAiV.counseling_id == counseling_id)
-        .order_by(ReportAiV.update_date.asc())   # 영상 순서 정렬
-        .all()
-    )
+        table_data = []
+        for idx, r in enumerate(rows):
+            table_data.append({
+                "video_id": idx + 1,
+                "category": r.category,
+                "attention_score": r.attention_score,
+                "emotion_score": r.emotion_score,
+                "survey_score": r.survey_score,
+                "final_score": r.final_score
+            })
 
-    table_data = []
+        return {
+            "success": True,
+            "table": table_data
+        }
 
-    for idx, r in enumerate(rows):
-        table_data.append({
-            "video_id": idx + 1,
-            "category": r.category,
-            "attention_score": r.attention_score,
-            "emotion_score": r.emotion_score,
-            "survey_score": r.survey_score,
-            "final_score": r.final_score
-        })
-
-    return {
-        "success": True,
-        "table": table_data
-    }
+    except Exception as e:
+        print("get_final_report 에러:", repr(e))
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/report/final/save")
 def save_final_report(data: FinalReportSave, db: Session = Depends(get_db)):
