@@ -2,6 +2,10 @@ from pydantic import BaseModel, EmailStr, field_validator
 from typing import Dict, Any, List, Optional
 
 class VideoAnalyze(BaseModel):
+    counseling_id: int
+
+
+class SingleVideoResult(BaseModel):
     video_path: str
 
 class SummaryRequest(BaseModel):

@@ -18,7 +18,8 @@ print("FRONTEND_URL =", os.getenv("FRONTEND_URL"))
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="JINRO_IS_BACK API")
+app = FastAPI(title="JINRO_IS_BACK API",
+    root_path="/api")
 
 frontend_origins_env = os.getenv("FRONTEND_URL", "")
 origins = [origin.strip() for origin in frontend_origins_env.split(",") if origin.strip()]
@@ -33,12 +34,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+#Session 설정 보완 
 app.add_middleware(
     SessionMiddleware,
     secret_key=os.getenv("SESSION_SECRET_KEY") or "fallback-secret-key",
     session_cookie="session",
     same_site="lax",
-    https_only=False
+    https_only=True
 )
 
 VIDEO_DIR = os.path.normpath(os.path.join(BASE_DIR, "..", "..", "ai_server", "videos"))
