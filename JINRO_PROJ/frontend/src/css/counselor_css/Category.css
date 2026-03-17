@@ -68,7 +68,7 @@
 
   transform: translateY(-3px);
 
-  box-shadow: var(--shadow);
+  box-shadow: none;
 }
 
 /* ===============================
@@ -221,7 +221,7 @@
 
   transition: all .2s ease;
 
-  box-shadow: var(--shadow);
+  box-shadow: none;
 }
 
 /* ===============================

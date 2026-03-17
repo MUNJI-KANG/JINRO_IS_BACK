@@ -64,7 +64,7 @@
 
 .student-card:hover {
 
-  box-shadow: var(--shadow);
+  box-shadow: none;
 
   transform: translateY(-2px);
 }
@@ -123,6 +123,11 @@
 
   color: var(--text-main);
 }
+
+.student-card:hover .student-tag {
+  background: #4f8f85;
+}
+
 
 .student-badge {
 
