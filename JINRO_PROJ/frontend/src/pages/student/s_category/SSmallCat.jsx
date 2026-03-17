@@ -6,8 +6,6 @@ import StudentCategory from "../../common/StudentCategory";
 import styles from "../../../css/student_css/SSmallCat.module.css";
 import api from "../../../services/app";
 
-import CatSmallOnboarding from "../s_onboarding/CatSmallOnboarding.jsx";
-
 function SSmallCat() {
 
   const navigate = useNavigate();
@@ -20,9 +18,10 @@ function SSmallCat() {
 
   const [videos, setVideos] = useState([]);
   const [selectedVideo, setSelectedVideo] = useState(null);
-  const [onboard, setOnboard] = useState(false);
 
   const isComplete = select.length === 3;
+  const isOnboardingMode = localStorage.getItem("skip_all_onboarding") === "true";
+  const canMoveCheckout = isComplete || (isOnboardingMode && select.length > 0);
 
   const extractVideoId = (url) => {
     if (!url) return null;
@@ -59,21 +58,6 @@ function SSmallCat() {
 
   }, [midId, navigate]);
 
-  useEffect(()=>{
-
-
-    const skip = localStorage.getItem("skip_all_onboarding");
-    const done = localStorage.getItem("small_cat_onboarding_done");
-
-    if(skip === "true") return;
-    if(done === "true") return;
-
-    setTimeout(()=>{
-        setOnboard(true);
-    },600);
-
-  },[]);
-
   const handleCardClick = (video) => {
 
     if (select.find(v => v.id === video.c_id)) {
@@ -102,9 +86,6 @@ function SSmallCat() {
     <StudentCategory>
       <div className="student-page">
 
-        {onboard && (
-          <CatSmallOnboarding onClose={() => setOnboard(false)} />
-        )}
 
         <h1 className="student-title">분야 선택</h1>
 
@@ -139,7 +120,10 @@ function SSmallCat() {
 
               <div
                 key={video.c_id}
+                data-video-id={video.c_id}
+                data-selected={alreadySelected ? "true" : "false"}
                 className={`${styles.card} 
+                  global-small-card
                   ${selectedVideo === video.c_id ? styles.activeCard : ""}
                   ${alreadySelected ? styles.alreadySelected : ""}
                 `}
@@ -199,14 +183,14 @@ function SSmallCat() {
         )}
 
         <button
-          className={`next-button ${isComplete ? "next-button-active" : ""}`}
+          className={`next-button global-category-next ${canMoveCheckout ? "next-button-active" : ""}`}
           onClick={() =>
-            isComplete
+            canMoveCheckout
               ? navigate("/student/category/checkout")
               : navigate("/student/category/big")
           }
         >
-          {isComplete
+          {canMoveCheckout
             ? "영상보기"
             : `카테고리로 이동 (${select.length}/3)`}
         </button>

@@ -6,6 +6,7 @@ import Footer from "./pages/common/Footer";
 import Home from "./pages/common/Home";
 import Layout from "./pages/common/Layout";
 import Sidebar from "./pages/common/Sidebar";
+import PageTransition from "./pages/common/PageTransition";
 
 // // counselor
 import CLogin from "./pages/counselor/CLogin";
@@ -38,29 +39,71 @@ import SSmallCat from "./pages/student/s_category/SSmallCat";
 import STest from "./pages/student/STest"
 import STest2 from "./pages/student/STest_copy"
 
+import { useEffect, useState } from "react";
+import GlobalOnboarding from "./pages/student/s_onboarding/GlobalOnboardingEngine.jsx";
+import "./css/student_css/s_onboarding/GlobalOnboarding.css";
+
+
 function App() {
+
+  const [globalOnboarding, setGlobalOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (window.location.pathname === "/") {
+      localStorage.removeItem("student_onboarding_flow");
+      localStorage.removeItem("skip_all_onboarding");
+    }
+  }, []);
+
+  const startGlobalOnboarding = () => {
+    localStorage.setItem("student_onboarding_flow", "true");
+    localStorage.removeItem("visited");
+    localStorage.removeItem("videoStarted");
+    setGlobalOnboarding(true);
+  };
+
+  const finishGlobalOnboarding = () => {
+    localStorage.removeItem("student_onboarding_flow");
+    setGlobalOnboarding(false);
+  };
+
+  const withTransition = (element) => <PageTransition>{element}</PageTransition>;
+
+
   return (
     <BrowserRouter>
+      {globalOnboarding && (
+        <GlobalOnboarding
+          onFinish={finishGlobalOnboarding}
+        />
+      )}
+
+
       <Routes>
 
         {/* counselor 로그인 (레이아웃 없이) */}
-        <Route path="/counselor/login" element={<CLogin />} />
+        <Route path="/counselor/login" element={withTransition(<CLogin />)} />
 
-        <Route index element={<Home />} />
 
         {/* 공통 레이아웃 */}
+       <Route
+          index
+          element={
+            withTransition(<Home startOnboarding={startGlobalOnboarding} />)
+          }
+        />
         <Route path="/" element={<Layout />}>
           {/* 로그인 후 진입시 바로 scheduler 화면 보여줌 */}
-          <Route path="counselor/scheduler" element={<CScheduler />} />
-          <Route path="counselor/students" element={<CStudentList />} />
-          <Route path="counselor/info" element={<CInfoEdit />} />
-          <Route path="counselor/category/list" element={<CCatList />} />
-          <Route path="counselor/category/write" element={<CCatWrite />} />
+          <Route path="counselor/scheduler" element={withTransition(<CScheduler />)} />
+          <Route path="counselor/students" element={withTransition(<CStudentList />)} />
+          <Route path="counselor/info" element={withTransition(<CInfoEdit />)} />
+          <Route path="counselor/category/list" element={withTransition(<CCatList />)} />
+          <Route path="counselor/category/write" element={withTransition(<CCatWrite />)} />
 
-          <Route path="counselor/report/counseling/:clientId/:counselingId" element={<CCounseling />} />
-          <Route path="counselor/report/video/:clientId/:counselingId" element={<CCounselingAI />} />
-          <Route path="/counselor/report/final/:clientId/:counselingId" element={<CFinal />} />
-          <Route path="counselor/report/voice/:clientId/:counselingId" element={<CReportVoice />} />
+          <Route path="counselor/report/counseling/:clientId/:counselingId" element={withTransition(<CCounseling />)} />
+          <Route path="counselor/report/video/:clientId/:counselingId" element={withTransition(<CCounselingAI />)} />
+          <Route path="/counselor/report/final/:clientId/:counselingId" element={withTransition(<CFinal />)} />
+          <Route path="counselor/report/voice/:clientId/:counselingId" element={withTransition(<CReportVoice />)} />
         </Route>
 
         {/* <Route index element={<Home />} /> */}
@@ -68,22 +111,24 @@ function App() {
         {/* counselor */}
 
         {/* student */}
-        <Route path="/student/login" element={<SLogin />} />
-        <Route path="/student/agreement" element={<SAgreement />} />
+        <Route path="/student/login" element={withTransition(<SLogin />)} />
+        <Route path="/student/agreement" element={withTransition(<SAgreement />)} />
 
 
-        <Route path="/student/survey/:categoryId" element={<SSurvey />} />
-        <Route path="/student/video/:categoryId" element={<SVideo />} />
-        <Route path="/student/loading" element={<SLoading />} />
-        <Route path="/student/complete" element={<SComplete />} />
+        <Route path="/student/survey/:categoryId" element={withTransition(<SSurvey />)} />
+        <Route path="/student/video/:categoryId" element={withTransition(<SVideo />)} />
+        <Route path="/student/loading" element={withTransition(<SLoading />)} />
+        <Route path="/student/complete" element={withTransition(<SComplete />)} />
 
-        <Route path="/student/category/big" element={<SBigCat />} />
-        <Route path="/student/category/checkout" element={<SCheckout />} />
-        <Route path="/student/category/medium" element={<SMedCat />} />
-        <Route path="/student/category/small" element={<SSmallCat />} />
+        <Route path="/student/category/big" element={withTransition(<SBigCat />)} />
+        <Route path="/student/category/checkout" element={withTransition(<SCheckout />)} />
+        <Route path="/student/category/medium" element={withTransition(<SMedCat />)} />
+        <Route path="/student/category/small" element={withTransition(<SSmallCat />)} />
 
-        <Route path="/student/test" element={<STest />} />
-        <Route path="/student/test_copy" element={<STest2 />} />
+        <Route path="/student/test" element={withTransition(<STest />)} />
+        <Route path="/student/test_copy" element={withTransition(<STest2 />)} />
+
+
       </Routes>
     </BrowserRouter>
 
