@@ -1,6 +1,6 @@
 import os
 import logging
-from logging.handlers import RotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,7 +12,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_PATH = os.path.normpath(os.path.join(BASE_DIR, "..", ".env"))
 load_dotenv(ENV_PATH)
 
-# 2. 로그 디렉토리 및 파일 경로 설정 (.env 활용)
+# 2. 로그 디렉토리 및 파일 경로 설정
 LOG_DIR_NAME = os.getenv("LOG_DIR", "logs")
 LOG_DIR_PATH = os.path.join(os.path.dirname(BASE_DIR), LOG_DIR_NAME)
 os.makedirs(LOG_DIR_PATH, exist_ok=True)
@@ -20,12 +20,18 @@ os.makedirs(LOG_DIR_PATH, exist_ok=True)
 BACKEND_LOG_FILE = os.getenv("BACKEND_LOG_FILE", "backend_error.log")
 full_log_path = os.path.join(LOG_DIR_PATH, BACKEND_LOG_FILE)
 
-# 3. 로깅 설정 (ERROR 레벨)
+# 3. 로깅 설정 (날짜 기반: .env 설정값 반영)
 logging.basicConfig(
     level=logging.ERROR,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[
-        RotatingFileHandler(full_log_path, maxBytes=5*1024*1024, backupCount=5),
+        TimedRotatingFileHandler(
+            full_log_path, 
+            when=os.getenv("LOG_ROTATION_WHEN", "midnight"), 
+            interval=int(os.getenv("LOG_ROTATION_INTERVAL", 1)), 
+            backupCount=int(os.getenv("LOG_BACKUP_COUNT", 30)), 
+            encoding="utf-8"
+        ),
         logging.StreamHandler()
     ]
 )
@@ -64,7 +70,7 @@ app.add_middleware(
     https_only=True
 )
 
-# 정적 파일 및 기타 설정
+# 정적 파일 경로 설정
 VIDEO_DIR = os.path.normpath(os.path.join(BASE_DIR, "..", "..", "ai_server", "videos"))
 app.mount("/videos", StaticFiles(directory=VIDEO_DIR), name="videos")
 
