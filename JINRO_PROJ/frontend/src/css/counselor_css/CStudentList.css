@@ -1,6 +1,10 @@
 /* ===============================
    STUDENT TOP
 ================================ */
+.student-container {
+  width: 1100px;          /* 기존 기준 유지 */
+  margin: 0 auto;         /* 중앙 정렬 */
+}
 
 .student-top {
   display: flex;
@@ -9,9 +13,9 @@
   margin-bottom: 30px;
   justify-content: space-between;
 
-  width: 1100px;
+  /* width: 1100px;
   margin-left: auto;
-  margin-right: auto;
+  margin-right: auto; */
 }
 
 .student-search {
@@ -37,7 +41,7 @@
   flex-direction: column;
   gap: 30px;
 
-  max-width: 1100px;
+  width: 100%;
 }
 
 .student-card {
