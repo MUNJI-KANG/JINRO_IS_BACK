@@ -14,7 +14,7 @@ from app.schemas.counselor import (
 from sqlalchemy import func, or_, and_
 from app.models.schema_models import (
     Counselor, Client, Category, Counseling,
-    ReportAiV, AiVideoAnalyze, ReCommentEnum,
+    ReportAiV, AiAnalyze, ReCommentEnum,
     ReportFinal, ReportCon, ReportAiM
 )
 
@@ -414,14 +414,14 @@ def get_final_report(counseling_id: int, db: Session = Depends(get_db)):
         db.query(
             ReportAiV.ai_v_erp_id,
             ReportAiV.category,
-            AiVideoAnalyze.attention_score,
-            AiVideoAnalyze.emotion_score,
-            AiVideoAnalyze.survey_score,
-            AiVideoAnalyze.final_score
+            AiAnalyze.attention_score,
+            AiAnalyze.emotion_score,
+            AiAnalyze.survey_score,
+            AiAnalyze.final_score
         )
         .join(
-            AiVideoAnalyze,
-            AiVideoAnalyze.ai_v_erp_id == ReportAiV.ai_v_erp_id
+            AiAnalyze,
+            AiAnalyze.ai_v_erp_id == ReportAiV.ai_v_erp_id
         )
         .filter(ReportAiV.counseling_id == counseling_id)
         .order_by(ReportAiV.update_date.asc())   # 영상 순서 정렬
@@ -942,8 +942,8 @@ def get_ai_video_report(
     if not video:
         raise HTTPException(status_code=404, detail="영상 없음")
 
-    analyze = db.query(AiVideoAnalyze).filter(
-        AiVideoAnalyze.ai_v_erp_id == video_id
+    analyze = db.query(AiAnalyze).filter(
+        AiAnalyze.ai_v_erp_id == video_id
     ).first()
 
     focus_data = []

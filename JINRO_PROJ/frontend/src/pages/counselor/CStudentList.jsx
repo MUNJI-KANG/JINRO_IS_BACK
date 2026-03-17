@@ -130,133 +130,133 @@ export default function CStudentList() {
     });
   };
 
-  return (
-    <div>
-      <div className="student-top">
-        <h2 className="content-title">학생목록</h2>
-        <input
-          type="text"
-          className="student-search"
-          placeholder="학생 검색..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
+    return (
+  <div className="student-container">
 
-      <div className="student-list">
-        {filteredStudents.map((student) => {
-          const unreadTotal = sumUnread(student.consultations);
+    <div className="student-top">
+      <h2 className="content-title">학생목록</h2>
+      <input
+        type="text"
+        className="student-search"
+        placeholder="학생 검색..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+    </div>
 
-          return (
-            <div
-              key={student.id}
-              className="student-card"
-              onClick={() => openStudentModal(student)}
-            >
-              <div>
-                <div className="name-row">
-                  <span className="student-name">{student.name}</span>
-                  <span className="student-id">{student.studentId}</span>
-                </div>
+    <div className="student-list">
+      {filteredStudents.map((student) => {
+        const unreadTotal = sumUnread(student.consultations);
 
-                <div className="info-row">
-                  <span>tel: {student.tel}</span>
-                  <span>email: {student.email}</span>
-                </div>
-
-                <div className="student-tag">{student.tag}</div>
+        return (
+          <div
+            key={student.id}
+            className="student-card"
+            onClick={() => openStudentModal(student)}
+          >
+            <div>
+              <div className="name-row">
+                <span className="student-name">{student.name}</span>
+                <span className="student-id">{student.studentId}</span>
               </div>
 
-              {unreadTotal > 0 && (
-                <div className="student-badge">
-                  {unreadTotal > 99 ? "99+" : unreadTotal}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+              <div className="info-row">
+                <span>tel: {student.tel}</span>
+                <span>email: {student.email}</span>
+              </div>
 
-      <dialog
-        ref={dialogRef}
-        className="consult-dialog"
-
-        onClick={(e) => {
-          if (e.target === dialogRef.current) closeModal();
-        }}
-
-        onClose={() => {
-          setModal({
-            isOpen: false,
-            studentId: null,
-          });
-        }}
-      >
-        {currentStudent && (
-          <div className="consult-dialog-inner">
-            <div className="consult-dialog-header">
-              <button className="consult-back" onClick={closeModal}>
-                ← 이전으로
-              </button>
+              <div className="student-tag">{student.tag}</div>
             </div>
 
-            <h2 className="consult-title-center">
-              {currentStudent.name} 상담 기록 (
-              {currentStudent.consultations.length}회)
-            </h2>
+            {unreadTotal > 0 && (
+              <div className="student-badge">
+                {unreadTotal > 99 ? "99+" : unreadTotal}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
 
-            <div className="consult-list">
-              {currentStudent.consultations.map((c) => (
-                <div
-                  key={c.id}
-                  className={`consult-card ${c.final === 'N' ? 'disabled' : ''}`}
-                  onClick={() => {
-                    if (c.final === 'N') {
-                      alert("아직 최종 리포트가 생성되지 않아 열람할 수 없습니다.");
-                      return; // 함수 실행 종료 (페이지 이동 안 됨)
-                    }
-                    goToFinalReport(c);
-                  }}
-                  style={{ 
-                    cursor: c.final === 'N' ? "not-allowed" : "pointer",
-                    opacity: c.final === 'N' ? 0.5 : 1,
-                    backgroundColor: c.final === 'N' ? "#f9f9f9" : "#fff"
-                  }}
-                >
-                  <div className="consult-card-left">
-                    <div className="consult-card-title-row">
-                      <div className="consult-card-title">
-                        {c.title}
-                      </div>
+    <dialog
+      ref={dialogRef}
+      className="consult-dialog"
+      onClick={(e) => {
+        if (e.target === dialogRef.current) closeModal();
+      }}
+      onClose={() => {
+        setModal({
+          isOpen: false,
+          studentId: null,
+        });
+      }}
+    >
+      {currentStudent && (
+        <div className="consult-dialog-inner">
+          <div className="consult-dialog-header">
+            <button className="consult-back" onClick={closeModal}>
+              ← 이전으로
+            </button>
+          </div>
 
-                      {c.unread > 0 && (
-                        <div className="consult-badge">
-                          {c.unread > 99 ? "99+" : c.unread}
-                        </div>
-                      )}
+          <h2 className="consult-title-center">
+            {currentStudent.name} 상담 기록 (
+            {currentStudent.consultations.length}회)
+          </h2>
+
+          <div className="consult-list">
+            {currentStudent.consultations.map((c) => (
+              <div
+                key={c.id}
+                className={`consult-card ${c.final === 'N' ? 'disabled' : ''}`}
+                onClick={() => {
+                  if (c.final === 'N') {
+                    alert("아직 최종 리포트가 생성되지 않아 열람할 수 없습니다.");
+                    return;
+                  }
+                  goToFinalReport(c);
+                }}
+                style={{ 
+                  cursor: c.final === 'N' ? "not-allowed" : "pointer",
+                  opacity: c.final === 'N' ? 0.5 : 1,
+                  backgroundColor: c.final === 'N' ? "#f9f9f9" : "#fff"
+                }}
+              >
+                <div className="consult-card-left">
+                  <div className="consult-card-title-row">
+                    <div className="consult-card-title">
+                      {c.title}
                     </div>
 
-                    <div className="consult-card-desc">
-                      {c.description}
-                    </div>
-                  </div>
-
-                  <div className="consult-card-right">
-                    {c.final_report_yn == 'Y' && (
-                      <div className="consult-card-date" style={{ color: "blue", fontWeight: "bold" }}>
-                        상담완료
+                    {c.unread > 0 && (
+                      <div className="consult-badge">
+                        {c.unread > 99 ? "99+" : c.unread}
                       </div>
                     )}
-                    <div className="consult-card-date">
-                      {c.date}
-                    </div>
+                  </div>
+
+                  <div className="consult-card-desc">
+                    {c.description}
                   </div>
                 </div>
-              ))}
-            </div>
+
+                <div className="consult-card-right">
+                  {c.final_report_yn == 'Y' && (
+                    <div className="consult-card-date" style={{ color: "blue", fontWeight: "bold" }}>
+                      상담완료
+                    </div>
+                  )}
+                  <div className="consult-card-date">
+                    {c.date}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        )}
-      </dialog>
-    </div>
-  );
+        </div>
+      )}
+    </dialog>
+
+  </div>
+);
 }

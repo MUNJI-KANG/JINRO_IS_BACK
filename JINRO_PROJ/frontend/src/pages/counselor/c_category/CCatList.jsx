@@ -4,6 +4,8 @@ import Layout from "../../common/Layout";
 import "../../../css/counselor_css/Category.css";
 import api from '../../../services/app'
 
+import CategoryOnboarding from "../c_onboarding/CategoryOnboarding.jsx"
+
 import {
   Briefcase,
   Calculator,
@@ -222,10 +224,13 @@ export default function CCatList() {
   const navigate = useNavigate();
 
   const [selectedBigId, setSelectedBigId] = useState(null);
-  const [selectedMidId, setSelectedMidId] = useState(null);   // 🔥 추가
+  const [selectedMidId, setSelectedMidId] = useState(null);   
   const [selectedMidName, setSelectedMidName] = useState(null);
   const [selectedMid, setSelectedMid] = useState(null);
   const [dbCategories, setDbCategories] = useState([]);
+
+  const [showGuide, setShowGuide] = useState(false);   
+
 
   useEffect(() => {
   if (selectedMidId === null) return;
@@ -385,6 +390,22 @@ export default function CCatList() {
           </div>
         </>
       )}
+      <button
+        className="guide-btn"
+        onClick={() => setShowGuide(true)}
+      >
+        가이드 보기
+      </button>
+      {showGuide && (
+        <CategoryOnboarding
+          onClose={() => setShowGuide(false)}
+          selectedBigId={selectedBigId}
+          selectedMidId={selectedMidId}
+          setSelectedBigId={setSelectedBigId}
+          setSelectedMidId={setSelectedMidId}
+        />
+      )}
     </div>
+    
   );
 }
