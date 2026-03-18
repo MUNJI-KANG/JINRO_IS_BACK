@@ -427,7 +427,7 @@ async def send_to_ai_server_background(
     try:
         async with httpx.AsyncClient(timeout=120.0) as http_client:
             response = await http_client.post(
-                f"{AI_SERVER_BASE_URL}/ai/upload-video",
+                f"{AI_SERVER_BASE_URL}/upload-video",
                 data={
                     "counseling_id": str(counseling_id),
                     "client_id": str(client_id),
