@@ -193,10 +193,6 @@ function SMedCat() {
         </div>
 
         <div className={styles.headerRow}>
-          <button className={styles.backButton} onClick={handleBack}>
-            ← 뒤로
-          </button>
-
           <h2 className={styles.categoryTitle}>{bigName}</h2>
         </div>
 
@@ -233,18 +229,29 @@ function SMedCat() {
           </div>
         )}
 
-        <button
-          className={`next-button global-category-next ${isComplete ? "next-button-active" : ""}`}
-          onClick={() =>
-            isComplete
-              ? navigate("/student/category/checkout")
-              : navigate("/student/category/big")
-          }
-        >
-          {isComplete
-            ? "영상보기"
-            : `카테고리로 이동 (${selectedVideos.length}/3)`}
-        </button>
+        <div className={styles.bottomActions}>
+
+          <button
+            className={styles.backBottomBtn}
+            onClick={handleBack}
+          >
+            ← 뒤로가기
+          </button>
+
+          <button
+            className={`${styles.nextBtn} ${isComplete ? styles.active : ""}`}
+            onClick={() =>
+              isComplete
+                ? navigate("/student/category/checkout")
+                : navigate("/student/category/big")
+            }
+          >
+            {isComplete
+              ? "영상보기"
+              : `카테고리로 이동 (${selectedVideos.length}/3)`}
+          </button>
+
+        </div>
 
       </div>
 

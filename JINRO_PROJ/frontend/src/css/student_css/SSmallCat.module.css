@@ -224,3 +224,48 @@
     cursor: not-allowed;
 
 }
+
+/* =========================
+   하단 버튼 영역
+========================= */
+
+.bottomActions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-top: 50px;
+}
+
+/* 뒤로가기 버튼 */
+.backBottomBtn {
+    width: 160px;
+    padding: 12px 0;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-main);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.backBottomBtn:hover {
+    background: var(--accent);
+}
+
+/* 다음 버튼 */
+.nextBtn {
+    width: 200px;
+    padding: 12px 0;
+    border-radius: 8px;
+    border: none;
+    background: #9ca3af;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+/* 활성화 상태 */
+.active {
+    background: var(--primary);
+}
