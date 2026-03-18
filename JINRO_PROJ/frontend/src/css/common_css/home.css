@@ -295,7 +295,7 @@
 }
 
 .home-guide-char{
-  width:132px;
+  width:156px;
   cursor:pointer;
   animation:floatGuide 2.4s ease-in-out infinite;
 }
@@ -306,9 +306,11 @@
 
 .home-guide-bubble{
   position:absolute;
-  right:96px;
-  bottom:108px;
-  width:260px;
+  right:112px;
+  bottom:122px;
+  width:290px;
+  animation:floatGuide 3s ease-in-out infinite;
+  pointer-events:none;
 }
 
 .home-guide-bubble img{
@@ -317,13 +319,13 @@
 
 .home-guide-bubble-text{
   position:absolute;
-  top:40px;
-  left:24px;
-  right:24px;
-  font-size:18px;
+  top:44px;
+  left:28px;
+  right:28px;
+  font-size:20px;
   font-weight:600;
   text-align:center;
-  line-height:1.45;
+  line-height:1.5;
   color:var(--text-main);
 }
 
@@ -340,20 +342,20 @@
   }
 
   .home-guide-char{
-    width:108px;
+    width:120px;
   }
 
   .home-guide-bubble{
-    right:74px;
-    bottom:88px;
-    width:210px;
+    right:84px;
+    bottom:96px;
+    width:228px;
   }
 
   .home-guide-bubble-text{
-    top:32px;
-    left:20px;
-    right:20px;
-    font-size:15px;
+    top:34px;
+    left:22px;
+    right:22px;
+    font-size:16px;
   }
 }
 
