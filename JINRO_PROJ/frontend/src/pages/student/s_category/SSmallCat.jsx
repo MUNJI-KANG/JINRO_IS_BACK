@@ -82,6 +82,8 @@ function SSmallCat() {
 
   const handleDelete = (id) => dispatch(deleteVideo(id));
 
+  const handleBack = () => navigate(-1);
+
   return (
     <StudentCategory>
       <div className="student-page">
@@ -97,18 +99,13 @@ function SSmallCat() {
           🛒 선택한 영상: {select.length} / 3
         </div>
 
-        <div className="student-header">
-          <button
-            className="student-back-btn"
-            onClick={() => navigate(-1)}
-          >
-            ← 뒤로
-          </button>
-
-          <h2 className="student-category-title">
-            {bigName} &gt; {midName}
-          </h2>
+        <div className={styles.headerRow}>
+          <h2 className={styles.categoryTitle}>{bigName}</h2>
         </div>
+
+        <h2 className="student-category-title">
+          📂 {midName}
+        </h2>
 
         <div className={`${styles.cardGrid} onboard-target-card-grid small-card-grid`}>
 
@@ -182,22 +179,32 @@ function SSmallCat() {
 
         )}
 
-        <button
-          className={`next-button global-category-next ${canMoveCheckout ? "next-button-active" : ""}`}
-          onClick={() =>
-            canMoveCheckout
-              ? navigate("/student/category/checkout")
-              : navigate("/student/category/big")
-          }
-        >
-          {canMoveCheckout
-            ? "영상보기"
-            : `카테고리로 이동 (${select.length}/3)`}
-        </button>
+                <div className={styles.bottomActions}>
 
-      </div>
-    
-    </StudentCategory>
+                  <button
+                    className={styles.backBottomBtn}
+                    onClick={handleBack}
+                  >
+                    ← 뒤로가기
+                  </button>
+
+                  <button
+                    className={`${styles.nextBtn} ${isComplete ? styles.active : ""}`}
+                    onClick={() =>
+                      isComplete
+                        ? navigate("/student/category/checkout")
+                        : navigate("/student/category/big")
+                    }
+                  >
+                    {isComplete
+                      ? "영상보기"
+                      : `카테고리로 이동 (${select.length}/3)`}
+                  </button>
+
+                </div>
+
+              </div>
+            </StudentCategory>
   );
 }
 

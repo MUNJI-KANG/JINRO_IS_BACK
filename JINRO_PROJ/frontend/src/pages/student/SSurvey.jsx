@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import styles from "../../css/student_css/SSurvey.module.css";
@@ -10,16 +10,18 @@ function SSurvey() {
   const navigate = useNavigate();
 
   const selectedVideos = useSelector((state) => state.cVideos);
+  const reduxCounselingId = useSelector((state) => state.counselingId);
+
   const { currentIndex = 0 } = location.state || {};
+  const counselingId =
+    reduxCounselingId || localStorage.getItem("counselingId");
+  const isGlobalOnboarding =
+    localStorage.getItem("student_onboarding_flow") === "true";
 
   const [surveyInfo, setSurveyInfo] = useState(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
-
-  const reduxCounselingId = useSelector((state) => state.counselingId);
-  const counselingId = reduxCounselingId || localStorage.getItem("counselingId");
-  const isGlobalOnboarding = localStorage.getItem("student_onboarding_flow") === "true";
 
   useEffect(() => {
     const fetchSurvey = async () => {
@@ -39,7 +41,7 @@ function SSurvey() {
     fetchSurvey();
   }, [categoryId]);
 
-  const questions = React.useMemo(() => {
+  const questions = useMemo(() => {
     if (!surveyInfo) return [];
 
     return typeof surveyInfo.survey === "string"
@@ -47,7 +49,18 @@ function SSurvey() {
       : surveyInfo.survey;
   }, [surveyInfo]);
 
-  const handleNext = async () => {
+  const handleSelectAnswer = (value) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [currentStep]: value,
+    }));
+  };
+
+  const handleNext = async (nextAnswers = answers) => {
+    if (nextAnswers[currentStep] === undefined) {
+      return;
+    }
+
     if (currentStep < questions.length - 1) {
       setCurrentStep((prev) => prev + 1);
       return;
@@ -79,7 +92,7 @@ function SSurvey() {
         await api.post("/client/pComplete", {
           counseling_id: Number(counselingId),
           report_id: currentReportId,
-          answer: answers,
+          answer: nextAnswers,
         });
       }
 
@@ -101,6 +114,16 @@ function SSurvey() {
     }
   };
 
+  const handleOptionDoubleClick = async (value) => {
+    const nextAnswers = {
+      ...answers,
+      [currentStep]: value,
+    };
+
+    setAnswers(nextAnswers);
+    await handleNext(nextAnswers);
+  };
+
   if (loading || !surveyInfo) {
     return <div className={styles.surveyContainer}>로딩 중...</div>;
   }
@@ -111,10 +134,10 @@ function SSurvey() {
     selectedVideos.length > 0 &&
     currentIndex === selectedVideos.length - 1;
 
-  let buttonText = "다음 문항";
+  let buttonText = "확인";
 
   if (isLastQuestion) {
-    buttonText = isLastVideo ? "결과 제출" : "다음 섹션으로";
+    buttonText = isLastVideo ? "결과 제출" : "다음 영상으로";
   }
 
   return (
@@ -151,30 +174,30 @@ function SSurvey() {
         </h2>
 
         <div className={`${styles.optionsList} survey-options`}>
-          {questions[currentStep].options.map((option, idx) => (
-            <div
-              key={idx}
-              data-option-index={idx}
-              className={`${styles.optionItem} global-survey-option ${
-                answers[currentStep] === 4 - idx ? styles.selected : ""
-              }`}
-              onClick={() =>
-                setAnswers((prev) => ({
-                  ...prev,
-                  [currentStep]: 4 - idx,
-                }))
-              }
-            >
-              <span className={styles.optionLabel}>{option}</span>
-              <div className={styles.radioCircle} />
-            </div>
-          ))}
+          {questions[currentStep].options.map((option, idx) => {
+            const value = 4 - idx;
+
+            return (
+              <div
+                key={idx}
+                data-option-index={idx}
+                className={`${styles.optionItem} global-survey-option ${
+                  answers[currentStep] === value ? styles.selected : ""
+                }`}
+                onClick={() => handleSelectAnswer(value)}
+                onDoubleClick={() => handleOptionDoubleClick(value)}
+              >
+                <span className={styles.optionLabel}>{option}</span>
+                <div className={styles.radioCircle} />
+              </div>
+            );
+          })}
         </div>
 
         <div style={{ textAlign: "center", marginTop: "30px" }}>
           <button
             className={`${styles.nextButton} survey-next-btn global-survey-next`}
-            onClick={handleNext}
+            onClick={() => handleNext()}
             disabled={answers[currentStep] === undefined}
             style={{
               padding: "12px 60px",
@@ -183,7 +206,8 @@ function SSurvey() {
               color: "white",
               border: "none",
               borderRadius: "8px",
-              cursor: "pointer",
+              cursor:
+                answers[currentStep] !== undefined ? "pointer" : "not-allowed",
               fontSize: "18px",
               fontWeight: "bold",
             }}
