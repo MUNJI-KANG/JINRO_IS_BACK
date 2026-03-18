@@ -62,3 +62,14 @@ class CompleteVideoRequest(BaseModel):
     counseling_id: int
     client_id: int
 
+# ------------ 콜벡용 -----------
+class AnalysisResultItem(BaseModel):
+    ai_v_erp_id: int
+    survey_score: float
+    interest: float
+    focused: float
+
+class AnalysisCallback(BaseModel):
+    status: str
+    results: List[AnalysisResultItem]
+
