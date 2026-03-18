@@ -40,9 +40,12 @@ const fillIfEmpty = (element, value) => {
 };
 
 const clickWhenReady = async (selector) => {
-  const element = await waitFor(() => getElement(selector));
+  const element = await waitFor(() => {
+    const target = getElement(selector);
+    return target && !target.disabled ? target : null;
+  });
 
-  if (!element || element.disabled) {
+  if (!element) {
     return false;
   }
 
@@ -59,6 +62,39 @@ const clickFirst = async (selector) => {
 
   element.click();
   return true;
+};
+
+const startVideoOnboarding = async () => {
+  const startTarget = await waitFor(() => {
+    const videoContainer = getElement(".video-container");
+
+    if (videoContainer) {
+      return { type: "video" };
+    }
+
+    const button = getElement(".global-video-start");
+    if (button && !button.disabled) {
+      return { type: "button", element: button };
+    }
+
+    return null;
+  }, 8000, 120);
+
+  if (!startTarget) {
+    return false;
+  }
+
+  if (startTarget.type === "button") {
+    startTarget.element.click();
+  }
+
+  const videoContainer = await waitFor(
+    () => getElement(".video-container"),
+    8000,
+    120
+  );
+
+  return Boolean(videoContainer);
 };
 
 const clickRotating = async (selector, storageKey) => {
@@ -264,6 +300,8 @@ const answerSurveyAndSubmit = async () => {
     }
 
     const buttonText = nextButton.textContent?.trim() ?? "";
+    const shouldSubmitStep =
+      buttonText === "결과 제출" || buttonText === "다음 영상으로";
     const isSubmitStep = buttonText !== "다음 문항";
 
     if (nextButton.disabled) {
@@ -275,7 +313,7 @@ const answerSurveyAndSubmit = async () => {
       }
     }
 
-    if (isSubmitStep) {
+    if (shouldSubmitStep) {
       nextButton.click();
       return true;
     }
@@ -426,7 +464,7 @@ export const FLOW = [
         target: ".webcam-view",
         title: "웹캠 확인 영역",
         text: "영상시청중 사용자를 녹화합니다.",
-        action: async () => clickWhenReady(".global-video-start"),
+        action: startVideoOnboarding,
       },
       {
         target: ".video-container",
