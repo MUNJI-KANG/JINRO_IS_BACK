@@ -742,7 +742,7 @@ async def process_analysis_background(counseling_id: int, client_id: str, db: Se
 
         # AI 서버에 지시서만 전송 (응답은 기다리지 않으므로 timeout을 아주 짧게 줍니다)
         async with httpx.AsyncClient() as cl:
-            await cl.post(f"{AI_SERVER_BASE_URL}/start-analysis", json=payload, timeout=5.0)
+            await cl.post(f"{AI_SERVER_BASE_URL}/focus-rule/start-analysis", json=payload, timeout=5.0)
             
         print("✅ [백엔드] AI 서버에 분석 작업 지시 완료! (이제 백엔드는 대기하지 않습니다)")
 
