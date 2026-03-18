@@ -3,14 +3,14 @@ import datetime
 import os
 import httpx
 from datetime import datetime
-from fastapi import Request, APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import Request, APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
 from app.db.database import get_db
 from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV,ReportCon,ReportFinal, ReCommentEnum, AiAnalyze
 from app.schemas.client import ClientCreate,CounselingCreateRequest,ReportCompleteRequest, SurveySubmitRequest, AIAnalysisRequest, CompleteRequest, CompleteVideoRequest
 from app.services.survey_service import analyze_survey
 
 from sqlalchemy.orm import Session
-
+import asyncio
 import requests
 
 
@@ -412,72 +412,44 @@ UPLOAD_DIR = os.path.join(BASE_DIR, "..", "ai_server", "videos")
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-import httpx # 설치 필요: pip install httpx
+# 1. AI 서버로 전송하는 작업을 별도의 비동기 함수로 분리합니다.
+async def send_to_ai_server_background(
+    counseling_id: int, 
+    client_id: int, 
+    report_id: int, 
+    c_id: int, 
+    filename: str, 
+    file_bytes: bytes, 
+    content_type: str
+):
+    try:
+        async with httpx.AsyncClient(timeout=120.0) as http_client:
+            response = await http_client.post(
+                f"{AI_SERVER_BASE_URL}/ai/upload-video",
+                data={
+                    "counseling_id": str(counseling_id),
+                    "client_id": str(client_id),
+                    "report_id": str(report_id),
+                    "c_id": str(c_id),
+                },
+                files={
+                    "file": (filename, file_bytes, content_type)
+                }
+            )
+            response.raise_for_status()
+            # 필요하다면 여기서 성공 로그를 남기거나, DB 상태를 업데이트할 수 있습니다.
+            
+    except Exception as e:
+        # 백그라운드에서 에러가 나면 프론트엔드로 에러를 던질 수 없으므로, 로그로 남겨야 합니다.
+        print(f"AI 서버 백그라운드 전송 실패: {e}")
 
-@router.post("/video/upload/{counseling_id}")
-# async def upload_video(
-#     counseling_id: int,
-#     request: Request,
-#     background_tasks: BackgroundTasks, # 추가
-#     file: UploadFile = File(...),
-#     report_id: int = Form(...),
-#     db: Session = Depends(get_db)
-# ):
-#     try:
-#         client_id = request.session.get("client_id")
-#         if not client_id:
-#             raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
 
-#         client = db.query(Client).filter(Client.client_id == client_id).first()
-#         if not client:
-#             raise HTTPException(status_code=404, detail="학생 없음")
-
-#         c_id = client.c_id
-#         counseling_folder = os.path.join(UPLOAD_DIR, str(counseling_id))
-#         os.makedirs(counseling_folder, exist_ok=True)
-
-#         files = os.listdir(counseling_folder)
-#         numbers = []
-#         for f in files:
-#             if f.startswith(f"{c_id}_") and f.endswith(".webm"):
-#                 try:
-#                     num = int(f.replace(".webm", "").split("_")[1])
-#                     numbers.append(num)
-#                 except: pass
-
-#         next_number = max(numbers, default=0) + 1
-#         filename = f"{c_id}_{next_number}.webm"
-#         file_path = os.path.join(counseling_folder, filename)
-
-#         # ⭐ 동일 영상 중복 업로드 방지
-#         if os.path.exists(file_path):
-#             return {
-#                 "success": True,
-#                 "message": "이미 업로드된 영상입니다.",
-#                 "url": f"{BACKEND_BASE_URL}/videos/{counseling_id}/{filename}"
-#             }
-
-#         with open(file_path, "wb") as buffer:
-#             shutil.copyfileobj(file.file, buffer)
-
-        
-#         if next_number >= 3:
-#             # 백그라운드 태스크로 실행하여 파일 업로드 응답 속도를 유지
-#             background_tasks.add_task(trigger_ai_analysis, counseling_id, client_id)
-
-#         return {
-#             "success": True,
-#             "message": "영상 저장 성공",
-#             "url": f"{BACKEND_BASE_URL}/videos/{counseling_id}/{filename}"
-#         }
-
-#     except Exception as e:
-#         print("영상 저장 오류:", str(e))
-#         raise HTTPException(status_code=500, detail=str(e))
-    
+# 2. 기존 API 엔드포인트 수정
+@router.post("/video/upload/{counseling_id}")   
 async def upload_video(
     counseling_id: int,
     request: Request,
+    background_tasks: BackgroundTasks,  # 백그라운드 태스크 객체 주입
     file: UploadFile = File(...),
     report_id: int = Form(...),
     db: Session = Depends(get_db)
@@ -492,44 +464,34 @@ async def upload_video(
             raise HTTPException(status_code=404, detail="학생 없음")
 
         c_id = client.c_id
+        
+        # 파일은 메모리에 읽어둔 후 백그라운드 작업으로 넘겨야 합니다.
+        # (요청이 끝나면 file 객체가 닫히기 때문)
         file_bytes = await file.read()
         filename = file.filename or "upload.webm"
+        content_type = file.content_type or "video/webm"
 
-        async with httpx.AsyncClient(timeout=120.0) as http_client:
-            response = await http_client.post(
-                f"{AI_SERVER_BASE_URL}/ai/upload-video",
-                data={
-                    "counseling_id": str(counseling_id),
-                    "client_id": str(client_id),
-                    "report_id": str(report_id),
-                    "c_id": str(c_id),
-                },
-                files={
-                    "file": (filename, file_bytes, file.content_type or "video/webm")
-                }
-            )
+        # 3. AI 서버 전송 작업을 백그라운드 큐에 추가합니다.
+        background_tasks.add_task(
+            send_to_ai_server_background,
+            counseling_id,
+            client_id,
+            report_id,
+            c_id,
+            filename,
+            file_bytes,
+            content_type
+        )
 
-        response.raise_for_status()
-        result = response.json()
-
+        # 4. 프론트엔드로는 즉각적으로 성공 응답을 반환합니다!
         return {
             "success": True,
-            "message": "AI 서버로 영상 전송 성공",
-            "ai_result": result
+            "message": "영상이 백엔드에 성공적으로 업로드되었으며, AI 처리 대기열에 추가되었습니다.",
+            "ai_result": "pending" # 즉시 반환하므로 결과는 아직 알 수 없음
         }
 
-    except httpx.HTTPStatusError as e:
-        raise HTTPException(
-            status_code=502,
-            detail=f"AI 서버 오류: {e.response.status_code}, {e.response.text}"
-        )
-    except httpx.HTTPError as e:
-        raise HTTPException(status_code=502, detail=f"AI 서버 호출 실패: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-
 
 
 async def trigger_ai_analysis(counseling_id: int, client_id: str):
@@ -747,79 +709,94 @@ def get_survey_score(counseling_id: int, db: Session = Depends(get_db)):
         "survey_score": round(avg, 2)
     }
 
-@router.post("/complete/video")
-async def complete_video(complete_request: CompleteVideoRequest, db: Session = Depends(get_db)):
-
+# ⭐ 백그라운드에서 실행될 함수 (응답에 구애받지 않고 끝까지 돌아갑니다)
+async def process_analysis_background(counseling_id: int, client_id: str, db: Session):
     try:
         counseling = db.query(Counseling, ReportAiV).join(
             ReportAiV, Counseling.counseling_id == ReportAiV.counseling_id
-        ).where(Counseling.counseling_id == complete_request.counseling_id).all()
+        ).where(Counseling.counseling_id == counseling_id).all()
 
-        client = db.query(Client).filter(Client.client_id == complete_request.client_id).first()
+        client = db.query(Client).filter(Client.client_id == client_id).first()
 
         data = {}
         if counseling:
             for i, (co, r) in enumerate(counseling):
                 total_score = 0
                 if f"{r.ai_v_erp_id}" not in data:
-                        data[f'{r.ai_v_erp_id}'] = {}
+                    data[f'{r.ai_v_erp_id}'] = {}
 
                 if len(r.answer) > 0:
                     for sc in r.answer.values():
                         total_score += sc + 1
-                    
                     score = ((total_score - len(r.answer)) / ((len(r.answer) * 5) - len(r.answer))) * 100
-
                     data[f'{r.ai_v_erp_id}']['survey'] = score
                 
-                # 'Total_Frames_Analyzed'
-                # 'Frames_With_Face'
-                # 'Interested_Percentage'
-                # 'Not_Interested_Percentage'
-                async with httpx.AsyncClient() as cl:
-                    response = await cl.get(
-                        f"{AI_SERVER_BASE_URL}/ai/interest/analyze/{complete_request.counseling_id}/{client.c_id}/{i+1}",
-                        timeout=600.0,  # 600초 대기 (필요에 따라 조절)
+                # ⭐ 5초 간격으로 최대 24번(약 2분) 재시도 로직
+                max_retries = 24
+                
+                # 흥미도(Interest) 분석 요청
+                for attempt in range(max_retries):
+                    async with httpx.AsyncClient() as cl:
+                        response = await cl.get(
+                            f"{AI_SERVER_BASE_URL}/ai/interest/analyze/{counseling_id}/{client.c_id}/{i+1}",
+                            timeout=None, # 일단 무제한
                         )
-                    
-                    res_interest = response.json()
-                    data[f'{r.ai_v_erp_id}']['interest'] = res_interest["Interested_Percentage"]
-            
+                        if response.status_code == 200:
+                            res_interest = response.json()
+                            data[f'{r.ai_v_erp_id}']['interest'] = res_interest["Interested_Percentage"]
+                            break # 파일이 확인되어 분석 성공하면 루프 탈출
+                        elif response.status_code == 404:
+                            await asyncio.sleep(5) # 파일이 아직 없으면 5초 대기
+                        else:
+                            response.raise_for_status()
 
-                # "status"
-                # "total_extracted_frames"
-                # "focus_score"
-                # "unfocus_score"
-                # "focus_rate"
-                # "unfocus_rate"
-                async with httpx.AsyncClient() as cl:
-                    response = await cl.get(
-                        f"{AI_SERVER_BASE_URL}/ai/engagement/analyze/{complete_request.counseling_id}/{client.c_id}/{i+1}",
-                        timeout=600.0,  # 600초 대기 (필요에 따라 조절)
+                # 집중도(Engagement) 분석 요청
+                for attempt in range(max_retries):
+                    async with httpx.AsyncClient() as cl:
+                        response = await cl.get(
+                            f"{AI_SERVER_BASE_URL}/ai/engagement/analyze/{counseling_id}/{client.c_id}/{i+1}",
+                            timeout=None, 
                         )
-                    
-                    res_engagement = response.json()
-                    data[f'{r.ai_v_erp_id}']['focused'] = res_engagement["focus_rate"]
+                        if response.status_code == 200:
+                            res_engagement = response.json()
+                            data[f'{r.ai_v_erp_id}']['focused'] = res_engagement["focus_rate"]
+                            break
+                        elif response.status_code == 404:
+                            await asyncio.sleep(5)
+                        else:
+                            response.raise_for_status()
             
-            
-        
+        # DB 저장
         for k, v in data.items():
-            final_score = (v['survey'] * 0.4) + (v['focused'] * 0.35) + (v['interest'] * 0.25)
+            final_score = (v.get('survey', 0) * 0.4) + (v.get('focused', 0) * 0.35) + (v.get('interest', 0) * 0.25)
             db.add(AiAnalyze(
                 ai_v_erp_id=int(k),
-                attention_score=v['focused'],
-                emotion_score=v['interest'],
+                attention_score=v.get('focused', 0),
+                emotion_score=v.get('interest', 0),
                 final_score=final_score,
-
-                survey_score=v['survey'],
+                survey_score=v.get('survey', 0),
                 ai_v_comment='',
                 raw_data={},
                 prompt='',
             ))
 
         db.commit()
-
-        return {'success': True}
     except Exception as e:
         db.rollback()
+        print(f"백그라운드 분석 실패: {e}")
+
+# ⭐ 라우터 엔드포인트
+@router.post("/complete/video")
+async def complete_video(
+    complete_request: CompleteVideoRequest, 
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    try:
+        # 분석 로직을 백그라운드로 던집니다.
+        background_tasks.add_task(process_analysis_background, complete_request.counseling_id, complete_request.client_id, db)
+        
+        # 프론트로는 대기 없이 즉각 성공 반환
+        return {'success': True, 'message': '백그라운드에서 분석 대기 및 실행을 시작합니다.'}
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
