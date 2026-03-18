@@ -66,7 +66,7 @@ model.eval()
 mp_face_detection = mp.solutions.face_detection
 face_detector = mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.5)
 
-router = APIRouter(prefix="/ai", tags=["Client (내담자)"])
+router = APIRouter(tags=["Client (내담자)"])
 
 @router.get("/")
 def get_client_list():
