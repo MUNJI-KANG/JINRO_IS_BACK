@@ -46,8 +46,6 @@ from app.api import ai, data_ai
 
 app = FastAPI(
     title="AI_SERVER",
-    root_path="/ai",
-    openapi_version="3.0.2"
 )
 
 # 파일 업로드 폴더 (.env에 없으므로 기본값 'uploads' 사용)

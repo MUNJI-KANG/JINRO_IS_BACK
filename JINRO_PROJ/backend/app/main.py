@@ -50,8 +50,7 @@ try:
 except Exception as e:
     logger.error(f"DB 테이블 생성 실패: {e}")
 
-app = FastAPI(title="JINRO_IS_BACK API",
-    root_path="/api")
+app = FastAPI(title="JINRO_IS_BACK API",)
 
 # CORS 및 미들웨어 설정
 frontend_origins_env = os.getenv("FRONTEND_URL", "http://127.0.0.1:5173")
