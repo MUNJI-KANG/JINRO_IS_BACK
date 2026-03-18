@@ -94,23 +94,38 @@
   width: 100%;
 }
 
+/* li는 레이아웃 역할만 */
 .sidebar-menu li {
+  padding: 0;
+  white-space: nowrap;
+}
+
+/* 🔥 핵심: a가 li 전체를 차지 */
+.sidebar-menu a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  height: 100%;
+
   padding: 22px 20px;
 
-  cursor: pointer;
-
+  text-decoration: none;
   color: var(--text-main);
 
-  white-space: nowrap;
+  cursor: pointer;
 
   transition: background .2s ease;
 }
 
-.sidebar-menu li:hover {
+/* hover */
+.sidebar-menu a:hover {
   background: var(--accent);
 }
 
-.sidebar-menu li.active {
+/* active */
+.sidebar-menu li.active a {
   background: var(--accent);
   font-weight: 600;
 }
