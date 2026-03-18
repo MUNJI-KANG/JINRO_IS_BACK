@@ -1,10 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import {
     ResponsiveContainer,
-    Tooltip,
     PieChart,
-    Pie,
-    Legend
+    Pie
 } from 'recharts';
 
 import '../../../css/common_css/base.css';
@@ -14,6 +12,55 @@ import api from '../../../services/app';
 
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+
+const PIE_COLORS = ['#3243ff', '#ffa042', '#38ff3b'];
+const RADIAN = Math.PI / 180;
+
+const renderPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+    if (!percent || percent < 0.05) return null;
+
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+        <text
+            x={x}
+            y={y}
+            fill="#ffffff"
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize={12}
+            fontWeight={700}
+        >
+            {`${Math.round(percent * 100)}%`}
+        </text>
+    );
+};
+
+const renderChartLegend = (items = []) => {
+    if (!items.length) return null;
+
+    return (
+        <ul className="chart-legend-list">
+            {items.map((item, index) => {
+                return (
+                    <li className="chart-legend-item" key={`${item.name}-${index}`}>
+                        <span
+                            className="chart-legend-swatch"
+                            style={{ backgroundColor: item.fill || item.color }}
+                        />
+                        <span className="chart-legend-name" title={item.name}>
+                            {item.name}
+                        </span>
+                        <span className="chart-legend-score">{item.value.toFixed(1)}점</span>
+                        <span className="chart-legend-percent">{item.percentText}</span>
+                    </li>
+                );
+            })}
+        </ul>
+    );
+};
 
 const CFinal = () => {
     const params = useParams();
@@ -93,6 +140,21 @@ const CFinal = () => {
         }
         return category || '-';
     };
+
+    const chartTotal = tableData.reduce((sum, item) => sum + (Number(item.final_score) || 0), 0);
+
+    const chartData = tableData.map((item, index) => {
+        const value = Number(item.final_score) || 0;
+        const percent = chartTotal > 0 ? value / chartTotal : 0;
+
+        return {
+            name: item.category,
+            value,
+            percent,
+            percentText: `${Math.round(percent * 100)}%`,
+            fill: item.fill || PIE_COLORS[index % PIE_COLORS.length]
+        };
+    });
 
     // ---------------------------------------------------------
     // PDF 생성 및 미리보기 로직
@@ -461,90 +523,40 @@ const CFinal = () => {
                 )}
                 <h3 className="section-title">AI 분석</h3>
 
-                <div className="report-top-grid">
-                    <section className="report-card">
+                <div className="ai-overview-grid">
+                    <section className="report-card ai-chart-card">
                         <h3>❶ 분야별 관심 비교 그래프</h3>
-                        {tableData && tableData.length > 0 ? (
+                        {chartData.length > 0 ? (
                             <div className="chart-box">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Legend
-                                            height={110}
-                                            layout="vertical"
-                                            verticalAlign="middle"
-                                            align="right"
-                                            iconSize={7}
-                                            payload={tableData.map((item, index) => ({
-                                                value: item.category, // 범례에 표시될 텍스트 (tableData의 키값에 맞게 수정)
-                                                type: 'square',   // 아이콘 모양
-                                                // item에 색상 데이터(fill 또는 color)가 있다면 그걸 쓰고, 없다면 미리 지정한 색상을 순서대로 매칭합니다.
-                                                color: item.fill || ['#FFB7B2', '#E2F0CB', '#C7CEEA'][index % 3] 
-                                            }))}
-                                        />
-                                        <Pie
-                                            data={tableData.map((item, index) => ({
-                                                name: item.category, // 범례에 표시될 텍스트 (tableData의 키값에 맞게 수정)
-                                                value: item.final_score,   // 아이콘 모양
-                                                // item에 색상 데이터(fill 또는 color)가 있다면 그걸 쓰고, 없다면 미리 지정한 색상을 순서대로 매칭합니다.
-                                                fill: item.fill || ['#FFB7B2', '#E2F0CB', '#C7CEEA'][index % 3] 
-                                            }))}
-                                            cx="50%"
-                                            cy="50%"
-                                            outerRadius={80}
-                                            dataKey="value"
-                                        />
-                                        <Tooltip />
-                                    </PieChart>
-                                </ResponsiveContainer>
+                                <div className="chart-layout">
+                                    <div className="chart-canvas">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie
+                                                    data={chartData}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={48}
+                                                    outerRadius={128}
+                                                    dataKey="value"
+                                                    paddingAngle={2}
+                                                    label={renderPieLabel}
+                                                    labelLine={false}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                    <div className="chart-legend-panel">
+                                        {renderChartLegend(chartData)}
+                                    </div>
+                                </div>
                             </div>
                         ) : (
                             <div className="chart-empty">⚠ 분석 데이터가 없습니다.</div>
                         )}
                     </section>
 
-                    <section className="report-card">
-                        <h3>❷ 학생 성향 분석</h3>
-
-                        {isAnalyzing && !llmResult && (
-                            <div className="chart-empty ai-loading">
-                                <div className="ai-spinner"></div>
-                                {aiStatus === 'STT_PROCESSING' && '음성을 텍스트로 변환 중입니다...'}
-                                {aiStatus === 'LLM_PROCESSING' && 'AI가 상담 내용을 분석 중입니다...'}
-                                {!aiStatus && 'AI 상담 분석을 준비 중입니다...'}
-                            </div>
-                        )}
-
-                        {llmResult ? (
-                            <div className="summary-box">{llmResult?.summary}</div>
-                        ) : isAnalyzing ? (
-                            <div className="chart-empty ai-loading">
-                                <div className="ai-spinner"></div>
-                                {aiStatus === 'STT_PROCESSING' && '음성을 분석 중입니다...'}
-                                {aiStatus === 'LLM_PROCESSING' && 'AI가 상담 내용을 요약 중입니다...'}
-                                {!aiStatus && 'AI 분석 준비 중입니다...'}
-                            </div>
-                        ) : (
-                            <div className="chart-empty">상담이 완료된 후 자동으로 생성됩니다.</div>
-                        )}
-                    </section>
-
-                    <section className="report-card">
-                        <h3>❸ 추천 진로 TOP5</h3>
-
-                        {llmResult ? (
-                            <div className="analysis-text">
-                                {(llmResult?.analysis?.career_recommendation || []).map((item, index) => (
-                                    <div key={index}>{item.trim()}</div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="chart-empty">상담이 완료된 후 자동으로 생성됩니다.</div>
-                        )}
-                    </section>
-                </div>
-
-                <div className="ai-summary-grid">
-                    <section className="ai-summary-left">
+                    <section className="report-card ai-table-card">
                         <h3>분야별 비교</h3>
                         <div className="summary-box" style={{ padding: '0' }}>
                             <table className="report-table">
@@ -589,12 +601,33 @@ const CFinal = () => {
                             </table>
                         </div>
                     </section>
+                </div>
 
-                    <section className="ai-summary-right">
-                        <h3>AI 상담 대화 요약</h3>
-
-                        {llmResult ? (
+                <div className="ai-insight-grid">
+                    <section className="report-card">
+                        <h3>❷ 학생 성향 분석</h3>
+                        {isAnalyzing && !llmResult ? (
+                            <div className="chart-empty ai-loading">
+                                <div className="ai-spinner"></div>
+                                {aiStatus === 'STT_PROCESSING' && '음성을 텍스트로 변환 중입니다...'}
+                                {aiStatus === 'LLM_PROCESSING' && 'AI가 상담 내용을 분석 중입니다...'}
+                                {!aiStatus && 'AI 상담 분석을 준비 중입니다...'}
+                            </div>
+                        ) : llmResult ? (
                             <div className="summary-box">{llmResult?.summary}</div>
+                        ) : (
+                            <div className="chart-empty">상담이 완료된 후 자동으로 생성됩니다.</div>
+                        )}
+                    </section>
+
+                    <section className="report-card">
+                        <h3>❸ 추천 진로 TOP5</h3>
+                        {llmResult ? (
+                            <div className="analysis-text">
+                                {(llmResult?.analysis?.career_recommendation || []).map((item, index) => (
+                                    <div key={index}>{item.trim()}</div>
+                                ))}
+                            </div>
                         ) : (
                             <div className="chart-empty">상담이 완료된 후 자동으로 생성됩니다.</div>
                         )}
@@ -734,3 +767,4 @@ const CFinal = () => {
 };
 
 export default CFinal;
+
