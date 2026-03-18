@@ -23,7 +23,7 @@ import cv2
 import tensorflow as tf
 import numpy as np
 import tf_keras as keras
-
+from app.services.focuse_service import FrameMobileNetV2
 
 
 BACKEND_URL = os.getenv("BACKEND_URL")
@@ -242,35 +242,51 @@ async def ai_upload_video(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+
+# ------------------------------------------------------------
+# 서버 시작시 집중도 모델 한번만 메모리에 로드(OOM 방지)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"💻 AI 서버 집중도 모델 로드 중... 디바이스: {device}")
+
+focus_model_path = os.path.join(BASE_DIR, '..', 'model', 'best_focus_model_frame.pth')
+focus_model = FrameMobileNetV2(num_classes=2).to(device)
+focus_model.load_state_dict(torch.load(focus_model_path, map_location=device))
+focus_model.eval()
+print("✅ 집중도 모델 로드 완료!")
+# ------------------------------------------------------------
+
+
 @router.get("/interest/analyze/{counseling_id}/{c_id}/{idx}", summary="흥미분석")
 def interest_analyze(counseling_id:int, c_id:str, idx:int):
-    # 4. 테스트 실행
     sample_video_path = os.path.join(UPLOAD_VIDEO, str(counseling_id), f"{c_id}_{idx}.webm")
 
-    # frame_skip=5 인자를 명시적으로 전달 (기본값이 5이므로 생략해도 됩니다)
-    # 'Total_Frames_Analyzed'
-    # 'Frames_With_Face'
-    # 'Interested_Percentage'
-    # 'Not_Interested_Percentage'
-    df_results, stats = analyze_video_with_face_crop(sample_video_path, model, test_transforms, class_names, device, face_detector, frame_skip=5, margin_ratio=0.3)
+    # ⭐ 파일 존재 여부 확인 로직
+    if not os.path.exists(sample_video_path):
+        raise HTTPException(status_code=404, detail="Video file not found or still saving.")
 
+    df_results, stats = analyze_video_with_face_crop(sample_video_path, model, test_transforms, class_names, device, face_detector, frame_skip=5, margin_ratio=0.3)
     return stats
 
-# {counseling_id}/{c_id}/{idx}
+
 @router.get("/engagement/analyze/{counseling_id}/{c_id}/{idx}", summary="집중분석")
 def engagement_analyze(counseling_id:int, c_id:str, idx:int):
     try:
         sample_video_path = os.path.join(UPLOAD_VIDEO, str(counseling_id), f"{c_id}_{idx}.webm")
-        model_p = os.path.join(BASE_DIR, '..', 'model', 'best_focus_model_frame.pth')
+        
+        # ⭐ 파일 존재 여부 확인 로직
+        if not os.path.exists(sample_video_path):
+            raise HTTPException(status_code=404, detail="Video file not found or still saving.")
 
-        # "total_predictions"
-        # "focused_points"
-        # "unfocused_points"
-        # "focused_percentage"
-        # "unfocused_percentage"
-        stats = analyze_video_to_json(sample_video_path, model_p)
+        # ⭐ 내부에서 모델 경로를 잡고 부르는 대신, 최상단에서 로드한 모델을 던져줍니다!
+        stats = analyze_video_to_json(
+            video_path=sample_video_path,
+            model=focus_model,
+            device=device,
+            stride=5
+        )
 
         return stats
-
+    except HTTPException as he:
+        raise he # 404는 그대로 던지기
     except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
