@@ -3,7 +3,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks,
 
 from fastapi.responses import FileResponse
 from app.schemas.ai import (
-    VideoAnalyze, SummaryRequest
+    VideoAnalyze, SummaryRequest, VideoTask, AnalysisRequest
     )
 from app.services.stt_service import speech_to_text
 from app.services.summary_service import summarize_text
@@ -24,7 +24,8 @@ import tensorflow as tf
 import numpy as np
 import tf_keras as keras
 from app.services.focuse_service import FrameMobileNetV2
-
+import httpx
+import asyncio
 
 BACKEND_URL = os.getenv("BACKEND_URL")
 
@@ -256,37 +257,115 @@ print("✅ 집중도 모델 로드 완료!")
 # ------------------------------------------------------------
 
 
-@router.get("/interest/analyze/{counseling_id}/{c_id}/{idx}", summary="흥미분석")
-def interest_analyze(counseling_id:int, c_id:str, idx:int):
-    sample_video_path = os.path.join(UPLOAD_VIDEO, str(counseling_id), f"{c_id}_{idx}.webm")
+# @router.get("/interest/analyze/{counseling_id}/{c_id}/{idx}", summary="흥미분석")
+# def interest_analyze(counseling_id:int, c_id:str, idx:int):
+#     sample_video_path = os.path.join(UPLOAD_VIDEO, str(counseling_id), f"{c_id}_{idx}.webm")
 
-    # ⭐ 파일 존재 여부 확인 로직
-    if not os.path.exists(sample_video_path):
-        raise HTTPException(status_code=404, detail="Video file not found or still saving.")
+#     # ⭐ 파일 존재 여부 확인 로직
+#     if not os.path.exists(sample_video_path):
+#         raise HTTPException(status_code=404, detail="Video file not found or still saving.")
 
-    df_results, stats = analyze_video_with_face_crop(sample_video_path, model, test_transforms, class_names, device, face_detector, frame_skip=5, margin_ratio=0.3)
-    return stats
+#     df_results, stats = analyze_video_with_face_crop(sample_video_path, model, test_transforms, class_names, device, face_detector, frame_skip=5, margin_ratio=0.3)
+#     return stats
 
 
-@router.get("/engagement/analyze/{counseling_id}/{c_id}/{idx}", summary="집중분석")
-def engagement_analyze(counseling_id:int, c_id:str, idx:int):
-    try:
+# @router.get("/engagement/analyze/{counseling_id}/{c_id}/{idx}", summary="집중분석")
+# def engagement_analyze(counseling_id:int, c_id:str, idx:int):
+#     try:
+#         sample_video_path = os.path.join(UPLOAD_VIDEO, str(counseling_id), f"{c_id}_{idx}.webm")
+        
+#         # ⭐ 파일 존재 여부 확인 로직
+#         if not os.path.exists(sample_video_path):
+#             raise HTTPException(status_code=404, detail="Video file not found or still saving.")
+
+#         # ⭐ 내부에서 모델 경로를 잡고 부르는 대신, 최상단에서 로드한 모델을 던져줍니다!
+#         stats = analyze_video_to_json(
+#             video_path=sample_video_path,
+#             model=focus_model,
+#             device=device,
+#             stride=5
+#         )
+
+#         return stats
+#     except HTTPException as he:
+#         raise he # 404는 그대로 던지기
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+
+async def run_full_analysis(request: AnalysisRequest):
+    counseling_id = request.counseling_id
+    c_id = request.c_id
+    
+    results = []
+    max_retries = 24  # 5초 간격 * 24번 = 최대 2분 대기
+    
+    print(f"🚀 [AI 서버] {c_id} 학생의 영상 분석 작업을 시작합니다.")
+    
+    for task in request.videos:
+        idx = task.idx
         sample_video_path = os.path.join(UPLOAD_VIDEO, str(counseling_id), f"{c_id}_{idx}.webm")
         
-        # ⭐ 파일 존재 여부 확인 로직
-        if not os.path.exists(sample_video_path):
-            raise HTTPException(status_code=404, detail="Video file not found or still saving.")
-
-        # ⭐ 내부에서 모델 경로를 잡고 부르는 대신, 최상단에서 로드한 모델을 던져줍니다!
-        stats = analyze_video_to_json(
-            video_path=sample_video_path,
-            model=focus_model,
-            device=device,
-            stride=5
+        # 💡 백엔드 대신 AI 서버가 파일이 올 때까지 5초씩 기다립니다!
+        file_ready = False
+        for attempt in range(max_retries):
+            if os.path.exists(sample_video_path):
+                file_ready = True
+                break
+            await asyncio.sleep(5)
+            
+        if not file_ready:
+            print(f"❌ [AI 서버] 타임아웃: {sample_video_path} 파일이 없습니다. 0점 처리합니다.")
+            results.append({
+                "ai_v_erp_id": task.ai_v_erp_id,
+                "survey_score": task.survey_score,
+                "interest": 0.0,
+                "focused": 0.0
+            })
+            continue
+        
+        # 1) 흥미도 분석 함수 직접 호출
+        # (기존에 로드하신 model, test_transforms 등을 인자로 넣어주세요)
+        df_results, interest_stats = analyze_video_with_face_crop(
+            sample_video_path, model, test_transforms, class_names, device, face_detector, frame_skip=5, margin_ratio=0.3
         )
-
-        return stats
-    except HTTPException as he:
-        raise he # 404는 그대로 던지기
+        interest_score = interest_stats["Interested_Percentage"] if interest_stats else 0.0
+        
+        # 2) 집중도 분석 함수 직접 호출
+        focus_stats = analyze_video_to_json(
+            sample_video_path, focus_model, device, stride=5
+        )
+        focus_score = focus_stats.get("focus_rate", 0.0)
+        
+        results.append({
+            "ai_v_erp_id": task.ai_v_erp_id,
+            "survey_score": task.survey_score,
+            "interest": interest_score,
+            "focused": focus_score
+        })
+        
+    # 💡 모든 영상 분석이 끝나면 백엔드로 웹훅(콜백) 전송!
+    callback_payload = {
+        "status": "success",
+        "results": results
+    }
+    
+    try:
+        async with httpx.AsyncClient() as cl:
+            # 설정해두신 백엔드 환경변수를 활용하여 콜백 주소 생성
+            backend_url = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
+            callback_url = f"{backend_url}/client/analysis/callback"
+            
+            await cl.post(callback_url, json=callback_payload, timeout=10.0)
+        print("✅ [AI 서버] 백엔드로 최종 분석 결과(웹훅) 전송 완료!")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"❌ [AI 서버] 콜백 전송 실패: {e}")
+
+# =====================================================================
+# ⭐ 4. 백엔드가 지시서를 던지는 곳
+# =====================================================================
+@router.post("/start-analysis")
+async def start_analysis_endpoint(request: AnalysisRequest, background_tasks: BackgroundTasks):
+    # 지시서를 받자마자 내부 백그라운드로 넘기고 200 OK를 반환합니다.
+    background_tasks.add_task(run_full_analysis, request)
+    return {"message": "분석 작업이 AI 서버 큐에 등록되었습니다."}

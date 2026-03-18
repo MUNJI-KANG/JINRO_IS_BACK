@@ -6,7 +6,7 @@ from datetime import datetime
 from fastapi import Request, APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
 from app.db.database import get_db
 from app.models.schema_models import Client,Counselor,Counseling,Category,ReportAiV,ReportCon,ReportFinal, ReCommentEnum, AiAnalyze
-from app.schemas.client import ClientCreate,CounselingCreateRequest,ReportCompleteRequest, SurveySubmitRequest, AIAnalysisRequest, CompleteRequest, CompleteVideoRequest
+from app.schemas.client import ClientCreate,CounselingCreateRequest,ReportCompleteRequest, SurveySubmitRequest, AIAnalysisRequest, CompleteRequest, CompleteVideoRequest, AnalysisCallback, AnalysisResultItem
 from app.services.survey_service import analyze_survey
 
 from sqlalchemy.orm import Session
@@ -705,7 +705,8 @@ def get_survey_score(counseling_id: int, db: Session = Depends(get_db)):
         "survey_score": round(avg, 2)
     }
 
-# ⭐ 백그라운드에서 실행될 함수 (응답에 구애받지 않고 끝까지 돌아갑니다)
+
+# 분석시작
 async def process_analysis_background(counseling_id: int, client_id: str, db: Session):
     try:
         counseling = db.query(Counseling, ReportAiV).join(
@@ -714,74 +715,44 @@ async def process_analysis_background(counseling_id: int, client_id: str, db: Se
 
         client = db.query(Client).filter(Client.client_id == client_id).first()
 
-        data = {}
+        video_tasks = []
         if counseling:
             for i, (co, r) in enumerate(counseling):
                 total_score = 0
-                if f"{r.ai_v_erp_id}" not in data:
-                    data[f'{r.ai_v_erp_id}'] = {}
-
                 if len(r.answer) > 0:
                     for sc in r.answer.values():
                         total_score += sc + 1
-                    score = ((total_score - len(r.answer)) / ((len(r.answer) * 5) - len(r.answer))) * 100
-                    data[f'{r.ai_v_erp_id}']['survey'] = score
+                    survey_score = ((total_score - len(r.answer)) / ((len(r.answer) * 5) - len(r.answer))) * 100
+                else:
+                    survey_score = 0
                 
-                # ⭐ 5초 간격으로 최대 24번(약 2분) 재시도 로직
-                max_retries = 24
-                
-                # 흥미도(Interest) 분석 요청
-                for attempt in range(max_retries):
-                    async with httpx.AsyncClient() as cl:
-                        response = await cl.get(
-                            f"{AI_SERVER_BASE_URL}/interest/analyze/{counseling_id}/{client.c_id}/{i+1}",
-                            timeout=None, # 일단 무제한
-                        )
-                        if response.status_code == 200:
-                            res_interest = response.json()
-                            data[f'{r.ai_v_erp_id}']['interest'] = res_interest["Interested_Percentage"]
-                            break # 파일이 확인되어 분석 성공하면 루프 탈출
-                        elif response.status_code == 404:
-                            await asyncio.sleep(5) # 파일이 아직 없으면 5초 대기
-                        else:
-                            response.raise_for_status()
+                # AI 서버에 넘겨줄 각 영상의 정보를 담습니다.
+                video_tasks.append({
+                    "idx": i + 1,
+                    "ai_v_erp_id": r.ai_v_erp_id,
+                    "survey_score": survey_score
+                })
 
-                # 집중도(Engagement) 분석 요청
-                for attempt in range(max_retries):
-                    async with httpx.AsyncClient() as cl:
-                        response = await cl.get(
-                            f"{AI_SERVER_BASE_URL}/engagement/analyze/{counseling_id}/{client.c_id}/{i+1}",
-                            timeout=None, 
-                        )
-                        if response.status_code == 200:
-                            res_engagement = response.json()
-                            data[f'{r.ai_v_erp_id}']['focused'] = res_engagement["focus_rate"]
-                            break
-                        elif response.status_code == 404:
-                            await asyncio.sleep(5)
-                        else:
-                            response.raise_for_status()
+        # AI 서버로 보낼 최종 지시서 (Payload)
+        payload = {
+            "counseling_id": counseling_id,
+            "c_id": client.c_id,
+            "videos": video_tasks
+        }
+
+        # AI 서버에 지시서만 전송 (응답은 기다리지 않으므로 timeout을 아주 짧게 줍니다)
+        async with httpx.AsyncClient() as cl:
+            await cl.post(f"{AI_SERVER_BASE_URL}/start-analysis", json=payload, timeout=5.0)
             
-        # DB 저장
-        for k, v in data.items():
-            final_score = (v.get('survey', 0) * 0.4) + (v.get('focused', 0) * 0.35) + (v.get('interest', 0) * 0.25)
-            db.add(AiAnalyze(
-                ai_v_erp_id=int(k),
-                attention_score=v.get('focused', 0),
-                emotion_score=v.get('interest', 0),
-                final_score=final_score,
-                survey_score=v.get('survey', 0),
-                ai_v_comment='',
-                raw_data={},
-                prompt='',
-            ))
+        print("✅ [백엔드] AI 서버에 분석 작업 지시 완료! (이제 백엔드는 대기하지 않습니다)")
 
-        db.commit()
     except Exception as e:
-        db.rollback()
-        print(f"백그라운드 분석 실패: {e}")
+        print(f"❌ [백엔드] AI 서버로 지시서 전송 실패: {e}")
 
-# ⭐ 라우터 엔드포인트
+
+# ==========================================================
+# ⭐ 3. Complete 처리 엔드포인트
+# ==========================================================
 @router.post("/complete/video")
 async def complete_video(
     complete_request: CompleteVideoRequest, 
@@ -789,10 +760,41 @@ async def complete_video(
     db: Session = Depends(get_db)
 ):
     try:
-        # 분석 로직을 백그라운드로 던집니다.
+        # 백그라운드로 지시서 전송 작업을 넘기고 프론트에는 즉각 성공 반환
         background_tasks.add_task(process_analysis_background, complete_request.counseling_id, complete_request.client_id, db)
-        
-        # 프론트로는 대기 없이 즉각 성공 반환
-        return {'success': True, 'message': '백그라운드에서 분석 대기 및 실행을 시작합니다.'}
+        return {'success': True, 'message': '백그라운드에서 AI 서버로 분석 지시가 내려졌습니다.'}
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==========================================================
+# ⭐ 4. [신규] AI 서버가 분석을 끝내고 결과를 쏴줄 때 받는 곳 (Webhook)
+# ==========================================================
+@router.post("/analysis/callback")
+async def receive_analysis_callback(data: AnalysisCallback, db: Session = Depends(get_db)):
+    try:
+        if data.status != "success":
+            print("⚠️ [백엔드] AI 서버에서 분석 실패 알림이 왔습니다.")
+            return {"success": False, "message": "분석 실패 알림 수신"}
+
+        # AI 서버가 보내준 점수를 그대로 꺼내서 DB에 저장
+        for res in data.results:
+            final_score = (res.survey_score * 0.4) + (res.focused * 0.35) + (res.interest * 0.25)
+            db.add(AiAnalyze(
+                ai_v_erp_id=res.ai_v_erp_id,
+                attention_score=res.focused,
+                emotion_score=res.interest,
+                final_score=final_score,
+                survey_score=res.survey_score,
+                ai_v_comment='',
+                raw_data={},
+                prompt='',
+            ))
+        db.commit()
+        print("✅ [백엔드] 웹훅 수신 완료 및 DB 저장 성공!")
+        return {"success": True}
+        
+    except Exception as e:
+        db.rollback()
+        print(f"❌ [백엔드] 콜백 데이터 저장 실패: {e}")
         raise HTTPException(status_code=500, detail=str(e))
