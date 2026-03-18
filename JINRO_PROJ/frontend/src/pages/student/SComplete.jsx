@@ -7,12 +7,21 @@ function SComplete() {
     const navigate = useNavigate();
     const [counselingVal, setCounselingVal] = useState(null);
 
+    const checkIsOnboarding = () => {
+        return localStorage.getItem("skip_all_onboarding") === "true" || 
+               document.body.classList.contains("onboarding-lock");
+    };
+
     useEffect(() => {
+        if (checkIsOnboarding()) {
+            console.log("온보딩 진행 중: AI 분석 요청 및 카메라 제어 중지");
+            return; 
+        }
+
         const triggerAIAnalysis = async () => {
             try {
-                // 1. localStorage에서 값 꺼내기
                 const counselingId = localStorage.getItem("counselingId");
-                const clientId = localStorage.getItem("client_id"); // client_id도 여기서 꺼냅니다.
+                const clientId = localStorage.getItem("client_id");
 
                 setCounselingVal(counselingId);
 
@@ -21,7 +30,6 @@ function SComplete() {
                     return;
                 }
 
-                // ⭐ 2. 화면이 켜지자마자 백엔드로 분석 요청 (백엔드는 바로 응답을 줍니다)
                 const response = await api.post('/client/complete/video', {
                     counseling_id: counselingId,
                     client_id: clientId
@@ -29,7 +37,6 @@ function SComplete() {
 
                 console.log("빽단에 분석 백그라운드 요청 완료:", response.data);
 
-                // 3. 사용이 끝났으니 localStorage 정리
                 localStorage.removeItem("counselingId");
                 localStorage.removeItem("reportIds");
                 localStorage.removeItem("videoStarted");
@@ -40,7 +47,6 @@ function SComplete() {
 
         triggerAIAnalysis();
 
-        // 4. 카메라 강제 종료
         const stopCamera = async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
@@ -52,8 +58,15 @@ function SComplete() {
         stopCamera();
     }, []);
 
-    const handleGoHome = () => {
-        // ⭐ 이제 여기서는 API 호출을 하지 않고 홈으로 이동만 합니다.
+    const handleGoHome = (e) => {
+        // ⭐ 온보딩 중일 때 홈 버튼 클릭도 막고 싶다면 이 주석을 해제하세요.
+        /*
+        if (checkIsOnboarding()) {
+            e.preventDefault();
+            return;
+        }
+        */
+        
         localStorage.setItem("visited", "yes");
         navigate('/');
     };
