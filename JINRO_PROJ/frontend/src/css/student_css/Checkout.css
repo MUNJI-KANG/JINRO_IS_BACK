@@ -73,13 +73,8 @@
 
   border-radius: 16px;
 
-  transition: 0.2s ease;
 }
 
-.video-card:hover {
-  background: var(--bg-card);
-  border-color: var(--primary);
-}
 
 /* 순서 */
 
@@ -189,8 +184,4 @@
 .cart-btn.primary {
   background: var(--primary);
   color: #fff;
-}
-
-.cart-btn.primary:hover {
-  background: var(--primary-hover);
 }

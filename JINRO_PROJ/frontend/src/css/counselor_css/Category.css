@@ -253,15 +253,8 @@
 
   transition: .2s;
 
-  cursor: pointer;
 }
 
-.video-card:hover {
-
-  transform: translateY(-3px);
-
-  box-shadow: var(--shadow);
-}
 
 .card-info h4 {
 

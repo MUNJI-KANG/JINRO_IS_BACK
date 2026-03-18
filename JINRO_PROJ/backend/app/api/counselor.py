@@ -1,4 +1,4 @@
-from fastapi import Request, APIRouter, Depends, HTTPException, Query, UploadFile, File
+from fastapi import Request, APIRouter, Depends, HTTPException, Query, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.db.database import SessionLocal
@@ -302,7 +302,7 @@ def update_report_con(counseling_id: int, data: ReportConUpdateRequest, db: Sess
 # ===============================
 # 🔹 AI 서버 비동기 전송
 # ===============================
-def send_audio_to_ai(counseling_id, file_bytes, filename, content_type):
+def send_audio_to_ai(counseling_id, file_bytes, filename, content_type, ai_report):
 
     try:
 
@@ -313,6 +313,7 @@ def send_audio_to_ai(counseling_id, file_bytes, filename, content_type):
         res = requests.post(
             f"{AI_SERVER_BASE_URL}/audio/upload/{counseling_id}",
             files=files,
+            data={"ai_report": ai_report},
             timeout=120
         )
 
@@ -356,13 +357,30 @@ async def upload_audio(
         
         file_bytes = await file.read() # Backend → file 읽기
 
+        ai_analyze = db.query(
+            AiAnalyze.attention_score,
+            AiAnalyze.emotion_score,
+            AiAnalyze.survey_score,
+            AiAnalyze.final_score,
+            ReportAiV.category,
+        ).select_from(Counseling) \
+        .join(ReportAiV, Counseling.counseling_id == ReportAiV.counseling_id) \
+        .join(AiAnalyze, ReportAiV.ai_v_erp_id == AiAnalyze.ai_v_erp_id) \
+        .where(Counseling.counseling_id == counseling_id).all()
+        
+        ai_report = ""
+        for i, ai in enumerate(ai_analyze):
+            ai_report += f"{i+1}. {ai.category}는 집중도:{ai.attention_score} 흥미도:{ai.emotion_score} 설문점수:{ai.survey_score} 최종점수:{ai.final_score}\n"
+
+
         # BackgroundTasks 등록
         background_tasks.add_task(
             send_audio_to_ai,
             counseling_id,
             file_bytes,
             file.filename,
-            file.content_type
+            file.content_type,
+            ai_report
         )
         
         return {
