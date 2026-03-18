@@ -6,6 +6,7 @@ import "../../css/common_css/home.css";
 import mainLogo from "../../assets/logo/main_logo.png";
 import clientImg from "../../assets/logo/char1.png";
 import counselorImg from "../../assets/logo/char2.png";
+import guide from "../../assets/logo/char2_before.png";
 import conv from "../../assets/image/conv.png";
 
 const Home = ({ startOnboarding }) => {
@@ -68,7 +69,7 @@ const Home = ({ startOnboarding }) => {
         </div>
 
         <div className="home-guide-char" onClick={handleGuide}>
-          <img src={counselorImg} alt="guide" />
+          <img src={guide} alt="guide" />
         </div>
       </div>
     </div>
