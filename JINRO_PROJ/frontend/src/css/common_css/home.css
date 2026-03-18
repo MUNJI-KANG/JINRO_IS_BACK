@@ -256,9 +256,8 @@
   }
 }
 .main-logo{
-  width:340px;
-  margin-bottom:20px;
-  animation: floatLogo 3.5s ease-in-out infinite;
+  width:1040px;
+  animation: floatLogo 3s ease-in-out infinite;
 }
 
 @keyframes floatLogo{
