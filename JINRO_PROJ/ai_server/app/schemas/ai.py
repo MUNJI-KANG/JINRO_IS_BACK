@@ -43,3 +43,14 @@ class AnalyzeRequest(BaseModel):
     counseling_id: str
     client_id: str
 
+
+# 빽엔드에서 받을것들
+class VideoTask(BaseModel):
+    idx: int
+    ai_v_erp_id: int
+    survey_score: float
+
+class AnalysisRequest(BaseModel):
+    counseling_id: int
+    c_id: str
+    videos: List[VideoTask]
