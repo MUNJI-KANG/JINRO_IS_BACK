@@ -103,8 +103,12 @@ def audio_analyze(data: dict):
 
 
 @router.post("/audio/upload/{counseling_id}")
-def upload_audio(counseling_id: int, file: UploadFile = File(...)):
+def upload_audio(
+    counseling_id: int, 
+    file: UploadFile = File(...), 
+    ai_report: str = Form(...)):
 
+    print("asdsadsa", ai_report)
     # 상담 ID 폴더 생성
     counseling_dir = os.path.join(UPLOAD_DIR, str(counseling_id))
     os.makedirs(counseling_dir, exist_ok=True)    
@@ -125,7 +129,7 @@ def upload_audio(counseling_id: int, file: UploadFile = File(...)):
     stt_result = speech_to_text(file_path)
 
     # LLM 요약 생성
-    summary = summarize_text(stt_result)
+    summary = summarize_text(stt_result, ai_report)
 
     stt_text = stt_result["text"]
 
