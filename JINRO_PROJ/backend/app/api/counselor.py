@@ -1,5 +1,6 @@
 from fastapi import Request, APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from app.db.database import SessionLocal
 from fastapi.responses import StreamingResponse
 from starlette.background import BackgroundTask
@@ -11,7 +12,7 @@ from app.schemas.counselor import (
     ReportConUpdateRequest, FinalReportSave,
     RecordingAnalyze
 )
-from sqlalchemy import func, or_, and_
+from sqlalchemy import func, or_, and_, case
 from app.models.schema_models import (
     Counselor, Client, Category, Counseling,
     ReportAiV, AiAnalyze, ReCommentEnum,
@@ -623,34 +624,44 @@ def get_daily_schedules(
 
 @router.get("/pending-students")
 def get_pending_students(request: Request, db: Session = Depends(get_db)):
+
     counselor_id = request.session.get('counselor_id')
     if not counselor_id:
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
 
-    today_date = datetime.now().date()
+    # 🔥 1. 영상 3개 + 모두 Y 조건
+    subquery = (
+        db.query(ReportAiV.counseling_id)
+        .filter(ReportAiV.complete_yn == 'Y')
+        .group_by(ReportAiV.counseling_id)
+        .having(func.count(ReportAiV.ai_v_erp_id) == 3)
+        .subquery()
+    )
 
-    try:
-        pending_records = db.query(Counseling, Client).join(
-            Client, Counseling.client_id == Client.client_id
-        ).filter(
-            Counseling.counselor_id == counselor_id,
-            or_(
-                Counseling.complete_yn == 1,
-                and_(
-                    Counseling.complete_yn == 2,
-                    func.date(Counseling.reservation_time) < today_date
-                )
-            )
-        ).all()
+    # 🔥 2. 상담 상태 + 영상 완료 둘 다 만족
+    records = db.query(Counseling, Client).join(
+        Client, Counseling.client_id == Client.client_id
+    ).filter(
+        Counseling.counselor_id == counselor_id,
 
-        results = [
-            {"counseling_id": c.counseling_id, "name": cl.name, "studentNo": cl.c_id}
-            for c, cl in pending_records
-        ]
-        return {"success": True, "students": results}
+        # ✅ 영상 3개 완료
+        Counseling.counseling_id.in_(subquery),
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"DB 조회 중 에러: {str(e)}")
+        # ✅ 아직 일정 안 잡힌 애만 (영상 상태)
+        Counseling.complete_yn == 1
+    ).all()
+
+    results = [
+        {
+            "counseling_id": c.counseling_id,
+            "name": cl.name,
+            "studentNo": cl.c_id
+        }
+        for c, cl in records
+    ]
+
+    return {"success": True, "students": results}
+
 
 
 @router.put("/schedule/{counseling_id}")
@@ -681,28 +692,54 @@ def get_students(db: Session = Depends(get_db)):
     students = (
         db.query(Client)
         .join(Counseling, Client.client_id == Counseling.client_id)
+        .filter(
+            # 일정 있음(2) 와 상담완료(3)만 뜨게
+            Counseling.complete_yn >= 2
+        )
         .distinct()
         .all()
     )
+
     return {
         "success": True,
         "data": [
-            {"client_id": s.client_id, "name": s.name, "student_id": s.c_id,
-             "tel": s.phone_num, "email": s.email}
+            {
+                "client_id": s.client_id,
+                "name": s.name,
+                "student_id": s.c_id,
+                "tel": s.phone_num,
+                "email": s.email
+            }
             for s in students
         ]
     }
 
-# 3월 6일 현재 complete_yn이 0과 1이 아니면 final을 Y로 했음 의도대로 안됨 확인해야함
 @router.get("/consultations/{client_id}")
 def get_student_consultations(client_id: int, db: Session = Depends(get_db)):
     try:
         # 1. 상담 기록 조회 (Counseling 테이블)
-        records = db.query(Counseling).filter(
-            Counseling.client_id == client_id,
-            Counseling.complete_yn != 1,
-            Counseling.complete_yn != 0,
-        ).order_by(Counseling.datetime.desc()).all()
+        records = (
+            db.query(Counseling)
+            .outerjoin(ReportFinal, ReportFinal.counseling_id == Counseling.counseling_id)
+            .filter(
+                Counseling.client_id == client_id,
+                Counseling.complete_yn >= 2
+            )
+            .order_by(
+                # 🔥 1순위: 작성중 먼저
+                case(
+                    (ReportFinal.complete_yn == 'N', 0),
+                    else_=1
+                ),
+
+                # 🔥 2순위: 날짜 기준 (완료는 update_date, 아니면 regdate)
+                func.coalesce(
+                    ReportFinal.update_date,
+                    Counseling.regdate
+                ).desc()
+            )
+            .all()
+        )
 
         result = []
         for c in records:

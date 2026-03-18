@@ -464,7 +464,7 @@ const CFinal = () => {
                 <div className="report-top-grid">
                     <section className="report-card">
                         <h3>❶ 분야별 관심 비교 그래프</h3>
-                        {Array.isArray(focusData) && focusData.length > 0 ? (
+                        {tableData && tableData.length > 0 ? (
                             <div className="chart-box">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
@@ -474,18 +474,20 @@ const CFinal = () => {
                                             verticalAlign="middle"
                                             align="right"
                                             iconSize={7}
-                                            payload={[
-                                                { value: '방송', type: 'square', color: '#FFB7B2' },
-                                                { value: '항해사', type: 'square', color: '#E2F0CB' },
-                                                { value: '자동차', type: 'square', color: '#C7CEEA' }
-                                            ]}
+                                            payload={tableData.map((item, index) => ({
+                                                value: item.category, // 범례에 표시될 텍스트 (tableData의 키값에 맞게 수정)
+                                                type: 'square',   // 아이콘 모양
+                                                // item에 색상 데이터(fill 또는 color)가 있다면 그걸 쓰고, 없다면 미리 지정한 색상을 순서대로 매칭합니다.
+                                                color: item.fill || ['#FFB7B2', '#E2F0CB', '#C7CEEA'][index % 3] 
+                                            }))}
                                         />
                                         <Pie
-                                            data={[
-                                                { name: '방송', value: 30, fill: '#FFB7B2' },
-                                                { name: '항해사', value: 30, fill: '#E2F0CB' },
-                                                { name: '자동차', value: 40, fill: '#C7CEEA' }
-                                            ]}
+                                            data={tableData.map((item, index) => ({
+                                                name: item.category, // 범례에 표시될 텍스트 (tableData의 키값에 맞게 수정)
+                                                value: item.final_score,   // 아이콘 모양
+                                                // item에 색상 데이터(fill 또는 color)가 있다면 그걸 쓰고, 없다면 미리 지정한 색상을 순서대로 매칭합니다.
+                                                fill: item.fill || ['#FFB7B2', '#E2F0CB', '#C7CEEA'][index % 3] 
+                                            }))}
                                             cx="50%"
                                             cy="50%"
                                             outerRadius={80}
