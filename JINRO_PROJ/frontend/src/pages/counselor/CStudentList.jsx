@@ -265,15 +265,16 @@ export default function CStudentList() {
                   </div>
 
                   <div className="consult-card-right">
-                    {c.final_report_yn === "Y" && (
-                      <div
-                        className="consult-card-date"
-                        style={{ color: "blue", fontWeight: "bold" }}
-                      >
-                        상담완료
-                      </div>
+                    {c.final_report_yn === "Y" ? (
+                      <div className="status-label complete">상담완료</div>
+                    ) : (
+                      <div className="status-label pending">작성중</div>
                     )}
-                    <div className="consult-card-date">{c.date}</div>
+
+                    {/* 👇 작성중일 때 date 숨김 */}
+                    {c.final_report_yn === "Y" && (
+                      <div className="consult-card-date">{c.date}</div>
+                    )}
                   </div>
                 </div>
               ))}

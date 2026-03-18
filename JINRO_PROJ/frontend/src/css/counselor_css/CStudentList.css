@@ -366,3 +366,29 @@
 
   color: var(--text-sub);
 }
+
+/* ===============================
+   STATUS LABEL (라벨 공통)
+================================ */
+
+.status-label {
+  padding: 4px 10px;
+  border-radius: 6px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  display: inline-block;
+}
+
+/* 🔴 상담완료 (강조) */
+.status-label.complete {
+  background: #ffe5e5;
+  color: #d93025;
+}
+
+/* ⚪ 작성중 (비활성) */
+.status-label.pending {
+  background: #f1f3f5;
+  color: #868e96;
+}
