@@ -499,7 +499,7 @@ async def upload_video(
 
         async with httpx.AsyncClient(timeout=120.0) as http_client:
             response = await http_client.post(
-                f"{AI_SERVER_BASE_URL}/ai/upload-video",
+                f"{AI_SERVER_BASE_URL}/upload-video",
                 data={
                     "counseling_id": str(counseling_id),
                     "client_id": str(client_id),
@@ -554,7 +554,7 @@ async def video_analyze():
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(
-                f'{AI_SERVER_BASE_URL}/ai/video/analyze',
+                f'{AI_SERVER_BASE_URL}/video/analyze',
                 json={"video_path": video_path},
                 timeout=120.0,  # 120초 대기 (필요에 따라 조절)
                 )
@@ -774,7 +774,7 @@ async def complete_video(complete_request: CompleteVideoRequest, db: Session = D
                 # 'Not_Interested_Percentage'
                 async with httpx.AsyncClient() as cl:
                     response = await cl.get(
-                        f"{AI_SERVER_BASE_URL}/ai/interest/analyze/{complete_request.counseling_id}/{client.c_id}/{i+1}",
+                        f"{AI_SERVER_BASE_URL}/interest/analyze/{complete_request.counseling_id}/{client.c_id}/{i+1}",
                         timeout=600.0,  # 600초 대기 (필요에 따라 조절)
                         )
                     
@@ -790,7 +790,7 @@ async def complete_video(complete_request: CompleteVideoRequest, db: Session = D
                 # "unfocus_rate"
                 async with httpx.AsyncClient() as cl:
                     response = await cl.get(
-                        f"{AI_SERVER_BASE_URL}/ai/engagement/analyze/{complete_request.counseling_id}/{client.c_id}/{i+1}",
+                        f"{AI_SERVER_BASE_URL}/engagement/analyze/{complete_request.counseling_id}/{client.c_id}/{i+1}",
                         timeout=600.0,  # 600초 대기 (필요에 따라 조절)
                         )
                     

@@ -179,7 +179,7 @@ async def set_recording_analyze(record_analyze: RecordingAnalyze,  db: Session =
         data = {}
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                f'{AI_SERVER_BASE_URL}/ai/api/summarize',
+                f'{AI_SERVER_BASE_URL}/api/summarize',
                 json={
                     "text": report_ai_m.stt_text,
                     record_analyze.prompt and "system_prompt": record_analyze.prompt,
@@ -310,7 +310,7 @@ def send_audio_to_ai(counseling_id, file_bytes, filename, content_type):
         }
 
         res = requests.post(
-            f"{AI_SERVER_BASE_URL}/ai/audio/upload/{counseling_id}",
+            f"{AI_SERVER_BASE_URL}/audio/upload/{counseling_id}",
             files=files,
             timeout=120
         )
@@ -526,7 +526,7 @@ async def get_ai_report_voice_file(counseling_id: int, request: Request):
         # 2. Server A로 Range 헤더를 포함하여 요청
         req = client.build_request(
             "GET", 
-            f"{AI_SERVER_BASE_URL}/ai/audio/load/{counseling_id}", 
+            f"{AI_SERVER_BASE_URL}/audio/load/{counseling_id}", 
             headers=req_headers,
             )
         r = await client.send(req, stream=True)
