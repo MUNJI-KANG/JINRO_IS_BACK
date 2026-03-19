@@ -4,6 +4,7 @@ import { FLOW } from "./onbordingflow";
 
 const SPOTLIGHT_PADDING = 14;
 const GUIDE_MARGIN = 16;
+const GUIDE_MASCOT_BOTTOM_SPACE = 92;
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 const findRouteIndex = (pathname) =>
@@ -296,7 +297,10 @@ export default function GlobalOnboardingEngine({ onFinish }) {
     const panelWidth = guideSize.width;
     const panelHeight = guideSize.height;
     const maxLeft = Math.max(GUIDE_MARGIN, window.innerWidth - panelWidth - GUIDE_MARGIN);
-    const maxTop = Math.max(GUIDE_MARGIN, window.innerHeight - panelHeight - GUIDE_MARGIN);
+    const maxTop = Math.max(
+      GUIDE_MARGIN,
+      window.innerHeight - panelHeight - GUIDE_MARGIN - GUIDE_MASCOT_BOTTOM_SPACE
+    );
 
     if (isHomeStartRoute && targetRect && window.innerWidth >= 1024) {
       const gap = 24;

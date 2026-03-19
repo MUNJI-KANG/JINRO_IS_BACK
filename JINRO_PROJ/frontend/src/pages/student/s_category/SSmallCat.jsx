@@ -189,14 +189,14 @@ function SSmallCat() {
                   </button>
 
                   <button
-                    className={`${styles.nextBtn} ${isComplete ? styles.active : ""}`}
+                    className={`${styles.nextBtn} global-category-next ${canMoveCheckout ? `${styles.active} next-button-active` : ""}`}
                     onClick={() =>
-                      isComplete
+                      canMoveCheckout
                         ? navigate("/student/category/checkout")
                         : navigate("/student/category/big")
                     }
                   >
-                    {isComplete
+                    {canMoveCheckout
                       ? "영상보기"
                       : `카테고리로 이동 (${select.length}/3)`}
                   </button>
