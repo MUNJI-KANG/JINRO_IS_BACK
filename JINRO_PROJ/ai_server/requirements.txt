@@ -15,4 +15,9 @@ email-validator
 faster_whisper
 openai
 torchvision==0.25.0
+<<<<<<< HEAD
 python-dotenv
+=======
+aiofiles
+httpx
+>>>>>>> ef7e72ab71ef15b4c0f5f0e72569451cb325bc96
