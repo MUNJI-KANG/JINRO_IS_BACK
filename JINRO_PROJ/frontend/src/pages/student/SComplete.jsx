@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/app.js';
 import styles from '../../css/student_css/SComplete.module.css';
@@ -6,6 +6,9 @@ import styles from '../../css/student_css/SComplete.module.css';
 function SComplete() {
     const navigate = useNavigate();
     const [counselingVal, setCounselingVal] = useState(null);
+    
+    // ⭐ 1. 중복 호출 방지용 깃발 (컴포넌트가 두 번 렌더링되어도 값 유지)
+    const isAnalysisTriggered = useRef(false);
 
     const checkIsOnboarding = () => {
         return localStorage.getItem("skip_all_onboarding") === "true" || 
@@ -19,6 +22,15 @@ function SComplete() {
         }
 
         const triggerAIAnalysis = async () => {
+            // ⭐ 2. 이미 요청이 시작되었다면 함수 즉시 종료
+            if (isAnalysisTriggered.current) {
+                console.log("이미 분석 요청이 진행 중입니다. 중복 호출을 차단합니다.");
+                return;
+            }
+            
+            // ⭐ 3. 통과하자마자 깃발을 올려서 다음 요청 차단
+            isAnalysisTriggered.current = true;
+
             try {
                 const counselingId = localStorage.getItem("counselingId");
                 const clientId = localStorage.getItem("client_id");
@@ -27,6 +39,7 @@ function SComplete() {
 
                 if (!counselingId || !clientId) {
                     console.error("상담 ID 또는 학생 ID를 찾을 수 없습니다.");
+                    isAnalysisTriggered.current = false; // 에러 시 다시 시도할 수 있게 깃발 내림
                     return;
                 }
 
@@ -37,11 +50,14 @@ function SComplete() {
 
                 console.log("빽단에 분석 백그라운드 요청 완료:", response.data);
 
+                // ⭐ 4. 요청이 성공적으로 들어간 후에 스토리지 정리
                 localStorage.removeItem("counselingId");
                 localStorage.removeItem("reportIds");
                 localStorage.removeItem("videoStarted");
+                
             } catch (error) {
                 console.error("분석 요청 실패:", error);
+                isAnalysisTriggered.current = false; // 실패 시 다시 시도할 수 있게 깃발 내림
             }
         };
 
@@ -59,7 +75,7 @@ function SComplete() {
     }, []);
 
     const handleGoHome = (e) => {
-        // ⭐ 온보딩 중일 때 홈 버튼 클릭도 막고 싶다면 이 주석을 해제하세요.
+        // 온보딩 중일 때 홈 버튼 클릭 막기 (필요시 주석 해제)
         /*
         if (checkIsOnboarding()) {
             e.preventDefault();

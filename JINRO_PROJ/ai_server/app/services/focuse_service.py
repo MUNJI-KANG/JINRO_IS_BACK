@@ -7,7 +7,7 @@ import torchvision.models as models
 import mediapipe as mp
 from PIL import Image
 
-# =====================================================================
+# ===================================================================== 
 # 🧠 1. 모델 아키텍처 (학습할 때 썼던 2D FrameMobileNetV2)
 # =====================================================================
 class FrameMobileNetV2(nn.Module):

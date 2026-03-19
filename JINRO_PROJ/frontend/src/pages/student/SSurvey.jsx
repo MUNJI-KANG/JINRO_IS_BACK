@@ -12,7 +12,8 @@ function SSurvey() {
   const selectedVideos = useSelector((state) => state.cVideos);
   const reduxCounselingId = useSelector((state) => state.counselingId);
 
-  const { currentIndex = 0 } = location.state || {};
+  // 🔥 SVideo에서 넘겨준 videoBlob을 받아옵니다.
+  const { currentIndex = 0, videoBlob = null } = location.state || {};
   const counselingId =
     reduxCounselingId || localStorage.getItem("counselingId");
   const isGlobalOnboarding =
@@ -39,7 +40,12 @@ function SSurvey() {
     };
 
     fetchSurvey();
-  }, [categoryId]);
+
+    // 🔥 만약 영상 시청 페이지를 거치지 않고 직접 주소를 치거나 새로고침해서 영상 데이터가 날아간 경우 경고
+    if (!isGlobalOnboarding && !videoBlob) {
+      console.warn("전달받은 영상 데이터가 없습니다. 영상이 저장되지 않을 수 있습니다.");
+    }
+  }, [categoryId, isGlobalOnboarding, videoBlob]);
 
   const questions = useMemo(() => {
     if (!surveyInfo) return [];
@@ -61,17 +67,20 @@ function SSurvey() {
       return;
     }
 
+    // 아직 마지막 질문이 아니면 다음 질문으로 이동
     if (currentStep < questions.length - 1) {
       setCurrentStep((prev) => prev + 1);
       return;
     }
 
+    // 온보딩 플로우 처리
     if (isGlobalOnboarding) {
       navigate("/student/complete");
       localStorage.removeItem("videoStarted");
       return;
     }
 
+    // 상담 ID 확인
     if (!counselingId) {
       console.error("counseling_id is missing");
       alert("상담 정보가 없습니다.");
@@ -88,14 +97,30 @@ function SSurvey() {
         return;
       }
 
+      // 1. 설문 결과 전송
       if (!isGlobalOnboarding) {
         await api.post("/client/pComplete", {
           counseling_id: Number(counselingId),
           report_id: currentReportId,
           answer: nextAnswers,
         });
+
+        // 🔥 2. 비디오 업로드 로직 추가 (설문 완료와 동시에 진행)
+        if (videoBlob) {
+          const formData = new FormData();
+          formData.append("file", videoBlob, "video.webm");
+          formData.append("report_id", currentReportId);
+
+          try {
+            await api.post(`/client/video/upload/${counselingId}`, formData);
+          } catch (uploadError) {
+            console.error("비디오 업로드 실패:", uploadError);
+            // 업로드 실패 시 알림을 띄울지 여부는 기획에 따라 선택 (여기서는 콘솔 에러만 남김)
+          }
+        }
       }
 
+      // 다음 단계(다음 영상 또는 완료)로 이동
       const nextIdx = currentIndex + 1;
 
       if (!selectedVideos || nextIdx >= selectedVideos.length) {
@@ -111,6 +136,7 @@ function SSurvey() {
       });
     } catch (error) {
       console.error(error);
+      alert("데이터 전송 중 오류가 발생했습니다.");
     }
   };
 
