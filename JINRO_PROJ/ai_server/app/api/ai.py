@@ -188,7 +188,7 @@ async def upload_audio(counseling_id: int, file: UploadFile = File(...), ai_repo
                     "summary": summary["summary"],
                     "analysis": summary
                 },
-                timeout=30.0
+                timeout=120.0
             )
             if res.status_code != 200:
                 logger.error(f"[{counseling_id}] 백엔드 STT 저장 실패: {res.text}")

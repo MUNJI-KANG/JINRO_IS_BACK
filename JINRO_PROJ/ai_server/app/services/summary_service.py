@@ -46,7 +46,8 @@ def build_chunks_from_segments(segments, max_chars=2500):
 
 
 # -----------------------------
-# Map 단계 (chunk 요약)
+# [주석 처리] Map 단계 (chunk 요약) - Map-Reduce 방식
+# 상담 대화는 앞뒤 맥락이 이어지는 특성상 Refine 방식으로 교체
 # -----------------------------
 def summarize_chunk(chunk: str):
 
@@ -81,10 +82,9 @@ def summarize_chunk(chunk: str):
 
 
 # -----------------------------
-# 병렬 Map 처리
+# [주석 처리] 병렬 Map 처리 - Map-Reduce 방식
+# 상담 대화는 순서·맥락이 중요하므로 병렬 처리 대신 Refine 방식으로 교체
 # -----------------------------
-
-# 
 def summarize_chunks(chunks):
 
     summaries = []
@@ -96,9 +96,8 @@ def summarize_chunks(chunks):
             except Exception as e:
                 print(f"[청크 요약 실패] {attempt+1}/{max_retries}회: {e}")
                 if attempt < max_retries - 1:
-                    time.sleep(2)   # 2초 후 재시도
-        
-        
+                    time.sleep(2)
+
         print(f"[청크 요약 최종 실패] 해당 청크 건너뜀")
         return ""
 
@@ -106,9 +105,9 @@ def summarize_chunks(chunks):
         results = executor.map(safe_summarize, chunks)
 
     for r in results:
-        if r:   # 빈 문자열 제외하고 추가
+        if r:
             summaries.append(r)
-        
+
     if not summaries:
         raise ValueError("모든 청크 요약에 실패했습니다.")
 
@@ -116,47 +115,97 @@ def summarize_chunks(chunks):
 
 
 # -----------------------------
+# Refine 단계 - 단일 청크 처리
+# 이전 누적 요약 + 새 청크 → 갱신된 누적 요약
+# 실패 시: 기존 요약 유지 (흐름 끊기지 않음)
+# -----------------------------
+def refine_chunk(existing_summary: str, new_chunk: str, max_retries=3) -> str:
+
+    # 첫 번째 청크는 기존 요약 없이 시작
+    if not existing_summary:
+        prompt = f"""
+다음은 학생과 상담사가 진행한 진로 상담 녹취 일부입니다.
+
+핵심 상담 내용을 간결하게 정리하세요.
+
+요약 기준
+- 학생이 관심을 보인 직업 또는 분야
+- 학생의 감정 반응 또는 태도
+- 상담사가 제시한 조언
+- 진로 관련 핵심 발언
+
+3~4문장 이내로 요약하세요.
+
+상담 녹취:
+{new_chunk}
+"""
+    else:
+        # 두 번째 청크부터는 기존 누적 요약 + 새 내용 합산 후 갱신
+        prompt = f"""
+다음은 학생과 상담사가 진행한 진로 상담의 누적 요약과 새로운 녹취 내용입니다.
+
+[지금까지의 요약]
+{existing_summary}
+
+[새로운 녹취 내용]
+{new_chunk}
+
+위 두 내용을 합쳐서 전체 상담 흐름이 유지되도록 요약을 갱신하세요.
+
+요약 기준
+- 학생이 관심을 보인 직업 또는 분야 (변화가 있으면 반영)
+- 학생의 감정 반응 또는 태도 (변화가 있으면 반영)
+- 상담사가 제시한 조언
+- 진로 관련 핵심 발언
+
+4~6문장 이내로 갱신된 요약을 작성하세요.
+"""
+
+    for attempt in range(max_retries):
+        try:
+            res = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "당신은 학교 진로 상담 내용을 정리하는 AI입니다."},
+                    {"role": "user",   "content": prompt}
+                ],
+                temperature=0.2,
+                max_tokens=400
+            )
+            return res.choices[0].message.content.strip()
+
+        except Exception as e:
+            print(f"[Refine 실패] {attempt+1}/{max_retries}회: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(1)
+
+    # 3번 다 실패 시 기존 누적 요약 유지 (흐름 끊기지 않음)
+    print("[Refine 최종 실패] 기존 누적 요약 유지")
+    return existing_summary
+
+
+# -----------------------------
+# Refine 전체 실행
+# 청크 순서대로 누적 요약 갱신
+# -----------------------------
+def refine_chunks(chunks: list) -> str:
+
+    accumulated_summary = ""
+
+    for i, chunk in enumerate(chunks):
+        print(f"[Refine] {i+1}/{len(chunks)} 청크 처리 중...")
+        accumulated_summary = refine_chunk(accumulated_summary, chunk)
+
+    if not accumulated_summary:
+        raise ValueError("모든 청크 Refine에 실패했습니다.")
+
+    return accumulated_summary
+
+
+# -----------------------------
 # Reduce 단계 (최종 요약)
 # -----------------------------
 def summarize_final(text, video_analyze):
-
-#     prompt = f"""
-# 당신은 20년 경력의 학교 진로 상담사입니다.
-
-# 다음 상담 요약들을 분석하여 반드시 JSON 형식으로 결과를 작성하세요.
-
-# 출력 JSON 구조
-
-# {{
-#   "interest_field": "",
-#   "low_interest_field": "",
-#   "student_trait": "",
-#   "career_recommendation": "",
-#   "summary": ""
-# }}
-
-# 설명
-
-# interest_field:
-# 학생이 가장 흥미를 보인 직업 또는 분야
-
-# low_interest_field:
-# 학생이 상대적으로 흥미가 낮은 분야
-
-# student_trait:
-# 학생의 성향 (예: 분석적, 창의적, 탐구적 등)
-
-# career_recommendation:
-# 상담을 바탕으로 추천할 진로 5가지
-
-# summary:
-# 전체 상담 핵심 요약 (4~6줄)
-
-# 상담 요약:
-# {text}
-
-# JSON만 출력하세요.
-# """
 
     prompt = f"""
     당신은 20년 경력의 전문 학교 진로 상담사입니다. 학생의 정성적인 '상담 요약'과 정량적인 '영상분석' 데이터를 종합적으로 분석하여 최적의 진로를 추천하는 것이 당신의 역할입니다.
@@ -188,7 +237,7 @@ def summarize_final(text, video_analyze):
         "career_recommendation": [],
         "summary": ""
     }}
-"""
+    """
 
     res = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -201,8 +250,6 @@ def summarize_final(text, video_analyze):
     )
 
     content = res.choices[0].message.content.strip()
-
-    # GPT JSON 파싱 오류 방지
     content = re.sub(r"```json|```", "", content).strip()
 
     if not content.startswith("{"):
@@ -213,13 +260,12 @@ def summarize_final(text, video_analyze):
         return json.loads(content)
 
     except Exception:
-
         return {
             "interest_field": "",
             "low_interest_field": "",
             "student_trait": "",
             "career_recommendation": [],
-            "summary": "분석결과를 가져온는데 실패했습니다."
+            "summary": "분석 결과를 가져오는 데 실패했습니다."
         }
 
 
@@ -234,19 +280,21 @@ def summarize_text(stt_result, ai_report):
             "interest_field": "",
             "low_interest_field": "",
             "student_trait": "",
-            "career_recommendation": "",
+            "career_recommendation": [],
             "summary": "음성 내용이 인식되지 않았습니다."
         }
 
     segments = stt_result["segments"]
 
-    # 1️⃣ segment 기반 chunk
+    # 1️⃣ segment 기반 chunk 분할
     chunks = build_chunks_from_segments(segments)
 
+    # 2️⃣ Refine — 청크 순서대로 누적 요약 (Map-Reduce에서 교체)
+    # [변경 이유] 상담 대화는 앞뒤 맥락이 이어지는 특성상
+    #            병렬 처리(Map-Reduce)보다 순차 누적(Refine)이 맥락 유지에 적합
     try:
-        # 2️⃣ Map 요약
-        chunk_summaries = summarize_chunks(chunks)
-    except ValueError as e:
+        refined_summary = refine_chunks(chunks)
+    except ValueError:
         return {
             "interest_field": "",
             "low_interest_field": "",
@@ -255,10 +303,7 @@ def summarize_text(stt_result, ai_report):
             "summary": "상담 내용 분석에 실패했습니다."
         }
 
-    # 3️⃣ Merge
-    merged = "\n".join(chunk_summaries)
-
-    # 4️⃣ Reduce 요약
-    final_summary = summarize_final(merged, ai_report)
+    # 3️⃣ Reduce — 누적 요약 + 영상 분석 데이터 → 최종 JSON
+    final_summary = summarize_final(refined_summary, ai_report)
 
     return final_summary
