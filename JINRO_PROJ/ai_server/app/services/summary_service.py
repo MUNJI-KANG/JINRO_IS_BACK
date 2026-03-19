@@ -4,6 +4,7 @@ import os
 import re
 import json
 from concurrent.futures import ThreadPoolExecutor
+import time 
 
 load_dotenv()
 
@@ -73,7 +74,7 @@ def summarize_chunk(chunk: str):
             {"role": "user", "content": prompt}
         ],
         temperature=0.2,
-        max_tokens=200
+        max_tokens=400
     )
 
     return res.choices[0].message.content.strip()
@@ -82,16 +83,34 @@ def summarize_chunk(chunk: str):
 # -----------------------------
 # 병렬 Map 처리
 # -----------------------------
+
+# 
 def summarize_chunks(chunks):
 
     summaries = []
 
-    # 병렬 LLM 호출
+    def safe_summarize(chunk, max_retries=3):
+        for attempt in range(max_retries):
+            try:
+                return summarize_chunk(chunk)
+            except Exception as e:
+                print(f"[청크 요약 실패] {attempt+1}/{max_retries}회: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(2)   # 2초 후 재시도
+        
+        
+        print(f"[청크 요약 최종 실패] 해당 청크 건너뜀")
+        return ""
+
     with ThreadPoolExecutor(max_workers=4) as executor:
-        results = executor.map(summarize_chunk, chunks)
+        results = executor.map(safe_summarize, chunks)
 
     for r in results:
-        summaries.append(r)
+        if r:   # 빈 문자열 제외하고 추가
+            summaries.append(r)
+        
+    if not summaries:
+        raise ValueError("모든 청크 요약에 실패했습니다.")
 
     return summaries
 
@@ -162,11 +181,13 @@ def summarize_final(text, video_analyze):
     {video_analyze}
 
     # 출력 형식 (Strict JSON):
-    "interest_field": "",
-    "low_interest_field": "",
-    "student_trait": "",
-    "career_recommendation": "",
-    "summary": ""
+    {{
+        "interest_field": "",
+        "low_interest_field": "",
+        "student_trait": "",
+        "career_recommendation": [],
+        "summary": ""
+    }}
 """
 
     res = client.chat.completions.create(
@@ -176,16 +197,17 @@ def summarize_final(text, video_analyze):
             {"role": "user", "content": prompt}
         ],
         temperature=0.2,
-        max_tokens=400
+        max_tokens=800
     )
 
     content = res.choices[0].message.content.strip()
 
     # GPT JSON 파싱 오류 방지
-    content = re.sub(r"^```json", "", content)
-    content = re.sub(r"^```", "", content)
-    content = re.sub(r"```$", "", content)
-    content = content.strip()
+    content = re.sub(r"```json|```", "", content).strip()
+
+    if not content.startswith("{"):
+        match = re.search(r"\{.*\}", content, re.DOTALL)
+        content = match.group(0) if match else content
 
     try:
         return json.loads(content)
@@ -196,8 +218,8 @@ def summarize_final(text, video_analyze):
             "interest_field": "",
             "low_interest_field": "",
             "student_trait": "",
-            "career_recommendation": "",
-            "summary": content
+            "career_recommendation": [],
+            "summary": "분석결과를 가져온는데 실패했습니다."
         }
 
 
@@ -221,8 +243,17 @@ def summarize_text(stt_result, ai_report):
     # 1️⃣ segment 기반 chunk
     chunks = build_chunks_from_segments(segments)
 
-    # 2️⃣ Map 요약
-    chunk_summaries = summarize_chunks(chunks)
+    try:
+        # 2️⃣ Map 요약
+        chunk_summaries = summarize_chunks(chunks)
+    except ValueError as e:
+        return {
+            "interest_field": "",
+            "low_interest_field": "",
+            "student_trait": "",
+            "career_recommendation": [],
+            "summary": "상담 내용 분석에 실패했습니다."
+        }
 
     # 3️⃣ Merge
     merged = "\n".join(chunk_summaries)

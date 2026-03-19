@@ -12,6 +12,7 @@ import shutil
 import os
 import requests
 import ollama
+import json
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
@@ -154,8 +155,27 @@ async def upload_audio(counseling_id: int, file: UploadFile = File(...), ai_repo
     stt_result = await asyncio.to_thread(speech_to_text, file_path)
     stt_text = stt_result["text"]
     
+    try:
+        ai_report_dict = json.loads(ai_report)
+    except Exception:
+        ai_report_dict = {}
+        logger.warning(f"[{counseling_id}] ai_report 파싱 실패")
+    
     logger.info(f"[{counseling_id}] STT 텍스트 요약 시작")
-    summary = await asyncio.to_thread(summarize_text, stt_result, ai_report)
+
+    summary = await asyncio.to_thread(summarize_text, stt_result, ai_report_dict)
+
+    try:
+         summary = await asyncio.to_thread(summarize_text, stt_result, ai_report_dict)
+    except Exception as e:
+        logger.error(f"[{counseling_id}] 요약 실패: {e}")
+        summary = {
+        "interest_field": "",
+        "low_interest_field": "",
+        "student_trait": "",
+        "career_recommendation": [],
+        "summary": "요약 생성에 실패했습니다."
+    }
 
     try:
         logger.info(f"[{counseling_id}] 백엔드로 STT 및 요약 결과 전송 중...")
@@ -195,7 +215,7 @@ async def summarize_api(summaryRequest: SummaryRequest):
         return {
             "success": True,
             "model": summaryRequest.model,
-            "summary": response.message['content']
+            "summary": response.message.content
         }
     except Exception as e:
         logger.error(f"Ollama 요약 실패: {str(e)}")
@@ -357,6 +377,8 @@ async def run_full_analysis(request: AnalysisRequest):
         "results": results
     }
     
+    # ✅ 웹훅 콜백 재시도 로직 추가
+    callback_url = f"{BACKEND_URL}/client/analysis/callback"
     logger.info(f"[{c_id}] 모든 영상 분석 완료. 백엔드로 웹훅 전송 시도...")
     try:
         async with httpx.AsyncClient() as cl:
