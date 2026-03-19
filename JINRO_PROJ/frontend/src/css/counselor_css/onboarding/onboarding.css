@@ -43,10 +43,25 @@
   color:white;
   text-align:center;
   max-width:420px;
+  overflow:visible;
+  box-sizing:border-box;
+  padding:0 18px 88px;
 
   transition:
     top .42s cubic-bezier(.22,.61,.36,1),
     left .42s cubic-bezier(.22,.61,.36,1);
+}
+
+.onboard-guide::after{
+  content:"";
+  position:absolute;
+  right:-18px;
+  bottom:-16px;
+  width:150px;
+  height:150px;
+  background:url("../../../assets/logo/onboarding.png") center / contain no-repeat;
+  pointer-events:none;
+  animation:onboardMascotFloat 2.6s ease-in-out infinite;
 }
 
 /* =========================================
@@ -91,4 +106,29 @@
 .onboard-btn:hover{
   transform:translateY(-4px);
   background:var(--primary-hover);
+}
+
+.onboard-btn:disabled{
+  opacity:.78;
+  cursor:default;
+  transform:none;
+}
+
+@keyframes onboardMascotFloat{
+  0%{ transform:translateY(0); }
+  50%{ transform:translateY(-8px); }
+  100%{ transform:translateY(0); }
+}
+
+@media (max-width: 768px){
+  .onboard-guide{
+    padding:0 10px 68px;
+  }
+
+  .onboard-guide::after{
+    right:-8px;
+    bottom:-10px;
+    width:104px;
+    height:104px;
+  }
 }
