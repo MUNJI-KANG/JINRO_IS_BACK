@@ -346,32 +346,24 @@ function SVideo() {
     setUploading(true);
 
     try {
+      // 1. 녹화 종료 및 영상 데이터(blob) 생성
       const blob = await stopRecording();
 
+      // 2. 웹캠 완전히 끄기
       if (webcamRef.current?.srcObject) {
         webcamRef.current.srcObject.getTracks().forEach((track) => track.stop());
         webcamRef.current.srcObject = null;
       }
 
-      if (!isGlobalOnboarding) {
-        const storedReportIds = JSON.parse(localStorage.getItem("reportIds") || "[]");
-        const currentReportId =
-          currentReportIds[currentIndex] || storedReportIds[currentIndex] || 1;
-        const counselingId =
-          currentCounselingId || localStorage.getItem("counselingId") || "1";
-
-        const formData = new FormData();
-        formData.append("file", blob, "video.webm");
-        formData.append("report_id", currentReportId);
-
-        await api.post(`/client/video/upload/${counselingId}`, formData);
-      }
-
+      // 3. 서버 업로드 X -> 바로 설문 페이지로 이동하면서 영상 데이터 전달
       navigate(`/student/survey/${categoryId}`, {
-        state: { currentIndex },
+        state: {
+          currentIndex,
+          videoBlob: blob // 🔥 핵심: 영상을 메모리에 들고 넘어갑니다.
+        },
       });
     } catch (error) {
-      console.error("영상 업로드 실패:", error);
+      console.error("영상 처리 실패:", error);
       setUploading(false);
       alert("영상 처리 중 문제가 발생했습니다. 다시 시도해 주세요.");
     }

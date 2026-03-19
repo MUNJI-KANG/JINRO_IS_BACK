@@ -25,6 +25,8 @@ from app.services.focuse_service import FrameMobileNetV2
 import httpx
 import asyncio
 import logging
+import aiofiles
+
 
 # =====================================================================
 # ⭐ 로거 설정 추가
@@ -45,6 +47,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # =====================================================================
 # 🧠 1. 디바이스 및 흥미도 예측 모델 설정
 # =====================================================================
+
+# 디바이스 설정
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 logger.info(f"디바이스 설정 완료: {device}")
 
@@ -56,6 +60,7 @@ test_transforms = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
+# 흥미도 모델
 model = models.resnet50(pretrained=False)
 num_ftrs = model.fc.in_features
 model.fc = nn.Linear(num_ftrs, len(class_names))
@@ -81,6 +86,7 @@ logger.info("MediaPipe 얼굴 인식 모듈 초기화 완료")
 # =====================================================================
 logger.info(f"💻 AI 서버 집중도 모델 로드 중... 디바이스: {device}")
 focus_model_path = os.path.join(BASE_DIR, '..', 'model', 'best_focus_model_frame.pth')
+# focus 모델 
 focus_model = FrameMobileNetV2(num_classes=2).to(device)
 
 if os.path.exists(focus_model_path):
@@ -110,23 +116,23 @@ def get_client_list():
 # 🎤 3. 오디오 및 STT, 요약 기능 (기존 유지)
 # =====================================================================
 @router.post("/audio/stt")
-def audio_stt(data: dict):
+async def audio_stt(data: dict):
     audio_path = data["audio_path"]
     logger.info(f"오디오 STT 변환 요청 수신: {audio_path}")
-    text = speech_to_text(audio_path)
+    text = await asyncio.to_thread(speech_to_text, audio_path)
     logger.info(f"오디오 STT 변환 완료: {audio_path}")
     return {"success": True, "text": text}
 
 @router.post("/audio/analyze")
-def audio_analyze(data: dict):
+async def audio_analyze(data: dict):
     audio_path = data["audio_path"]
     logger.info(f"오디오 STT 분석 요청 수신: {audio_path}")
-    text = speech_to_text(audio_path)
+    text = await asyncio.to_thread(speech_to_text, audio_path)
     logger.info(f"오디오 STT 분석 완료: {audio_path}")
     return {"success": True, "stt_text": text}
 
 @router.post("/audio/upload/{counseling_id}")
-def upload_audio(counseling_id: int, file: UploadFile = File(...), ai_report: str = Form(...)):
+async def upload_audio(counseling_id: int, file: UploadFile = File(...), ai_report: str = Form(...)):
     logger.info(f"[{counseling_id}] 오디오 업로드 및 STT/요약 요청 수신")
     
     counseling_dir = os.path.join(UPLOAD_DIR, str(counseling_id))
@@ -136,32 +142,38 @@ def upload_audio(counseling_id: int, file: UploadFile = File(...), ai_report: st
     filename = f"counseling_{counseling_id}{ext}"
     file_path = os.path.join(counseling_dir, filename)
 
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    # 병목 해결: 비동기 파일 저장
+    async with aiofiles.open(file_path, "wb") as buffer:
+        while content := await file.read(1024 * 1024):
+            await buffer.write(content)
+            
     logger.debug(f"[{counseling_id}] 오디오 파일 저장 완료: {file_path}")
 
     logger.info(f"[{counseling_id}] STT 변환 시작")
-    stt_result = speech_to_text(file_path)
+    # 병목 해결: 무거운 연산 스레드 분리
+    stt_result = await asyncio.to_thread(speech_to_text, file_path)
     stt_text = stt_result["text"]
     
     logger.info(f"[{counseling_id}] STT 텍스트 요약 시작")
-    summary = summarize_text(stt_result, ai_report)
+    summary = await asyncio.to_thread(summarize_text, stt_result, ai_report)
 
     try:
         logger.info(f"[{counseling_id}] 백엔드로 STT 및 요약 결과 전송 중...")
-        res = requests.post(
-            f"{BACKEND_URL}/counselor/report/con/{counseling_id}/stt-result",
-            json={
-                "stt_text": stt_text,
-                "summary": summary["summary"],
-                "analysis": summary
-            },
-            timeout=30
-        )
-        if res.status_code != 200:
-            logger.error(f"[{counseling_id}] 백엔드 STT 저장 실패: {res.text}")
-        else:
-            logger.info(f"[{counseling_id}] 백엔드 STT 저장 성공")
+        # 병목 해결: httpx 비동기 통신
+        async with httpx.AsyncClient() as client:
+            res = await client.post(
+                f"{BACKEND_URL}/counselor/report/con/{counseling_id}/stt-result",
+                json={
+                    "stt_text": stt_text,
+                    "summary": summary["summary"],
+                    "analysis": summary
+                },
+                timeout=30.0
+            )
+            if res.status_code != 200:
+                logger.error(f"[{counseling_id}] 백엔드 STT 저장 실패: {res.text}")
+            else:
+                logger.info(f"[{counseling_id}] 백엔드 STT 저장 성공")
     except Exception as e:
         logger.error(f"[{counseling_id}] 백엔드 API 호출 실패: {str(e)}")
 
@@ -222,26 +234,22 @@ async def ai_upload_video(
         os.makedirs(counseling_folder, exist_ok=True)
 
         files = os.listdir(counseling_folder)
-        numbers = []
-
-        for f in files:
-            if f.startswith(f"{c_id}_") and f.endswith(".webm"):
-                try:
-                    num = int(f.split("_")[1].replace(".webm", ""))
-                    numbers.append(num)
-                except:
-                    pass
+        numbers = [
+            int(f.split("_")[1].replace(".webm", "")) 
+            for f in files if f.startswith(f"{c_id}_") and f.endswith(".webm") and f.split("_")[1].replace(".webm", "").isdigit()
+        ]
 
         next_number = max(numbers, default=0) + 1
         filename = f"{c_id}_{next_number}.webm"
         file_path = os.path.join(counseling_folder, filename)
 
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        # 병목 해결: aiofiles를 사용하여 비동기적으로 청크 단위 쓰기
+        async with aiofiles.open(file_path, "wb") as buffer:
+            while content := await file.read(1024 * 1024):
+                await buffer.write(content)
             
         logger.info(f"[{c_id}] 비디오 청크 저장 완료: {filename} (번호: {next_number})")
 
-        # 기존 로직 유지
         if next_number >= 3:
             logger.info(f"[{c_id}] 비디오 청크 3개 이상 도달 - 레거시 분석 백그라운드 등록")
             background_tasks.add_task(
