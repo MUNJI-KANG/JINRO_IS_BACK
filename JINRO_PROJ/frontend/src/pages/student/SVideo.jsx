@@ -139,19 +139,23 @@ function SVideo() {
       lostFaceCountRef.current = 0;
 
       const landmarks = results.multiFaceLandmarks[0];
-      const nose = landmarks[1];
-      const left = landmarks[234];
-      const right = landmarks[454];
-      const faceWidth = right.x - left.x;
 
-      if (faceWidth === 0) return;
+      let front = undefined;
+      if (landmarks) {
+        const nose = landmarks[1];
+        const left = landmarks[234];
+        const right = landmarks[454];
+        const faceWidth = right.x - left.x;
 
-      setFaceDetected(true);
+        if (faceWidth === 0) return;
 
-      const noseOffset = (nose.x - left.x) / faceWidth;
-      const yawFront = noseOffset > 0.15 && noseOffset < 0.85;
-      const pitchFront = nose.y > 0.35 && nose.y < 0.65;
-      const front = yawFront && pitchFront;
+        setFaceDetected(true);
+
+        const noseOffset = (nose.x - left.x) / faceWidth;
+        const yawFront = noseOffset > 0.15 && noseOffset < 0.85;
+        const pitchFront = nose.y > 0.35 && nose.y < 0.65;
+        front = yawFront && pitchFront;
+      }
 
       setIsFacingFront(front);
 
