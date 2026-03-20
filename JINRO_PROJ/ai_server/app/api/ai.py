@@ -163,7 +163,7 @@ async def upload_audio(counseling_id: int, file: UploadFile = File(...), ai_repo
     
     logger.info(f"[{counseling_id}] STT 텍스트 요약 시작")
 
-    summary = await asyncio.to_thread(summarize_text, stt_result, ai_report_dict)
+   
 
     try:
          summary = await asyncio.to_thread(summarize_text, stt_result, ai_report_dict)
