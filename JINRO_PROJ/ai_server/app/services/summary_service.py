@@ -1,23 +1,37 @@
 from openai import OpenAI
+from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
 import re
-import json
 from concurrent.futures import ThreadPoolExecutor
-import time 
+import time
 
 load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+
+# ─────────────────────────────────────────
+# JSON 스키마 강제 — Pydantic 모델 정의
+# GPT가 반드시 이 구조로 반환
+# → 파싱 실패 없음
+# → career_recommendation 항상 list[str] 보장
+# → 프론트엔드에서 바로 렌더링 가능
+# ─────────────────────────────────────────
+class CounselingResult(BaseModel):
+    interest_field:        str
+    low_interest_field:    str
+    student_trait:         str
+    career_recommendation: list[str]
+    summary:               str
+
+
 # -----------------------------
 # filler 제거
 # -----------------------------
 def clean_text(text: str):
-
     text = re.sub(r"\b(음+|어+|그+|아+)\b", "", text)
     text = re.sub(r"\s+", " ", text)
-
     return text.strip()
 
 
@@ -25,14 +39,11 @@ def clean_text(text: str):
 # Whisper segment → semantic chunk
 # -----------------------------
 def build_chunks_from_segments(segments, max_chars=2500):
-
     chunks = []
     current_chunk = ""
 
     for seg in segments:
-
         text = clean_text(seg["text"])
-
         if len(current_chunk) + len(text) < max_chars:
             current_chunk += " " + text
         else:
@@ -46,28 +57,22 @@ def build_chunks_from_segments(segments, max_chars=2500):
 
 
 # -----------------------------
-# # [주석 처리] Map 단계 (chunk 요약) - Map-Reduce 방식
-# # 상담 대화는 앞뒤 맥락이 이어지는 특성상 Refine 방식으로 교체
-# # -----------------------------
+# [주석 처리] Map 단계 (chunk 요약) - Map-Reduce 방식
+# 상담 대화는 앞뒤 맥락이 이어지는 특성상 Refine 방식으로 교체
+# -----------------------------
 # def summarize_chunk(chunk: str):
-
 #     prompt = f"""
 # 다음은 학생과 상담사가 진행한 진로 상담 녹취 일부입니다.
-
 # 핵심 상담 내용을 간결하게 정리하세요.
-
 # 요약 기준
 # - 학생이 관심을 보인 직업 또는 분야
 # - 학생의 감정 반응 또는 태도
 # - 상담사가 제시한 조언
 # - 진로 관련 핵심 발언
-
 # 3~4문장 이내로 요약하세요.
-
 # 상담 녹취:
 # {chunk}
 # """
-
 #     res = client.chat.completions.create(
 #         model="gpt-4o-mini",
 #         messages=[
@@ -77,7 +82,6 @@ def build_chunks_from_segments(segments, max_chars=2500):
 #         temperature=0.2,
 #         max_tokens=400
 #     )
-
 #     return res.choices[0].message.content.strip()
 
 
@@ -86,9 +90,7 @@ def build_chunks_from_segments(segments, max_chars=2500):
 # 상담 대화는 순서·맥락이 중요하므로 병렬 처리 대신 Refine 방식으로 교체
 # -----------------------------
 # def summarize_chunks(chunks):
-
 #     summaries = []
-
 #     def safe_summarize(chunk, max_retries=3):
 #         for attempt in range(max_retries):
 #             try:
@@ -97,20 +99,15 @@ def build_chunks_from_segments(segments, max_chars=2500):
 #                 print(f"[청크 요약 실패] {attempt+1}/{max_retries}회: {e}")
 #                 if attempt < max_retries - 1:
 #                     time.sleep(2)
-
 #         print(f"[청크 요약 최종 실패] 해당 청크 건너뜀")
 #         return ""
-
 #     with ThreadPoolExecutor(max_workers=4) as executor:
 #         results = executor.map(safe_summarize, chunks)
-
 #     for r in results:
 #         if r:
 #             summaries.append(r)
-
 #     if not summaries:
 #         raise ValueError("모든 청크 요약에 실패했습니다.")
-
 #     return summaries
 
 
@@ -121,7 +118,6 @@ def build_chunks_from_segments(segments, max_chars=2500):
 # -----------------------------
 def refine_chunk(existing_summary: str, new_chunk: str, max_retries=3) -> str:
 
-    # 첫 번째 청크는 기존 요약 없이 시작
     if not existing_summary:
         prompt = f"""
     당신은 학교 진로 상담 전문 분석가입니다.
@@ -185,7 +181,6 @@ def refine_chunk(existing_summary: str, new_chunk: str, max_retries=3) -> str:
             if attempt < max_retries - 1:
                 time.sleep(1)
 
-    # 3번 다 실패 시 기존 누적 요약 유지 (흐름 끊기지 않음)
     print("[Refine 최종 실패] 기존 누적 요약 유지")
     return existing_summary
 
@@ -195,7 +190,6 @@ def refine_chunk(existing_summary: str, new_chunk: str, max_retries=3) -> str:
 # 청크 순서대로 누적 요약 갱신
 # -----------------------------
 def refine_chunks(chunks: list) -> str:
-
     accumulated_summary = ""
 
     for i, chunk in enumerate(chunks):
@@ -208,16 +202,21 @@ def refine_chunks(chunks: list) -> str:
     return accumulated_summary
 
 
-# -----------------------------
-# Reduce 단계 (최종 요약)
-# -----------------------------
+# =====================================================================
+# Reduce 단계 — Structured Output 적용
+# ✅ 기존: 프롬프트로 JSON 형식 요청 → GPT가 어길 수 있음
+#          정규식 파싱 + json.loads() + try/except 필요
+# ✅ 변경: Pydantic 스키마로 완전 강제
+#          → 파싱 실패 없음
+#          → career_recommendation 항상 list[str] 보장
+#          → 정규식, json.loads(), try/except 전부 불필요
+# =====================================================================
 def summarize_final(text, video_analyze):
 
     prompt = f"""
 당신은 20년 경력의 전문 학교 진로 상담사입니다.
 학생의 정성적인 '상담 요약'과 정량적인 '영상분석' 데이터를 종합 분석하여
 최적의 진로를 추천하는 것이 당신의 역할입니다.
-반드시 아래 JSON 형식으로만 출력하고, 마크다운 코드 블록이나 추가 설명은 절대 포함하지 마세요.
 
 [분석 원칙]
 - 상담 요약과 영상분석 두 데이터가 일치하면 신뢰도 높음으로 판단합니다
@@ -252,11 +251,8 @@ def summarize_final(text, video_analyze):
    - 상담에서 학생이 직접 언급하거나 흥미를 보인 직업을 우선합니다
    - student_trait과 부합하는지 교차검증 후 최종 5가지를 선정합니다
 
-   - 출력 형식: ["직업1", "직업2", "직업3", "직업4", "직업5"]
-
 5. summary:
-   - 전체 상담 내용과 영상분석 결과를 아우르는 핵심 요약
-   - 학생의 고민, 관심 방향, 상담사 조언, 최종 방향성 순서로 작성
+   - 학생의 고민 → 관심 방향 → 상담사 조언 → 최종 방향성 순서로 작성
    - 4~6줄로 작성하세요
 
 [입력 데이터]
@@ -265,45 +261,49 @@ def summarize_final(text, video_analyze):
 
 [영상분석]
 {video_analyze}
-
-[출력 형식 - Strict JSON]
-{{
-    "interest_field": "관심도 높은 분야 (근거: 상담 기반/영상분석 기반/둘 다 일치)",
-    "low_interest_field": "관심도 낮은 분야 (근거: 상담 기반/영상분석 기반/둘 다 일치)",
-    "student_trait": "키워드1, 키워드2, 키워드3",
-    "career_recommendation": ["직업1", "직업2", "직업3", "직업4", "직업5"],
-    "summary": "전체 상담 핵심 요약 4~6줄"
-}}
 """
 
-    res = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "진로 상담 분석 AI입니다."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.2,
-        max_tokens=800
-    )
+    for attempt in range(3):
+        try:
+            # ✅ Structured Output 적용
+            # response_format에 Pydantic 모델을 넣으면
+            # GPT가 반드시 해당 스키마 구조로 반환 보장
+            res = client.beta.chat.completions.parse(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "당신은 진로 상담 분석 전문 AI입니다."},
+                    {"role": "user",   "content": prompt}
+                ],
+                response_format=CounselingResult,  # ← 스키마 강제
+                # temperature=0.2,
+                max_tokens=800
+            )
 
-    content = res.choices[0].message.content.strip()
-    content = re.sub(r"```json|```", "", content).strip()
+            # ✅ 파싱 없이 바로 객체로 접근
+            result = res.choices[0].message.parsed
 
-    if not content.startswith("{"):
-        match = re.search(r"\{.*\}", content, re.DOTALL)
-        content = match.group(0) if match else content
+            # ✅ 딕셔너리로 변환해서 반환 (기존 코드와 호환)
+            return {
+                "interest_field":        result.interest_field,
+                "low_interest_field":    result.low_interest_field,
+                "student_trait":         result.student_trait,
+                "career_recommendation": result.career_recommendation,
+                "summary":               result.summary
+            }
 
-    try:
-        return json.loads(content)
+        except Exception as e:
+            print(f"[summarize_final 실패] {attempt+1}/3회: {e}")
+            if attempt < 2:
+                time.sleep(1)
 
-    except Exception:
-        return {
-            "interest_field": "",
-            "low_interest_field": "",
-            "student_trait": "",
-            "career_recommendation": [],
-            "summary": "분석 결과를 가져오는 데 실패했습니다."
-        }
+    # 3번 다 실패 시 기본값 반환
+    return {
+        "interest_field":        "",
+        "low_interest_field":    "",
+        "student_trait":         "",
+        "career_recommendation": [],
+        "summary":               "분석 결과를 가져오는 데 실패했습니다."
+    }
 
 
 # -----------------------------
@@ -311,14 +311,13 @@ def summarize_final(text, video_analyze):
 # -----------------------------
 def summarize_text(stt_result, ai_report):
 
-    # STT 결과 검증
     if not stt_result or "segments" not in stt_result or not stt_result["segments"]:
         return {
-            "interest_field": "",
-            "low_interest_field": "",
-            "student_trait": "",
+            "interest_field":        "",
+            "low_interest_field":    "",
+            "student_trait":         "",
             "career_recommendation": [],
-            "summary": "음성 내용이 인식되지 않았습니다."
+            "summary":               "음성 내용이 인식되지 않았습니다."
         }
 
     segments = stt_result["segments"]
@@ -326,18 +325,16 @@ def summarize_text(stt_result, ai_report):
     # 1️⃣ segment 기반 chunk 분할
     chunks = build_chunks_from_segments(segments)
 
-    # 2️⃣ Refine — 청크 순서대로 누적 요약 (Map-Reduce에서 교체)
-    # [변경 이유] 상담 대화는 앞뒤 맥락이 이어지는 특성상
-    #            병렬 처리(Map-Reduce)보다 순차 누적(Refine)이 맥락 유지에 적합
+    # 2️⃣ Refine — 청크 순서대로 누적 요약
     try:
         refined_summary = refine_chunks(chunks)
     except ValueError:
         return {
-            "interest_field": "",
-            "low_interest_field": "",
-            "student_trait": "",
+            "interest_field":        "",
+            "low_interest_field":    "",
+            "student_trait":         "",
             "career_recommendation": [],
-            "summary": "상담 내용 분석에 실패했습니다."
+            "summary":               "상담 내용 분석에 실패했습니다."
         }
 
     # 3️⃣ Reduce — 누적 요약 + 영상 분석 데이터 → 최종 JSON
