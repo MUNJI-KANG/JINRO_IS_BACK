@@ -144,7 +144,7 @@ def login_or_create_client(client_data: ClientCreate, request: Request, db: Sess
         raise HTTPException(status_code=500, detail=str(e))
     
 
-@router.get("/{client_id}")
+@router.get("/id/{client_id}")
 def get_client_detail(client_id: int):
     return {"message": f"{client_id}번 내담자 상세 정보 조회 API 입니다."}
     
