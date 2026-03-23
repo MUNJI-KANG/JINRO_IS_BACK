@@ -659,7 +659,7 @@ const CFinal = () => {
                                     if (!isComplete) setIsEditingPersonality(true);
                                 }}
                             >
-                                {personalityComment || '학생 성향에 대한 상담사의 분석을 작성해주세요.'}
+                                <pre>{personalityComment || '학생 성향에 대한 상담사의 분석을 작성해주세요.'}</pre>
                             </div>
                         )}
                     </section>
@@ -683,7 +683,7 @@ const CFinal = () => {
                                     if (!isComplete) setIsEditingCareer(true);
                                 }}
                             >
-                                {careerComment || '추천 진로에 대한 상담사의 의견을 작성해주세요.'}
+                                <pre>{careerComment || '추천 진로에 대한 상담사의 의견을 작성해주세요.'}</pre>
                             </div>
                         )}
                     </section>
@@ -748,7 +748,7 @@ const CFinal = () => {
                                         if (!isComplete) setIsEditingFinalComment(true);
                                     }}
                                 >
-                                    {finalComment || '학생과의 상담 내용을 입력해주세요.'}
+                                    <pre>{finalComment || '학생과의 상담 내용을 입력해주세요.'}</pre>
                                 </div>
                             )}
                         </div>
