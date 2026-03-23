@@ -24,7 +24,6 @@ function SVideo() {
   const recordedChunks = useRef([]);
   const cameraRef = useRef(null);
   const streamRef = useRef(null);
-  const onboardingAutoStartRef = useRef(false);
 
   const frontStartTimeRef = useRef(null);
   const frontFrameCountRef = useRef(0);
@@ -43,7 +42,9 @@ function SVideo() {
   const [readyToStart, setReadyToStart] = useState(false);
   const [uploading, setUploading] = useState(false);
   const canGoSurvey = isGlobalOnboarding || videoEnded;
-  const showStartButton = isGlobalOnboarding || readyToStart;
+  const showStartButton = isGlobalOnboarding
+    ? webcamReady || webcamError
+    : readyToStart;
 
   useEffect(() => {
     let activeStream = null;
@@ -62,20 +63,12 @@ function SVideo() {
           setWebcamReady(true);
           setWebcamError(false);
 
-          if (isGlobalOnboarding) {
-            setReadyToStart(true);
-          }
         }
       } catch (error) {
         console.error("카메라 연결 실패:", error);
         setWebcamError(true);
         setWebcamReady(false);
 
-        if (isGlobalOnboarding) {
-          setTimeout(() => {
-            setReadyToStart(true);
-          }, 800);
-        }
       }
     };
 
@@ -325,24 +318,6 @@ function SVideo() {
       startRecording();
     }
   };
-
-  useEffect(() => {
-    if (!isGlobalOnboarding || !readyToStart || started) {
-      return undefined;
-    }
-
-    if (onboardingAutoStartRef.current) {
-      return undefined;
-    }
-
-    onboardingAutoStartRef.current = true;
-
-    const timeoutId = window.setTimeout(() => {
-      handleStart();
-    }, webcamReady ? 280 : 520);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [isGlobalOnboarding, readyToStart, started, webcamReady]);
 
   const handleGoSurvey = async () => {
     if (uploading) return;
