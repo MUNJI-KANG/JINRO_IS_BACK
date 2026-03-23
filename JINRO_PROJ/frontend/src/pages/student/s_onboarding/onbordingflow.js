@@ -65,28 +65,16 @@ const clickFirst = async (selector) => {
 };
 
 const startVideoOnboarding = async () => {
-  const startTarget = await waitFor(() => {
-    const videoContainer = getElement(".video-container");
-
-    if (videoContainer) {
-      return { type: "video" };
-    }
-
+  const startButton = await waitFor(() => {
     const button = getElement(".global-video-start");
-    if (button && !button.disabled) {
-      return { type: "button", element: button };
-    }
-
-    return null;
+    return button && !button.disabled ? button : null;
   }, 8000, 120);
 
-  if (!startTarget) {
+  if (!startButton) {
     return false;
   }
 
-  if (startTarget.type === "button") {
-    startTarget.element.click();
-  }
+  window.dispatchEvent(new Event("student-onboarding-video-confirmed"));
 
   const videoContainer = await waitFor(
     () => getElement(".video-container"),
