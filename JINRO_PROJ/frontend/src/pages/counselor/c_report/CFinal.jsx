@@ -53,7 +53,7 @@ const renderChartLegend = (items = []) => {
                         <span className="chart-legend-name" title={item.name}>
                             {item.name}
                         </span>
-                        <span className="chart-legend-score">{item.value.toFixed(1)}점</span>
+                        <span className="chart-legend-score">{Math.round(item.value)}점</span>
                         <span className="chart-legend-percent">{item.percentText}</span>
                     </li>
                 );
@@ -577,16 +577,16 @@ const CFinal = () => {
                                                     {video.category?.replace(' 직업', '')}
                                                 </td>
                                                 <td className="report-table-cell">
-                                                    {video.attention_score ?? '-'}
+                                                    {video.attention_score != null ? Math.round(video.attention_score) : '-'}
                                                 </td>
                                                 <td className="report-table-cell">
-                                                    {video.emotion_score ?? '-'}
+                                                    {video.emotion_score != null ? Math.round(video.emotion_score) : '-'}
                                                 </td>
                                                 <td className="report-table-cell">
-                                                    {video.survey_score ?? '-'}
+                                                    {video.survey_score != null ? Math.round(video.survey_score) : '-'}
                                                 </td>
                                                 <td className="report-table-cell final-score-value">
-                                                    {video.final_score ?? '-'}
+                                                    {video.final_score != null ? Math.round(video.final_score) : '-'}
                                                 </td>
                                             </tr>
                                         ))
