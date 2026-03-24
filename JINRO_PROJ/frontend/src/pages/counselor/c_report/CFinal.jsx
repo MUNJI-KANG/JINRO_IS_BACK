@@ -156,6 +156,26 @@ const CFinal = () => {
         };
     });
 
+    const getStudentTrait = () => {
+        return (
+            llmResult?.analysis?.student_trait ||
+            llmResult?.student_trait ||
+            ''
+        );
+    };
+
+    const getCareerRecommendation = () => {
+        const raw =
+            llmResult?.analysis?.career_recommendation ||
+            llmResult?.career_recommendation ||
+            [];
+        // 문자열로 왔을 경우 배열로 변환
+        if (typeof raw === 'string') {
+            return raw.split(',').map(s => s.trim()).filter(Boolean);
+        }
+        return Array.isArray(raw) ? raw : [];
+    };
+
     // ---------------------------------------------------------
     // PDF 생성 및 미리보기 로직
     // ---------------------------------------------------------
@@ -603,6 +623,7 @@ const CFinal = () => {
                     </section>
                 </div>
 
+                {/* ✅ 수정된 ai-insight-grid */}
                 <div className="ai-insight-grid">
                     <section className="report-card">
                         <h3>❷ 학생 성향 분석</h3>
@@ -614,7 +635,39 @@ const CFinal = () => {
                                 {!aiStatus && 'AI 상담 분석을 준비 중입니다...'}
                             </div>
                         ) : llmResult ? (
-                            <div className="summary-box">{llmResult?.summary}</div>
+                            <div>
+                                {/* ✅ 성향 키워드 pill 태그 */}
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                                    {getStudentTrait()
+                                        .split(',')
+                                        .filter(t => t.trim())
+                                        .map((trait, i) => {
+                                            const styles = [
+                                                { background: '#E6F1FB', color: '#0C447C' },
+                                                { background: '#E1F5EE', color: '#085041' },
+                                                { background: '#EEEDFE', color: '#3C3489' },
+                                            ];
+                                            const s = styles[i % 3];
+                                            return (
+                                                <span key={i} style={{
+                                                    padding: '4px 14px',
+                                                    borderRadius: '20px',
+                                                    fontSize: '13px',
+                                                    fontWeight: '500',
+                                                    background: s.background,
+                                                    color: s.color
+                                                }}>
+                                                    {trait.trim()}
+                                                </span>
+                                            );
+                                        })
+                                    }
+                                </div>
+                                {/* ✅ 요약 텍스트 */}
+                                <div className="summary-box">
+                                    {llmResult?.summary || llmResult?.analysis?.summary || ''}
+                                </div>
+                            </div>
                         ) : (
                             <div className="chart-empty">상담이 완료된 후 자동으로 생성됩니다.</div>
                         )}
@@ -623,10 +676,59 @@ const CFinal = () => {
                     <section className="report-card">
                         <h3>❸ 추천 진로 TOP5</h3>
                         {llmResult ? (
-                            <div className="analysis-text">
-                                {(llmResult?.analysis?.career_recommendation || []).map((item, index) => (
-                                    <div key={index}>{item.trim()}</div>
-                                ))}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {/* ✅ 순위 뱃지 카드 형태 */}
+                                {getCareerRecommendation()
+                                    .filter(item => item && item.trim())
+                                    .map((item, index) => {
+                                        const rankColors = [
+                                            { bg: '#FAC775', color: '#633806' },
+                                            { bg: '#D3D1C7', color: '#2C2C2A' },
+                                            { bg: '#F5C4B3', color: '#712B13' },
+                                            { bg: '#E6F1FB', color: '#0C447C' },
+                                            { bg: '#E6F1FB', color: '#0C447C' },
+                                        ];
+                                        const rc = rankColors[index] || rankColors[3];
+                                        return (
+                                            <div key={index} style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '10px',
+                                                padding: '10px 12px',
+                                                background: '#f8f9fa',
+                                                border: '0.5px solid #e0e0e0',
+                                                borderRadius: '8px',
+                                            }}>
+                                                <span style={{
+                                                    width: '24px',
+                                                    height: '24px',
+                                                    borderRadius: '50%',
+                                                    background: rc.bg,
+                                                    color: rc.color,
+                                                    fontSize: '12px',
+                                                    fontWeight: '500',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    flexShrink: 0
+                                                }}>
+                                                    {index + 1}
+                                                </span>
+                                                <span style={{
+                                                    fontSize: '13px',
+                                                    fontWeight: '500',
+                                                    color: '#1F2937'
+                                                }}>
+                                                    {item.trim()}
+                                                </span>
+                                            </div>
+                                        );
+                                    })
+                                }
+                                {/* ✅ 데이터 없을 때 안내 */}
+                                {getCareerRecommendation().length === 0 && (
+                                    <div className="chart-empty">진로 추천 데이터가 없습니다.</div>
+                                )}
                             </div>
                         ) : (
                             <div className="chart-empty">상담이 완료된 후 자동으로 생성됩니다.</div>
@@ -634,7 +736,7 @@ const CFinal = () => {
                     </section>
                 </div>
             </div>
-
+            
             {/* 2페이지: 상담사 분석 */}
             <div ref={counselorPageRef} className="pdf-export-container" style={{ padding: '20px', backgroundColor: '#fff', marginTop: '20px' }}>
                 <h3 className="section-title">상담사 분석</h3>
