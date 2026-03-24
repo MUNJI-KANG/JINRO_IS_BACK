@@ -29,6 +29,7 @@ import logging
 import aiofiles
 
 
+
 # =====================================================================
 # ⭐ 로거 설정 추가
 # =====================================================================
@@ -50,6 +51,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # =====================================================================
 
 # 디바이스 설정
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 logger.info(f"디바이스 설정 완료: {device}")
 
@@ -105,6 +107,8 @@ MAX_CONCURRENT_JOBS = 1
 analysis_semaphore = asyncio.Semaphore(MAX_CONCURRENT_JOBS)
 logger.info(f"GPU OOM 방지용 세마포어 설정 완료 (최대 동시 작업 수: {MAX_CONCURRENT_JOBS})")
 
+
+
 router = APIRouter(tags=["Client (내담자)"])
 
 @router.get("/")
@@ -135,13 +139,13 @@ async def audio_analyze(data: dict):
 @router.post("/audio/upload/{counseling_id}")
 async def upload_audio(counseling_id: int, file: UploadFile = File(...), ai_report: str = Form(...)):
     logger.info(f"[{counseling_id}] 오디오 업로드 및 STT/요약 요청 수신")
-    
     counseling_dir = os.path.join(UPLOAD_DIR, str(counseling_id))
     os.makedirs(counseling_dir, exist_ok=True)    
 
     ext = os.path.splitext(file.filename)[1]
     filename = f"counseling_{counseling_id}{ext}"
     file_path = os.path.join(counseling_dir, filename)
+
 
     # 병목 해결: 비동기 파일 저장
     async with aiofiles.open(file_path, "wb") as buffer:
@@ -212,6 +216,7 @@ async def summarize_api(summaryRequest: SummaryRequest):
             ]
         )
         logger.info("Ollama 요약 완료")
+
         return {
             "success": True,
             "model": summaryRequest.model,
@@ -238,6 +243,7 @@ def run_ai_analysis(counseling_id: int, client_id: int, report_id: int):
     # 이 부분은 이제 쓰이지 않을 수 있으나 (백엔드가 통합 지시를 내리므로)
     # 기존 코드와의 호환성을 위해 유지합니다.
     logger.info(f"AI 분석 시작 트리거 (레거시 호출) - Counseling: {counseling_id}, Client: {client_id}, Report: {report_id}")
+
 
 @router.post("/upload-video")
 async def ai_upload_video(
@@ -270,6 +276,7 @@ async def ai_upload_video(
             
         logger.info(f"[{c_id}] 비디오 청크 저장 완료: {filename} (번호: {next_number})")
 
+        # 기존 로직 유지
         if next_number >= 3:
             logger.info(f"[{c_id}] 비디오 청크 3개 이상 도달 - 레거시 분석 백그라운드 등록")
             background_tasks.add_task(
@@ -301,6 +308,7 @@ async def run_full_analysis(request: AnalysisRequest):
     max_retries = 24  # 5초 간격 * 24번 = 최대 2분 대기
     
     logger.info(f"📥 [AI 서버] {c_id} 학생의 영상 분석 요청 접수 완료! (대기열 진입) - 영상 {len(request.videos)}개")
+
     
     for task in request.videos:
         idx = task.idx
@@ -327,6 +335,7 @@ async def run_full_analysis(request: AnalysisRequest):
             })
             continue
         
+
         logger.info(f"⏳ [AI 서버] {c_id} 학생의 {idx}번째 영상 - 입장권(GPU 세마포어) 대기 중...")
         
         # ⭐ 입장권을 획득해야만 분석 진입 (서버 터짐 방지)
@@ -394,7 +403,7 @@ async def run_full_analysis(request: AnalysisRequest):
 @router.post("/start-analysis")
 async def start_analysis_endpoint(request: AnalysisRequest, background_tasks: BackgroundTasks):
     logger.info(f"📡 백엔드로부터 /start-analysis 지시서 수신 (Counseling ID: {request.counseling_id})")
-    
+
     # 지시서를 받자마자 내부 큐에 넘기고 바로 응답 (다른 API도 즉시 처리 가능)
     background_tasks.add_task(run_full_analysis, request)
     

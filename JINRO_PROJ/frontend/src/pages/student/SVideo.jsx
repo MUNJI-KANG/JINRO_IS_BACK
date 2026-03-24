@@ -36,6 +36,7 @@ function SVideo() {
   const [webcamError, setWebcamError] = useState(false);
   const [videoEnded, setVideoEnded] = useState(false);
   const [started, setStarted] = useState(false);
+  const [onboardingStartRequested, setOnboardingStartRequested] = useState(false);
   const [faceDetected, setFaceDetected] = useState(false);
   const [isFacingFront, setIsFacingFront] = useState(false);
   const [frontTime, setFrontTime] = useState(0);
@@ -214,6 +215,28 @@ function SVideo() {
     }
   }, [currentIndex, webcamReady]);
 
+  useEffect(() => {
+    if (!isGlobalOnboarding) {
+      return undefined;
+    }
+
+    const handleOnboardingStartRequest = () => {
+      setOnboardingStartRequested(true);
+    };
+
+    window.addEventListener(
+      "student-onboarding-video-confirmed",
+      handleOnboardingStartRequest
+    );
+
+    return () => {
+      window.removeEventListener(
+        "student-onboarding-video-confirmed",
+        handleOnboardingStartRequest
+      );
+    };
+  }, [isGlobalOnboarding]);
+
   const fetchVideo = async () => {
     try {
       const response = await api.get(`/client/survey/${categoryId}`);
@@ -318,6 +341,24 @@ function SVideo() {
       startRecording();
     }
   };
+
+  useEffect(() => {
+    if (!isGlobalOnboarding || !onboardingStartRequested || started) {
+      return;
+    }
+
+    if (!webcamReady && !webcamError) {
+      return;
+    }
+
+    handleStart();
+  }, [
+    isGlobalOnboarding,
+    onboardingStartRequested,
+    started,
+    webcamError,
+    webcamReady,
+  ]);
 
   const handleGoSurvey = async () => {
     if (uploading) return;
