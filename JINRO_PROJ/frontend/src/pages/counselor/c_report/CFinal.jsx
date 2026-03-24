@@ -761,7 +761,9 @@ const CFinal = () => {
                                     if (!isComplete) setIsEditingPersonality(true);
                                 }}
                             >
-                                <pre>{personalityComment || '학생 성향에 대한 상담사의 분석을 작성해주세요.'}</pre>
+                                <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: '1.6' }}>
+                                            {personalityComment || '학생 성향에 대한 상담사의 분석을 작성해주세요.'}
+                                </pre>
                             </div>
                         )}
                     </section>
@@ -785,7 +787,9 @@ const CFinal = () => {
                                     if (!isComplete) setIsEditingCareer(true);
                                 }}
                             >
-                                <pre>{careerComment || '추천 진로에 대한 상담사의 의견을 작성해주세요.'}</pre>
+                                <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: '1.6' }}>
+                                    {careerComment || '추천 진로에 대한 상담사의 의견을 작성해주세요.'}
+                                </pre>
                             </div>
                         )}
                     </section>
@@ -850,7 +854,9 @@ const CFinal = () => {
                                         if (!isComplete) setIsEditingFinalComment(true);
                                     }}
                                 >
-                                    <pre>{finalComment || '학생과의 상담 내용을 입력해주세요.'}</pre>
+                                    <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: '1.6' }}>
+                                        {finalComment || '학생과의 상담 내용을 입력해주세요.'}
+                                    </pre>
                                 </div>
                             )}
                         </div>
