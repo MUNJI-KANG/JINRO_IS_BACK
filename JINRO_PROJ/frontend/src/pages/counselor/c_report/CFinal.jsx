@@ -53,7 +53,7 @@ const renderChartLegend = (items = []) => {
                         <span className="chart-legend-name" title={item.name}>
                             {item.name}
                         </span>
-                        <span className="chart-legend-score">{item.value.toFixed(1)}점</span>
+                        <span className="chart-legend-score">{Math.round(item.value)}점</span>
                         <span className="chart-legend-percent">{item.percentText}</span>
                     </li>
                 );
@@ -577,16 +577,16 @@ const CFinal = () => {
                                                     {video.category?.replace(' 직업', '')}
                                                 </td>
                                                 <td className="report-table-cell">
-                                                    {video.attention_score ?? '-'}
+                                                    {video.attention_score != null ? Math.round(video.attention_score) : '-'}
                                                 </td>
                                                 <td className="report-table-cell">
-                                                    {video.emotion_score ?? '-'}
+                                                    {video.emotion_score != null ? Math.round(video.emotion_score) : '-'}
                                                 </td>
                                                 <td className="report-table-cell">
-                                                    {video.survey_score ?? '-'}
+                                                    {video.survey_score != null ? Math.round(video.survey_score) : '-'}
                                                 </td>
                                                 <td className="report-table-cell final-score-value">
-                                                    {video.final_score ?? '-'}
+                                                    {video.final_score != null ? Math.round(video.final_score) : '-'}
                                                 </td>
                                             </tr>
                                         ))
@@ -659,7 +659,7 @@ const CFinal = () => {
                                     if (!isComplete) setIsEditingPersonality(true);
                                 }}
                             >
-                                {personalityComment || '학생 성향에 대한 상담사의 분석을 작성해주세요.'}
+                                <pre>{personalityComment || '학생 성향에 대한 상담사의 분석을 작성해주세요.'}</pre>
                             </div>
                         )}
                     </section>
@@ -683,7 +683,7 @@ const CFinal = () => {
                                     if (!isComplete) setIsEditingCareer(true);
                                 }}
                             >
-                                {careerComment || '추천 진로에 대한 상담사의 의견을 작성해주세요.'}
+                                <pre>{careerComment || '추천 진로에 대한 상담사의 의견을 작성해주세요.'}</pre>
                             </div>
                         )}
                     </section>
@@ -748,7 +748,7 @@ const CFinal = () => {
                                         if (!isComplete) setIsEditingFinalComment(true);
                                     }}
                                 >
-                                    {finalComment || '학생과의 상담 내용을 입력해주세요.'}
+                                    <pre>{finalComment || '학생과의 상담 내용을 입력해주세요.'}</pre>
                                 </div>
                             )}
                         </div>

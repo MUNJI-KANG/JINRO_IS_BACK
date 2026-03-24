@@ -111,12 +111,10 @@ function SSurvey() {
           formData.append("file", videoBlob, "video.webm");
           formData.append("report_id", currentReportId);
 
-          try {
-            await api.post(`/client/video/upload/${counselingId}`, formData);
-          } catch (uploadError) {
-            console.error("비디오 업로드 실패:", uploadError);
-            // 업로드 실패 시 알림을 띄울지 여부는 기획에 따라 선택 (여기서는 콘솔 에러만 남김)
-          }
+          api.post(`/client/video/upload/${counselingId}`, formData)
+            .then(() => console.log(`[업로드 요청완료] reportId: ${currentReportId} 백그라운드 처리 중`))
+            .catch((uploadError) => console.log("비디오 업로드 실패:", uploadError));
+          
         }
       }
 
