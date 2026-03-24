@@ -11,13 +11,6 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
-# ─────────────────────────────────────────
-# JSON 스키마 강제 — Pydantic 모델 정의
-# GPT가 반드시 이 구조로 반환
-# → 파싱 실패 없음
-# → career_recommendation 항상 list[str] 보장
-# → 프론트엔드에서 바로 렌더링 가능
-# ─────────────────────────────────────────
 class CounselingResult(BaseModel):
     interest_field:        str
     low_interest_field:    str
@@ -132,7 +125,7 @@ def refine_chunk(existing_summary: str, new_chunk: str, max_retries=3) -> str:
     [출력 형식]
     - 각 항목을 명확히 구분해서 작성
     - 확인된 내용만 작성, 없으면 "언급 없음"으로 표기
-    - 4~5문장으로 작성
+    - 6~7문장으로 작성
 
     [상담 녹취]
     {new_chunk}
@@ -160,7 +153,7 @@ def refine_chunk(existing_summary: str, new_chunk: str, max_retries=3) -> str:
     3. 상담사 조언: 새로운 조언 추가
     4. 핵심 발언: 중요 발언 누적
 
-    5~6문장으로 갱신된 요약을 작성하세요.
+    6~8문장으로 갱신된 요약을 작성하세요.
     """
 
     for attempt in range(max_retries):
@@ -204,12 +197,7 @@ def refine_chunks(chunks: list) -> str:
 
 # =====================================================================
 # Reduce 단계 — Structured Output 적용
-# ✅ 기존: 프롬프트로 JSON 형식 요청 → GPT가 어길 수 있음
-#          정규식 파싱 + json.loads() + try/except 필요
 # ✅ 변경: Pydantic 스키마로 완전 강제
-#          → 파싱 실패 없음
-#          → career_recommendation 항상 list[str] 보장
-#          → 정규식, json.loads(), try/except 전부 불필요
 # =====================================================================
 def summarize_final(text, video_analyze):
 
@@ -253,7 +241,7 @@ def summarize_final(text, video_analyze):
 
 5. summary:
    - 학생의 고민 → 관심 방향 → 상담사 조언 → 최종 방향성 순서로 작성
-   - 4~6줄로 작성하세요
+   - 7~8줄로 작성하세요
 
 [입력 데이터]
 [상담 요약]
@@ -265,9 +253,7 @@ def summarize_final(text, video_analyze):
 
     for attempt in range(3):
         try:
-            # ✅ Structured Output 적용
-            # response_format에 Pydantic 모델을 넣으면
-            # GPT가 반드시 해당 스키마 구조로 반환 보장
+
             res = client.beta.chat.completions.parse(
                 model="gpt-4o-mini",
                 messages=[
@@ -279,10 +265,9 @@ def summarize_final(text, video_analyze):
                 max_tokens=800
             )
 
-            # ✅ 파싱 없이 바로 객체로 접근
+   
             result = res.choices[0].message.parsed
 
-            # ✅ 딕셔너리로 변환해서 반환 (기존 코드와 호환)
             return {
                 "interest_field":        result.interest_field,
                 "low_interest_field":    result.low_interest_field,
