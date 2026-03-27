@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks, Form, FastAPI
 from fastapi.responses import FileResponse
 from app.schemas.ai import (
-    VideoAnalyze, SummaryRequest, VideoTask, AnalysisRequest
+    VideoAnalyze, SummaryRequest, VideoTask, AnalysisRequest, DeleteRequest
 )
 from app.services.stt_service import speech_to_text
 from app.services.summary_service import summarize_text
@@ -401,3 +401,19 @@ async def start_analysis_endpoint(request: AnalysisRequest, background_tasks: Ba
     
     logger.info(f"✅ 분석 작업 백그라운드 큐 등록 완료. 백엔드에 즉시 응답 반환됨.")
     return {"message": "분석 작업이 AI 서버 큐에 등록되었습니다."}
+
+
+@router.post("/delete")
+def video_delete(request: DeleteRequest):
+    audio_path = os.path.join(UPLOAD_DIR, str(request.counseling_id))
+    video_path = os.path.join(UPLOAD_VIDEO, str(request.counseling_id))
+
+    if os.path.exists(audio_path):
+        shutil.rmtree(audio_path)
+
+    if os.path.exists(video_path):
+        shutil.rmtree(video_path)
+
+    return {
+        "success": True
+    }

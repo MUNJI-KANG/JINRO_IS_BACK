@@ -50,3 +50,6 @@ class AnalysisRequest(BaseModel):
     counseling_id: int
     c_id: str
     videos: List[VideoTask]
+
+class DeleteRequest(BaseModel):
+    counseling_id: int

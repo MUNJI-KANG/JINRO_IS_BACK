@@ -505,7 +505,7 @@ def save_final_report(data: FinalReportSave, db: Session = Depends(get_db)):
 
 
 @router.post("/report/final/complete")
-def complete_final_report(data: FinalReportSave, db: Session = Depends(get_db)):
+async def complete_final_report(data: FinalReportSave, db: Session = Depends(get_db)):
 
     report = db.query(ReportFinal).filter(
         ReportFinal.counseling_id == data.counseling_id
@@ -528,6 +528,15 @@ def complete_final_report(data: FinalReportSave, db: Session = Depends(get_db)):
         counseling.complete_yn = 3
 
     db.commit()
+
+    async with httpx.AsyncClient() as client:
+        await client.post(
+            f'{AI_SERVER_BASE_URL}/ai/delete',
+            json={
+                "counseling_id": data.counseling_id
+            },
+            timeout=120.0,  # 120초 대기 (필요에 따라 조절)
+        )
 
     return {"success": True, "message": "최종 리포트 작성 완료"}
 
