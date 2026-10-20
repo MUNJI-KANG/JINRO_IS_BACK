@@ -12,6 +12,7 @@ import CLogin from "./pages/counselor/CLogin";
 import CInfoEdit from "./pages/counselor/CInfoEdit";
 import CScheduler from "./pages/counselor/CScheduler";
 import CStudentList from "./pages/counselor/CStudentList";
+import CPreparation from "./pages/counselor/CPreparation";
 
 import CCatList from "./pages/counselor/c_category/CCatList";
 import CCatWrite from "./pages/counselor/c_category/CCatWrite";
@@ -93,6 +94,7 @@ function App() {
           {/* 로그인 후 진입시 바로 scheduler 화면 보여줌 */}
           <Route path="counselor/scheduler" element={<CScheduler />} />
           <Route path="counselor/students" element={<CStudentList />} />
+          <Route path="counselor/preparation/:clientId/:counselingId" element={<CPreparation />} />
           <Route path="counselor/info" element={<CInfoEdit />} />
           <Route path="counselor/category/list" element={<CCatList />} />
           <Route path="counselor/category/write" element={<CCatWrite />} />

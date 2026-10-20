@@ -84,7 +84,7 @@ function CScheduler() {
         setSearch("");
         dialogRef.current?.showModal();
       }
-    } catch (error) {
+    } catch {
       alert("대상자 목록을 불러오지 못했습니다.");
     }
   };

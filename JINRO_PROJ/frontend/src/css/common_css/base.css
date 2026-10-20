@@ -47,6 +47,9 @@
 }
 
 .logout-btn {
+  border: 0;
+  background: none;
+  font: inherit;
   cursor: pointer;
   font-size: 14px;
   color: var(--text-sub);
@@ -238,6 +241,7 @@
 }
 
 .main-container {
+  min-width: 0;
   flex: 1;
-  width: 100%;
+  width: auto;
 }

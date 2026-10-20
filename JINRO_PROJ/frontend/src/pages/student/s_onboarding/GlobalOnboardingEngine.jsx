@@ -366,7 +366,7 @@ export default function GlobalOnboardingEngine({ onFinish }) {
       ? step.text()
       : step?.text ?? "강조된 영역을 보면서 천천히 진행해 주세요.";
     return rawText.replace(/\.\s*/g, ".\n");
-  }, [step?.text]);
+  }, [step]);
 
   if (pausedUntilRouteChange) {
     return null;

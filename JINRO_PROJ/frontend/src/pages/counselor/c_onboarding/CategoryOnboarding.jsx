@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 
 import "../../../css/counselor_css/onboarding/onboarding.css";
 
@@ -21,12 +21,21 @@ function CategoryOnboarding({
       ? "mid"
       : "small";
 
-  const config = {
+  const config = useMemo(() => ({
     big:{ target:".category-grid", title:"대분류 선택", text:"상담할 직무 분야를 먼저 선택합니다."},
     mid:{ target:".mid-grid", title:"중분류 선택", text:"보다 구체적인 직무 영역을 선택합니다."},
     small1:{ target:".list-container", title:"상세 항목", text:"등록된 상담 콘텐츠를 확인할 수 있습니다."},
     small2:{ target:".add-btn", title:"콘텐츠 추가", text:"새 상담 콘텐츠를 등록할 수 있습니다."}
-  };
+  }), []);
+
+  const next = useCallback(() => {
+    if(phase==="big"){ setSelectedBigId(1); return;}
+    if(phase==="mid"){ setSelectedMidId(101); return;}
+    if(step===1){ setStep(2); return;}
+    setSelectedBigId(null);
+    setSelectedMidId(null);
+    onClose();
+  }, [phase, step, setSelectedBigId, setSelectedMidId, onClose]);
 
   useEffect(()=>{
     const scrollY = window.scrollY;
@@ -59,7 +68,7 @@ function CategoryOnboarding({
     };
     window.addEventListener("keydown",handler);
     return ()=>window.removeEventListener("keydown",handler);
-  },[phase,step]);
+  },[phase,step,next,onClose,setSelectedBigId,setSelectedMidId]);
 
   useEffect(()=>{
     const update = ()=>{
@@ -81,16 +90,7 @@ function CategoryOnboarding({
       window.removeEventListener("resize",update);
       window.removeEventListener("scroll",update,true);
     };
-  },[phase,step]);
-
-  const next = ()=>{
-    if(phase==="big"){ setSelectedBigId(1); return;}
-    if(phase==="mid"){ setSelectedMidId(101); return;}
-    if(step===1){ setStep(2); return;}
-    setSelectedBigId(null);
-    setSelectedMidId(null);
-    onClose();
-  };
+  },[phase,step,config]);
 
   if(!rect) return null;
 

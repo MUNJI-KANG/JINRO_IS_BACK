@@ -42,7 +42,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # 4. FastAPI 앱 정의 및 라우터 임포트
-from app.api import ai, data_ai
+from app.api import ai, data_ai, preparation
 
 app = FastAPI(title="AI_SERVER")
 
@@ -52,6 +52,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app.include_router(ai.router)
 app.include_router(data_ai.router)
+app.include_router(preparation.router)
 
 @app.get("/")
 def read_root():

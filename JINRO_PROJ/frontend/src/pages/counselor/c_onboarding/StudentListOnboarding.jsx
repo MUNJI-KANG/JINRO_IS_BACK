@@ -1,4 +1,4 @@
-import { useState,useEffect } from "react";
+import { useState,useEffect,useMemo,useCallback } from "react";
 import "../../../css/counselor_css/onboarding/onboarding.css";
 
 function StudentListOnboarding({ onClose, modalOpen }) {
@@ -6,11 +6,11 @@ function StudentListOnboarding({ onClose, modalOpen }) {
   const [step,setStep]=useState(1);
   const [rect,setRect]=useState(null);
 
-  const config={
+  const config=useMemo(() => ({
     1:{target:".student-search",title:"학생 검색",text:"이름으로 학생을 검색할 수 있습니다."},
     2:{title:"학생 선택",text:"학생을 클릭하면 상담 기록을 확인할 수 있습니다."},
     3:{title:"상담 기록",text:"상담 기록 클릭시 최종리포트로 이동합니다."}
-  };
+  }), []);
 
   useEffect(()=>{
     const scrollY=window.scrollY;
@@ -50,9 +50,9 @@ function StudentListOnboarding({ onClose, modalOpen }) {
     };
     frame=requestAnimationFrame(update);
     return ()=>cancelAnimationFrame(frame);
-  },[step,modalOpen]);
+  },[step,modalOpen,config]);
 
-  const next=()=>{
+  const next=useCallback(()=>{
     if(step===1){ setStep(2); return;}
     if(step===2){
       document.querySelector(".student-card")?.click();
@@ -60,7 +60,7 @@ function StudentListOnboarding({ onClose, modalOpen }) {
       return;
     }
     onClose();
-  };
+  }, [step,onClose]);
 
   useEffect(()=>{
     const handler=(e)=>{
@@ -70,7 +70,7 @@ function StudentListOnboarding({ onClose, modalOpen }) {
     };
     window.addEventListener("keydown",handler);
     return ()=>window.removeEventListener("keydown",handler);
-  },[step]);
+  },[step,next,onClose]);
 
   return(
     <div className="onboard-layer">

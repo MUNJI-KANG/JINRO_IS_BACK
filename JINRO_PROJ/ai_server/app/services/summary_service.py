@@ -3,11 +3,32 @@ from dotenv import load_dotenv
 import os
 import re
 import json
+from pydantic import BaseModel, Field
 from concurrent.futures import ThreadPoolExecutor
 
 load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+
+class VideoEvidence(BaseModel):
+    category: str
+    attention_score: float = Field(ge=0, le=100, allow_inf_nan=False)
+    interest_score: float = Field(ge=0, le=100, allow_inf_nan=False)
+    survey_score: float = Field(ge=0, le=100, allow_inf_nan=False)
+    final_score: float = Field(ge=0, le=100, allow_inf_nan=False)
+
+
+def grounded_video_summary(speech_summary, video_data):
+    videos = [VideoEvidence.model_validate(item) for item in json.loads(video_data)]
+    lines = ['상담 내용 요약:', speech_summary, '', '영상 행동 분석 참고:']
+    for video in videos:
+        lines.append(f'{video.category}: 집중도 {video.attention_score:g}, 영상 흥미도 {video.interest_score:g}, '
+                     f'설문 {video.survey_score:g}, 최종점수 {video.final_score:g}.')
+    if not videos:
+        lines.append('완료된 영상 분석 자료가 없습니다.')
+    lines.append('영상 행동 점수만으로 실제 흥미나 적성을 확정할 수 없습니다.')
+    return '\n'.join(lines)
 
 # -----------------------------
 # filler 제거
@@ -188,7 +209,10 @@ def summarize_final(text, video_analyze):
     content = content.strip()
 
     try:
-        return json.loads(content)
+        result = json.loads(content)
+        # Keep numeric/category claims out of free-form model-generated prose.
+        result['summary'] = grounded_video_summary(text, video_analyze)
+        return result
 
     except Exception:
 
@@ -197,7 +221,7 @@ def summarize_final(text, video_analyze):
             "low_interest_field": "",
             "student_trait": "",
             "career_recommendation": "",
-            "summary": content
+            "summary": grounded_video_summary(text, video_analyze)
         }
 
 
@@ -218,16 +242,16 @@ def summarize_text(stt_result, ai_report):
 
     segments = stt_result["segments"]
 
-    # 1️⃣ segment 기반 chunk
+    # segment 기반 chunk
     chunks = build_chunks_from_segments(segments)
 
-    # 2️⃣ Map 요약
+    # Map 요약
     chunk_summaries = summarize_chunks(chunks)
 
-    # 3️⃣ Merge
+    # Merge
     merged = "\n".join(chunk_summaries)
 
-    # 4️⃣ Reduce 요약
+    # Reduce 요약
     final_summary = summarize_final(merged, ai_report)
 
     return final_summary

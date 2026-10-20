@@ -221,10 +221,7 @@ def submit_survey(data: SurveySubmitRequest, db: Session = Depends(get_db)):
 
         report.answer = data.answer
 
-        scores = [int(v) for v in data.answer.values()]
-        avg = sum(scores) / len(scores)
-
-        report.survey_score = (avg / 5) * 100
+        survey_score = analyze_survey(data.answer)
         report.complete_yn = 'Y'
         report.re_comment = ReCommentEnum.SUCCESS
 
@@ -232,10 +229,13 @@ def submit_survey(data: SurveySubmitRequest, db: Session = Depends(get_db)):
 
         return {
             "success": True,
-            "survey_score": report.survey_score,
+            "survey_score": survey_score,
             "ai_v_erp_id": report.ai_v_erp_id
         }
 
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
@@ -490,6 +490,8 @@ async def upload_video(
             "ai_result": "pending" # 즉시 반환하므로 결과는 아직 알 수 없음
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -577,25 +579,28 @@ async def receive_ai_analysis(data: AIAnalysisRequest, db: Session = Depends(get
         if not report:
             raise HTTPException(status_code=404, detail="영상 리포트 없음")
 
-        report.attention_score = data.attention_score
-        report.emotion_score = data.emotion_score
-
-        survey = report.survey_score or 0
+        survey = analyze_survey(report.answer)
 
         final_score = (
-            data.attention_score * 0.3 +
-            data.emotion_score * 0.3 +
+            data.attention_score * 0.35 +
+            data.emotion_score * 0.25 +
             survey * 0.4
         )
 
-        report.final_score = round(final_score, 2)
+        db.add(AiAnalyze(
+            ai_v_erp_id=report.ai_v_erp_id,
+            attention_score=data.attention_score,
+            emotion_score=data.emotion_score,
+            survey_score=survey,
+            final_score=round(final_score, 2),
+        ))
         report.re_comment = ReCommentEnum.ANALYZED
 
         db.commit()
 
         return {
             "success": True,
-            "final_score": report.final_score
+            "final_score": round(final_score, 2)
         }
 
     except Exception as e:
@@ -620,44 +625,27 @@ def get_final_score(counseling_id: int, db: Session = Depends(get_db)):
     if not reports:
         raise HTTPException(status_code=404, detail="데이터 없음")
 
-    avg = sum(r.final_score or 0 for r in reports) / len(reports)
+    scores = []
+    for report in reports:
+        if report.re_comment == ReCommentEnum.ANALYZE_FAIL:
+            continue
+        analysis = db.query(AiAnalyze).filter(
+            AiAnalyze.ai_v_erp_id == report.ai_v_erp_id
+        ).order_by(AiAnalyze.analyze_id.desc()).first()
+        if analysis:
+            scores.append(analysis.final_score)
+    avg = sum(scores) / len(scores) if scores else None
+    failed_count = sum(r.re_comment == ReCommentEnum.ANALYZE_FAIL for r in reports)
 
     return {
-        "success": True,
-        "counseling_score": round(avg, 2)
+        "success": bool(scores),
+        "counseling_score": round(avg, 2) if avg is not None else None,
+        "analysis_status": (
+            "partial_failure" if failed_count and scores else
+            "failed" if failed_count else
+            "success" if len(scores) == len(reports) else "pending"
+        ),
     }
-
-@router.post("/survey/submit")
-def submit_survey(data: SurveySubmitRequest, db: Session = Depends(get_db)):
-    try:
-        report = db.query(ReportAiV).filter(
-            ReportAiV.counseling_id == data.counseling_id,
-            ReportAiV.url == data.url
-        ).first()
-
-        if not report:
-            raise HTTPException(status_code=404, detail="리포트 없음")
-
-        report.answer = data.answer
-
-        survey_score = analyze_survey(data.answer)
-
-        report.survey_score = survey_score
-        report.complete_yn = "Y"
-        report.re_comment = ReCommentEnum.SUCCESS
-
-        db.commit()
-
-        return {
-            "success": True,
-            "survey_score": survey_score,
-            "ai_v_erp_id": report.ai_v_erp_id
-        }
-
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-    
 
 @router.get("/survey/score/{counseling_id}")
 def get_survey_score(counseling_id: int, db: Session = Depends(get_db)):
@@ -666,7 +654,7 @@ def get_survey_score(counseling_id: int, db: Session = Depends(get_db)):
         ReportAiV.counseling_id == counseling_id
     ).all()
 
-    scores = [r.survey_score for r in reports if r.survey_score is not None]
+    scores = [analyze_survey(r.answer) for r in reports if r.answer]
 
     if not scores:
         return {"success": True, "survey_score": 0}
@@ -691,13 +679,7 @@ async def process_analysis_background(counseling_id: int, client_id: str, db: Se
         video_tasks = []
         if counseling:
             for i, (co, r) in enumerate(counseling):
-                total_score = 0
-                if len(r.answer) > 0:
-                    for sc in r.answer.values():
-                        total_score += sc + 1
-                    survey_score = ((total_score - len(r.answer)) / ((len(r.answer) * 5) - len(r.answer))) * 100
-                else:
-                    survey_score = 0
+                survey_score = analyze_survey(r.answer)
                 
                 # AI 서버에 넘겨줄 각 영상의 정보를 담습니다.
                 video_tasks.append({
@@ -746,12 +728,17 @@ async def complete_video(
 @router.post("/analysis/callback")
 async def receive_analysis_callback(data: AnalysisCallback, db: Session = Depends(get_db)):
     try:
-        if data.status != "success":
-            print("⚠️ [백엔드] AI 서버에서 분석 실패 알림이 왔습니다.")
-            return {"success": False, "message": "분석 실패 알림 수신"}
-
         # AI 서버가 보내준 점수를 그대로 꺼내서 DB에 저장
         for res in data.results:
+            report = db.query(ReportAiV).filter(
+                ReportAiV.ai_v_erp_id == res.ai_v_erp_id
+            ).first()
+            if not report:
+                raise HTTPException(status_code=404, detail="영상 리포트 없음")
+            if res.status != "success" or data.status not in ("success", "partial_failure"):
+                report.re_comment = ReCommentEnum.ANALYZE_FAIL
+                continue
+            report.re_comment = ReCommentEnum.ANALYZED
             final_score = (res.survey_score * 0.4) + (res.focused * 0.35) + (res.interest * 0.25)
             db.add(AiAnalyze(
                 ai_v_erp_id=res.ai_v_erp_id,
@@ -765,8 +752,13 @@ async def receive_analysis_callback(data: AnalysisCallback, db: Session = Depend
             ))
         db.commit()
         print("✅ [백엔드] 웹훅 수신 완료 및 DB 저장 성공!")
-        return {"success": True}
+        return {"success": data.status == "success" and all(
+            res.status == "success" for res in data.results
+        )}
         
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
         db.rollback()
         print(f"❌ [백엔드] 콜백 데이터 저장 실패: {e}")

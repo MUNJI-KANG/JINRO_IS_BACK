@@ -116,12 +116,6 @@ focus_model.load_state_dict(torch.load(focus_model_path, map_location=device))
 focus_model.eval()
 print("✅ 집중도 모델 로드 완료!")
 
-# =====================================================================
-# ⭐ [핵심 설정] GPU OOM 방지용 Semaphore (동시 분석 개수 제한)
-# =====================================================================
-MAX_CONCURRENT_JOBS = 1  
-analysis_semaphore = asyncio.Semaphore(MAX_CONCURRENT_JOBS)
-
 router = APIRouter(prefix="/ai", tags=["Client (내담자)"])
 
 @router.get("/")
@@ -320,12 +314,14 @@ async def run_full_analysis(request: AnalysisRequest):
             await asyncio.sleep(5)
             
         if not file_ready:
-            logger.error(f"❌ [AI 서버] 타임아웃: {sample_video_path} 파일이 없습니다. 0점 처리합니다.")
+            logger.error(f"Video missing: {sample_video_path}; analysis failed")
             results.append({
                 "ai_v_erp_id": task.ai_v_erp_id,
                 "survey_score": task.survey_score,
                 "interest": 0.0,
-                "focused": 0.0
+                "focused": 0.0,
+                "status": "failed",
+                "error": "video_missing"
             })
             continue
         
@@ -344,7 +340,9 @@ async def run_full_analysis(request: AnalysisRequest):
                     analyze_video_with_face_crop,
                     sample_video_path, model, test_transforms, class_names, device, face_detector, 5, 0.3
                 )
-                interest_score = interest_stats["Interested_Percentage"] if interest_stats else 0.0
+                if not interest_stats or not interest_stats.get("Frames_With_Face"):
+                    raise ValueError("No face frames available for interest analysis")
+                interest_score = interest_stats["Interested_Percentage"]
                 logger.info(f"[{c_id}-{idx}] 흥미도 분석 완료: {interest_score}%")
                 
                 # 2) 집중도 분석
@@ -353,7 +351,9 @@ async def run_full_analysis(request: AnalysisRequest):
                     analyze_video_to_json,
                     sample_video_path, focus_model, device, 'test_img', 5
                 )
-                focus_score = focus_stats.get("focus_rate", 0.0)
+                if focus_stats.get("status") != "success":
+                    raise ValueError(focus_stats.get("error", "Focus analysis failed"))
+                focus_score = focus_stats["focus_rate"]
                 logger.info(f"[{c_id}-{idx}] 집중도 분석 완료: {focus_score}%")
                 
                 logger.info(f"🏁 [AI 서버] {c_id} 학생의 {idx}번째 영상 - 분석 완료! (입장권 반납)")
@@ -371,12 +371,18 @@ async def run_full_analysis(request: AnalysisRequest):
                     "ai_v_erp_id": task.ai_v_erp_id,
                     "survey_score": task.survey_score,
                     "interest": 0.0,
-                    "focused": 0.0
+                    "focused": 0.0,
+                    "status": "failed",
+                    "error": "analysis_failed"
                 })
         
     # 💡 모든 영상 분석이 끝나면 백엔드로 웹훅(콜백) 전송!
     callback_payload = {
-        "status": "success",
+        "status": (
+            "failed" if results and all(r.get("status") == "failed" for r in results)
+            else "partial_failure" if any(r.get("status") == "failed" for r in results)
+            else "success"
+        ),
         "results": results
     }
     
@@ -384,7 +390,8 @@ async def run_full_analysis(request: AnalysisRequest):
     try:
         async with httpx.AsyncClient() as cl:
             callback_url = f"{BACKEND_URL}/client/analysis/callback"
-            await cl.post(callback_url, json=callback_payload, timeout=10.0)
+            response = await cl.post(callback_url, json=callback_payload, timeout=10.0)
+            response.raise_for_status()
         logger.info(f"✅ [AI 서버] 백엔드로 {c_id} 학생의 최종 분석 결과(웹훅) 전송 완료!")
     except Exception as e:
         logger.error(f"❌ [AI 서버] 콜백 전송 실패: {e}")

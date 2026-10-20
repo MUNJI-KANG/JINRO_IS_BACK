@@ -16,6 +16,29 @@ const STest = () => {
   const [cameraStatus, setCameraStatus] = useState("로딩 중...");
 
   const isRecordingRef = useRef(isRecording);
+
+  function onResults(results) {
+    const canvasElement = canvasRef.current;
+    if (!canvasElement) return;
+    const canvasCtx = canvasElement.getContext('2d');
+    canvasCtx.save();
+    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+    for (const landmarks of results.multiFaceLandmarks || []) {
+      for (const landmark of landmarks) {
+        canvasCtx.beginPath();
+        canvasCtx.arc(landmark.x * canvasElement.width, landmark.y * canvasElement.height, 1, 0, 2 * Math.PI);
+        canvasCtx.fillStyle = 'aqua';
+        canvasCtx.fill();
+      }
+      if (isRecordingRef.current) {
+        setLandmarkDataLog((prev) => [...prev, {
+          timestamp: Date.now(), nose_tip: landmarks[1], left_iris: landmarks[468], right_iris: landmarks[473],
+        }]);
+      }
+    }
+    canvasCtx.restore();
+  }
   useEffect(() => {
     isRecordingRef.current = isRecording;
   }, [isRecording]);
@@ -53,41 +76,6 @@ const STest = () => {
       faceMesh.close();
     };
   }, []);
-
-  const onResults = (results) => {
-    if (!canvasRef.current) return;
-    
-    const canvasElement = canvasRef.current;
-    const canvasCtx = canvasElement.getContext('2d');
-    
-    canvasCtx.save();
-    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-
-    if (results.multiFaceLandmarks) {
-      for (const landmarks of results.multiFaceLandmarks) {
-        for (let i = 0; i < landmarks.length; i++) {
-          const x = landmarks[i].x * canvasElement.width;
-          const y = landmarks[i].y * canvasElement.height;
-          canvasCtx.beginPath();
-          canvasCtx.arc(x, y, 1, 0, 2 * Math.PI);
-          canvasCtx.fillStyle = 'aqua';
-          canvasCtx.fill();
-        }
-
-        if (isRecordingRef.current) {
-          const logEntry = {
-            timestamp: Date.now(),
-            nose_tip: landmarks[1],
-            left_iris: landmarks[468],
-            right_iris: landmarks[473],
-          };
-          setLandmarkDataLog((prev) => [...prev, logEntry]);
-        }
-      }
-    }
-    canvasCtx.restore();
-  };
 
   // 영상 및 데이터 기록 시작/중지 통합 관리 함수
   const toggleRecording = () => {

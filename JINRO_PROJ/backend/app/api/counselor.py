@@ -39,6 +39,53 @@ def get_db():
         db.close()
 
 
+async def require_counselor_access(request: Request, db: Session = Depends(get_db)):
+    route = request.scope['route'].path
+    if route in ('/counselor/login', '/counselor/logout', '/counselor/report/con/{counseling_id}/stt-result'):
+        return
+    if request.method == 'GET' and route.startswith('/counselor/category'):
+        return
+    counselor_id = request.session.get('counselor_id')
+    if not counselor_id or not db.query(Counselor).filter_by(counselor_id=counselor_id, active_yn='Y').first():
+        raise HTTPException(401, '상담사 로그인이 필요합니다.')
+    parameters = {**request.query_params, **request.path_params}
+    if request.method in ('POST', 'PUT') and request.headers.get('content-type', '').startswith('application/json'):
+        payload = await request.json()
+        if isinstance(payload, dict):
+            parameters = {**payload, **parameters}
+    counseling_id = parameters.get('counseling_id', parameters.get('counselingId'))
+    client_id = parameters.get('client_id', parameters.get('clientId'))
+    try:
+        if parameters.get('counselor_id') is not None and int(parameters['counselor_id']) != counselor_id:
+            raise HTTPException(404, '담당 상담사 정보를 찾을 수 없습니다.')
+        if counseling_id is not None:
+            counseling = db.query(Counseling).filter_by(counseling_id=int(counseling_id), counselor_id=counselor_id).first()
+            if not counseling or (client_id is not None and counseling.client_id != int(client_id)):
+                raise HTTPException(404, '담당 상담을 찾을 수 없습니다.')
+        elif client_id is not None and not db.query(Counseling).filter_by(client_id=int(client_id), counselor_id=counselor_id).first():
+            raise HTTPException(404, '담당 학생을 찾을 수 없습니다.')
+        video_id = parameters.get('ai_v_erp_id', parameters.get('video_id'))
+        if video_id is not None:
+            query = db.query(ReportAiV).join(Counseling).filter(
+                ReportAiV.ai_v_erp_id == int(video_id), Counseling.counselor_id == counselor_id,
+            )
+            if counseling_id is not None:
+                query = query.filter(Counseling.counseling_id == int(counseling_id))
+            if not query.first():
+                raise HTTPException(404, '담당 영상 자료를 찾을 수 없습니다.')
+    except (ValueError, TypeError):
+        raise HTTPException(422, '조회 식별자가 올바르지 않습니다.')
+
+
+router.dependencies.append(Depends(require_counselor_access))
+
+
+@router.post('/logout')
+def logout(request: Request):
+    request.session.clear()
+    return {'success': True, 'message': '로그아웃되었습니다.'}
+
+
 # ===============================
 # 🔹 로그인
 # ===============================
@@ -134,10 +181,11 @@ def update_category(c_id: int, request: CategoryCreateRequest, db: Session = Dep
 # 🔹 영상 리스트 / 영상 URL
 # ===============================
 @router.get("/recording/dates/{client_id}")  
-def get_video_list(client_id: int, db: Session = Depends(get_db)):
+def get_video_list(client_id: int, request: Request, db: Session = Depends(get_db)):
     try:
         counseling_by_client = db.query(Counseling).filter(
             Counseling.client_id == client_id,
+            Counseling.counselor_id == request.session['counselor_id'],
             Counseling.datetime != None,
             ).order_by(Counseling.datetime.desc()).all()
         
@@ -368,9 +416,11 @@ async def upload_audio(
         .join(AiAnalyze, ReportAiV.ai_v_erp_id == AiAnalyze.ai_v_erp_id) \
         .where(Counseling.counseling_id == counseling_id).all()
         
-        ai_report = ""
-        for i, ai in enumerate(ai_analyze):
-            ai_report += f"{i+1}. {ai.category}는 집중도:{ai.attention_score} 흥미도:{ai.emotion_score} 설문점수:{ai.survey_score} 최종점수:{ai.final_score}\n"
+        ai_report = json.dumps([
+            {'category': ai.category, 'attention_score': ai.attention_score,
+             'interest_score': ai.emotion_score, 'survey_score': ai.survey_score,
+             'final_score': ai.final_score} for ai in ai_analyze
+        ], ensure_ascii=False)
 
 
         # BackgroundTasks 등록
@@ -706,13 +756,14 @@ def update_counseling_schedule(counseling_id: int, request_data: ScheduleUpdateR
 # 🔹 학생 목록 / 상담 기록
 # ===============================
 @router.get("/students")
-def get_students(db: Session = Depends(get_db)):
+def get_students(request: Request, db: Session = Depends(get_db)):
     students = (
         db.query(Client)
         .join(Counseling, Client.client_id == Counseling.client_id)
         .filter(
             # 일정 있음(2) 와 상담완료(3)만 뜨게
-            Counseling.complete_yn >= 2
+            Counseling.complete_yn >= 2,
+            Counseling.counselor_id == request.session['counselor_id'],
         )
         .distinct()
         .all()
@@ -733,7 +784,7 @@ def get_students(db: Session = Depends(get_db)):
     }
 
 @router.get("/consultations/{client_id}")
-def get_student_consultations(client_id: int, db: Session = Depends(get_db)):
+def get_student_consultations(client_id: int, request: Request, db: Session = Depends(get_db)):
     try:
         # 1. 상담 기록 조회 (Counseling 테이블)
         records = (
@@ -741,6 +792,7 @@ def get_student_consultations(client_id: int, db: Session = Depends(get_db)):
             .outerjoin(ReportFinal, ReportFinal.counseling_id == Counseling.counseling_id)
             .filter(
                 Counseling.client_id == client_id,
+                Counseling.counselor_id == request.session['counselor_id'],
                 Counseling.complete_yn >= 2
             )
             .order_by(
@@ -1007,23 +1059,20 @@ def get_ai_video_report(
     focus_data = []
     interest_data = []
 
-    if analyze and analyze.emotion_v_score:
-        focus_data = analyze.emotion_v_score
-
-    interest_data = [
-        {
+    if analyze:
+        interest_data = [{
             "subject": video.category,
-            "관심도": 70,
-            "자신감": 65
-        }
-    ]
+            "관심도": analyze.emotion_score,
+            "설문": analyze.survey_score,
+        }]
 
     return {
         "success": True,
         "data": {
             "focus": focus_data,
             "interest": interest_data,
-            "summary": video.ai_comment if hasattr(video, "ai_comment") else ""
+            "summary": (analyze.ai_v_comment or "") if analyze else "",
+            "prompt": (analyze.prompt or "") if analyze else ""
         }
     }
 
@@ -1032,16 +1081,14 @@ from pathlib import Path
 @router.get("/local-videos/{counseling_id}")
 def get_local_videos(counseling_id: int):
 
-    video_dir = Path(
-        "F:/JINRO_IS_BACK_PROJ/JINRO_PROJ/ai_server/videos"
-    ) / str(counseling_id)
+    video_dir = Path(__file__).resolve().parents[3] / "ai_server" / "videos" / str(counseling_id)
 
     if not video_dir.exists():
         return {"success": True, "data": []}
 
     files = []
 
-    for f in video_dir.glob("*.webm"):
+    for f in sorted(video_dir.glob("*.webm")):
 
         files.append({
             "name": f.name,

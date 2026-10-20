@@ -1,4 +1,4 @@
-import { useEffect,useState } from "react";
+import { useEffect,useState,useMemo,useCallback } from "react";
 
 import "../../../css/counselor_css/onboarding/onboarding.css";
 
@@ -7,12 +7,14 @@ function InfoEditOnboarding({ onClose }) {
   const [step,setStep]=useState(1);
   const [rect,setRect]=useState(null);
 
-  const config={
+  const config=useMemo(() => ({
     1:{target:".cinfoedit-form input[name='name']",title:"이름 수정",text:"상담사 이름을 수정할 수 있습니다."},
     2:{target:".cinfoedit-form input[name='phone']",title:"전화번호",text:"연락 가능한 전화번호를 입력하세요."},
     3:{target:".cinfoedit-form input[name='email']",title:"이메일",text:"리포트 및 알림 수신 이메일입니다."},
     4:{target:".save-btn",title:"저장",text:"입력한 정보를 저장합니다."}
-  };
+  }), []);
+
+  const next=useCallback(()=>{ step===4 ? onClose() : setStep(step+1); }, [step,onClose]);
 
   useEffect(()=>{
     const scrollY=window.scrollY;
@@ -42,7 +44,7 @@ function InfoEditOnboarding({ onClose }) {
       cancelAnimationFrame(frame);
       window.removeEventListener("resize",update);
     };
-  },[step]);
+  },[step,config]);
 
   useEffect(()=>{
     const handler=(e)=>{
@@ -54,9 +56,7 @@ function InfoEditOnboarding({ onClose }) {
     };
     window.addEventListener("keydown",handler);
     return ()=>window.removeEventListener("keydown",handler);
-  },[step]);
-
-  const next=()=>{ step===4 ? onClose() : setStep(step+1); };
+  },[step,next,onClose]);
 
   if(!rect) return null;
 
