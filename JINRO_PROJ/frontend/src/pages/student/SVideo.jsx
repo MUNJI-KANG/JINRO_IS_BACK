@@ -1,8 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { FaceMesh } from "@mediapipe/face_mesh";
-import { Camera } from "@mediapipe/camera_utils";
-import { useSelector } from "react-redux";
 
 import "../../css/student_css/SVideo.css";
 import api from "../../services/app";
@@ -12,17 +10,15 @@ function SVideo() {
   const { categoryId } = useParams();
   const location = useLocation();
 
-  const selectedVideos = useSelector((state) => state.cVideos);
   const currentIndex = location.state?.currentIndex ?? 0;
   const currentCounselingId = location.state?.counseling_id || null;
-  const currentReportIds = location.state?.report_ids || [];
+  const currentReportIds = useMemo(() => location.state?.report_ids || [], [location.state?.report_ids]);
   const isGlobalOnboarding =
     localStorage.getItem("student_onboarding_flow") === "true";
 
   const webcamRef = useRef(null);
   const recorderRef = useRef(null);
   const recordedChunks = useRef([]);
-  const cameraRef = useRef(null);
   const streamRef = useRef(null);
 
   const frontStartTimeRef = useRef(null);
@@ -35,20 +31,39 @@ function SVideo() {
   const [webcamReady, setWebcamReady] = useState(false);
   const [webcamError, setWebcamError] = useState(false);
   const [videoEnded, setVideoEnded] = useState(false);
-  const [started, setStarted] = useState(false);
+  const [manualStarted, setStarted] = useState(currentIndex > 0);
   const [onboardingStartRequested, setOnboardingStartRequested] = useState(false);
   const [faceDetected, setFaceDetected] = useState(false);
   const [isFacingFront, setIsFacingFront] = useState(false);
   const [frontTime, setFrontTime] = useState(0);
   const [readyToStart, setReadyToStart] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const started = manualStarted || (isGlobalOnboarding && onboardingStartRequested && (webcamReady || webcamError));
   const canGoSurvey = isGlobalOnboarding || videoEnded;
   const showStartButton = isGlobalOnboarding
     ? webcamReady || webcamError
     : readyToStart;
 
+  function startRecording() {
+    const stream = webcamRef.current?.srcObject;
+    if (!stream || recorderRef.current?.state === 'recording') return;
+    if (streamRef.current && streamRef.current !== stream) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+    }
+    streamRef.current = stream;
+    const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+    recorderRef.current = mediaRecorder;
+    recordedChunks.current = [];
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) recordedChunks.current.push(event.data);
+    };
+    mediaRecorder.start(1000);
+  }
+
   useEffect(() => {
     let activeStream = null;
+    let active = true;
+    const webcamElement = webcamRef.current;
 
     const initWebcam = async () => {
       try {
@@ -58,9 +73,13 @@ function SVideo() {
         });
 
         activeStream = stream;
+        if (!active) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
 
-        if (webcamRef.current) {
-          webcamRef.current.srcObject = stream;
+        if (webcamElement) {
+          webcamElement.srcObject = stream;
           setWebcamReady(true);
           setWebcamError(false);
 
@@ -76,18 +95,14 @@ function SVideo() {
     initWebcam();
 
     return () => {
-      if (webcamRef.current?.srcObject) {
-        webcamRef.current.srcObject.getTracks().forEach((track) => track.stop());
-        webcamRef.current.srcObject = null;
+      active = false;
+      if (webcamElement?.srcObject) {
+        webcamElement.srcObject.getTracks().forEach((track) => track.stop());
+        webcamElement.srcObject = null;
       }
 
       if (activeStream) {
         activeStream.getTracks().forEach((track) => track.stop());
-      }
-
-      if (cameraRef.current) {
-        cameraRef.current.stop();
-        cameraRef.current = null;
       }
 
       if (streamRef.current) {
@@ -106,6 +121,10 @@ function SVideo() {
       locateFile: (file) =>
         `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
     });
+    const webcam = webcamRef.current;
+    let active = true;
+    let frameId;
+    let pendingFrame = Promise.resolve();
 
     faceMesh.setOptions({
       maxNumFaces: 1,
@@ -115,6 +134,7 @@ function SVideo() {
     });
 
     faceMesh.onResults((results) => {
+      if (!active) return;
       if (!results.multiFaceLandmarks) {
         setFaceDetected(false);
         lostFaceCountRef.current += 1;
@@ -188,32 +208,33 @@ function SVideo() {
       }
     });
 
-    const camera = new Camera(webcamRef.current, {
-      onFrame: async () => {
-        await faceMesh.send({ image: webcamRef.current });
-      },
-      width: 640,
-      height: 480,
-    });
-
-    cameraRef.current = camera;
-    camera.start();
+    const processFrame = async () => {
+      if (!active) return;
+      if (webcam.readyState >= 2) {
+        try {
+          pendingFrame = faceMesh.send({ image: webcam });
+          await pendingFrame;
+        } catch (error) {
+          if (active) console.error("Face detection failed:", error);
+        }
+      }
+      if (active) frameId = requestAnimationFrame(processFrame);
+    };
+    frameId = requestAnimationFrame(processFrame);
 
     return () => {
-      try {
-        faceMesh.close();
-      } catch (error) {
-        console.error(error);
-      }
+      active = false;
+      cancelAnimationFrame(frameId);
+      // Keep the recording stream alive and close inference after its last frame.
+      pendingFrame.catch(() => {}).then(() => faceMesh.close()).catch(console.error);
     };
   }, [isGlobalOnboarding, started, webcamReady]);
 
   useEffect(() => {
-    if (currentIndex > 0 && webcamReady) {
+    if (started && webcamReady) {
       startRecording();
-      setStarted(true);
     }
-  }, [currentIndex, webcamReady]);
+  }, [started, categoryId, webcamReady]);
 
   useEffect(() => {
     if (!isGlobalOnboarding) {
@@ -221,6 +242,8 @@ function SVideo() {
     }
 
     const handleOnboardingStartRequest = () => {
+      if (currentCounselingId) localStorage.setItem('counselingId', currentCounselingId);
+      if (currentReportIds.length) localStorage.setItem('reportIds', JSON.stringify(currentReportIds));
       setOnboardingStartRequested(true);
     };
 
@@ -235,25 +258,25 @@ function SVideo() {
         handleOnboardingStartRequest
       );
     };
-  }, [isGlobalOnboarding]);
+  }, [isGlobalOnboarding, currentCounselingId, currentReportIds]);
 
-  const fetchVideo = async () => {
+  useEffect(() => {
+    if (!started) return;
+    let active = true;
+    const fetchVideo = async () => {
     try {
       const response = await api.get(`/client/survey/${categoryId}`);
 
-      if (response.data.success) {
+      if (active && response.data.success) {
         setCurrentVideo(response.data.data);
         setVideoEnded(false);
       }
     } catch (error) {
       console.error(error);
     }
-  };
-
-  useEffect(() => {
-    if (started) {
-      fetchVideo();
-    }
+    };
+    fetchVideo();
+    return () => { active = false; };
   }, [categoryId, started]);
 
   const extractVideoId = (url) => {
@@ -270,32 +293,6 @@ function SVideo() {
     } catch {
       return null;
     }
-  };
-
-  const startRecording = () => {
-    if (!webcamRef.current?.srcObject) {
-      return;
-    }
-
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-
-    const stream = webcamRef.current.srcObject;
-    streamRef.current = stream;
-
-    const mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
-    recorderRef.current = mediaRecorder;
-    recordedChunks.current = [];
-
-    mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        recordedChunks.current.push(event.data);
-      }
-    };
-
-    mediaRecorder.start(1000);
   };
 
   const stopRecording = () =>
@@ -342,24 +339,6 @@ function SVideo() {
     }
   };
 
-  useEffect(() => {
-    if (!isGlobalOnboarding || !onboardingStartRequested || started) {
-      return;
-    }
-
-    if (!webcamReady && !webcamError) {
-      return;
-    }
-
-    handleStart();
-  }, [
-    isGlobalOnboarding,
-    onboardingStartRequested,
-    started,
-    webcamError,
-    webcamReady,
-  ]);
-
   const handleGoSurvey = async () => {
     if (uploading) return;
 
@@ -393,8 +372,6 @@ function SVideo() {
 
   useEffect(() => {
     if (!started || !videoId) return;
-
-    setVideoEnded(false);
 
     const createPlayer = () => {
       new window.YT.Player("youtube-player", {

@@ -1,15 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import '../../../css/common_css/base.css';
 import '../../../css/counselor_css/CCounseling.css';
-import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import api from '../../../services/app';
 
 
 const CCounseling = () => {
 
     const navigate = useNavigate();
-    const location  = useLocation();
-    const { clientId, counselingId } = useParams();
+    const { counselingId } = useParams();
 
     const [title, setTitle] = useState('');
     const [contents, setContents] = useState('');

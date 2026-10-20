@@ -226,7 +226,6 @@ export default function CCatList() {
   const [selectedBigId, setSelectedBigId] = useState(null);
   const [selectedMidId, setSelectedMidId] = useState(null);   
   const [selectedMidName, setSelectedMidName] = useState(null);
-  const [selectedMid, setSelectedMid] = useState(null);
   const [dbCategories, setDbCategories] = useState([]);
 
   const [showGuide, setShowGuide] = useState(false);   

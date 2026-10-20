@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   ResponsiveContainer,
   LineChart,
@@ -37,106 +37,41 @@ const ReportAi = ({ pageTitle, studentName }) => {
     prompt: ""
   });
 
-  useEffect(() => {
-
-    if (!counselingId) return;
-
-    fetchAnalyzeList();
-    loadFinalScore();
-    loadVideoScores();
-
+  const loadReport = useCallback(async (videoId) => {
+    try {
+      const res = await api.get(`/counselor/ai-report/${counselingId}/${videoId}`);
+      if (!res.data.success) return;
+      setCurrentData({
+        focus: res.data.data.focus || [], interest: res.data.data.interest || [],
+        summary: res.data.data.summary || "", prompt: res.data.data.prompt || ""
+      });
+    } catch (err) {
+      console.error('영상 리포트 조회 실패:', err);
+    }
   }, [counselingId]);
 
-  const fetchAnalyzeList = async () => {
-
-    try {
-
-      const res = await api.get(`/counselor/ai-report/dates/${counselingId}`);
-
-      if (!res.data.success) return;
-
-      const list = res.data.data;
-
-      if (!list || list.length === 0) return;
-
-      setAnalyzeDates(list);
-
-      const firstId = list[0].ai_v_erp_id;
-
-      setSelectedAnalyzeId(firstId);
-      loadReport(firstId);
-
-    } catch (err) {
-      console.error(err);
-    }
-
-  };
-
-  const loadReport = async (videoId) => {
-
-    try {
-
-      const res = await api.get(`/counselor/ai-report/${counselingId}/${videoId}`);
-
-      if (!res.data.success) return;
-
-      setCurrentData({
-        focus: res.data.data.focus || [],
-        interest: res.data.data.interest || [],
-        summary: res.data.data.summary || "",
-        prompt: res.data.data.prompt || ""
-      });
-
-    } catch (err) {
-      console.error(err);
-    }
-
-  };
-
-  const loadFinalScore = async () => {
-
-    try {
-
-      const res = await api.get(`/counselor/report/final/${counselingId}`);
-
-      if (!res.data.success) return;
-
-      const focusList = res.data.focus || [];
-
-      if (focusList.length === 0) {
-        setFinalScore(0);
-        return;
+  useEffect(() => {
+    if (!counselingId) return;
+    let active = true;
+    Promise.all([
+      api.get(`/counselor/ai-report/dates/${counselingId}`),
+      api.get(`/counselor/report/final/${counselingId}`),
+    ]).then(([dates, scores]) => {
+      if (!active) return;
+      if (dates.data.success && dates.data.data?.length) {
+        const list = dates.data.data;
+        setAnalyzeDates(list);
+        setSelectedAnalyzeId(list[0].ai_v_erp_id);
+        loadReport(list[0].ai_v_erp_id);
       }
-
-      const avg =
-        focusList.reduce((sum, v) => sum + v.value, 0) /
-        focusList.length;
-
-      setFinalScore(avg.toFixed(1));
-
-    } catch (e) {
-      console.error(e);
-    }
-
-  };
-
-  const loadVideoScores = async () => {
-
-    try {
-
-      const res = await api.get(`/counselor/report/final/${counselingId}`);
-
-      if (!res.data.success) return;
-
-      const focusList = res.data.focus || [];
-
-      setVideoScores(focusList);
-
-    } catch (e) {
-      console.error(e);
-    }
-
-  };
+      if (scores.data.success) {
+        const focusList = scores.data.focus || [];
+        setVideoScores(focusList);
+        setFinalScore(focusList.length ? (focusList.reduce((sum, v) => sum + v.value, 0) / focusList.length).toFixed(1) : 0);
+      }
+    }).catch(error => console.error('분석 자료 조회 실패:', error));
+    return () => { active = false; };
+  }, [counselingId, loadReport]);
 
   const handleAnalyzeChange = (e) => {
 
@@ -254,7 +189,7 @@ const ReportAi = ({ pageTitle, studentName }) => {
                   />
 
                   <Bar
-                    dataKey="자신감"
+                    dataKey="설문"
                     fill="var(--secondary)"
                     radius={[4,4,0,0]}
                   />

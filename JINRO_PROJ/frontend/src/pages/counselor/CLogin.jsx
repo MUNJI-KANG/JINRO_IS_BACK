@@ -64,7 +64,7 @@ const CLogin = () => {
         localStorage.clear();
         dispatch(clearVideos());
         // api.get('client/session/clear'); => 세션 최기화 이미 다른 코드로도 충분해서 잠시 주석 처리.
-    }, []);
+    }, [dispatch]);
 
     return (
         <div className='c-login-wrap'>

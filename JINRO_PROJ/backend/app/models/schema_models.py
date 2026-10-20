@@ -115,3 +115,16 @@ class ReportFinal(Base):
     update_date = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False, comment='리포트 수정 날짜')
     complete_yn = Column(String(1), default='N', nullable=False, comment='최종작성여부')
     counseling_id = Column(Integer, ForeignKey('COUNSELING.counseling_id'), nullable=False)
+
+
+class CounselingPreparation(Base):
+    __tablename__ = 'COUNSELING_PREPARATION'
+
+    preparation_id = Column(Integer, primary_key=True, autoincrement=True)
+    counseling_id = Column(Integer, ForeignKey('COUNSELING.counseling_id'), nullable=False, unique=True)
+    content = Column(JSON, nullable=False)
+    evidence = Column(JSON, nullable=False)
+    tool_trace = Column(JSON, nullable=False)
+    status = Column(String(16), nullable=False, default='draft')
+    revision = Column(Integer, nullable=False, default=1)
+    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())

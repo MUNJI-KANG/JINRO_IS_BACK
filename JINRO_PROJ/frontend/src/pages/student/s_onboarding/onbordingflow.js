@@ -53,17 +53,6 @@ const clickWhenReady = async (selector) => {
   return true;
 };
 
-const clickFirst = async (selector) => {
-  const element = await waitFor(() => document.querySelector(selector));
-
-  if (!element || element.disabled) {
-    return false;
-  }
-
-  element.click();
-  return true;
-};
-
 const startVideoOnboarding = async () => {
   const startButton = await waitFor(() => {
     const button = getElement(".global-video-start");
@@ -290,7 +279,6 @@ const answerSurveyAndSubmit = async () => {
     const buttonText = nextButton.textContent?.trim() ?? "";
     const shouldSubmitStep =
       buttonText === "결과 제출" || buttonText === "다음 영상으로";
-    const isSubmitStep = buttonText !== "다음 문항";
 
     if (nextButton.disabled) {
       firstOption.click();

@@ -77,8 +77,6 @@ const CFinal = () => {
     const [isPdfRendering, setIsPdfRendering] = useState(false);
 
     // 상담 데이터 관련 상태
-    const [focusData, setFocusData] = useState([]);
-    const [interestData, setInterestData] = useState([]);
     const [tableData, setTableData] = useState([]);
 
     // 상담사 TEXT 리포트 부분
@@ -257,8 +255,6 @@ const CFinal = () => {
             .then(res => res.data)
             .then(data => {
                 if (data.success) {
-                    setFocusData(data.focus || []);
-                    setInterestData(data.interest || []);
                     setTableData(data.table || []);
                 }
             })
@@ -405,7 +401,7 @@ const CFinal = () => {
             setRecordState('recording');
             setRecordTime(0);
             timerRef.current = setInterval(() => setRecordTime(prev => prev + 1), 1000);
-        } catch (err) {
+        } catch {
             alert('오디오 권한이 필요합니다.');
         }
     };
@@ -461,7 +457,9 @@ const CFinal = () => {
             try {
                 const res = await api.get(`/counselor/report/status/${counselingId}`);
 
-                if (!res.data.success) return;
+                if (!res.data.success) {
+                    throw new Error('Analysis status is unavailable');
+                }
 
                 const status = res.data.status;
                 setAiStatus(status);
@@ -482,7 +480,7 @@ const CFinal = () => {
 
             retry++;
 
-            if (retry < maxRetry && isAnalyzing) {
+            if (retry < maxRetry) {
                 setTimeout(checkStatus, 3000);
             } else {
                 setIsAnalyzing(false);

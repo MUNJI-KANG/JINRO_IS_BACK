@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import api from "../../../services/app";
 
 import styles from "../../../css/component_css/ReportAi.module.css";
 
-const CReportAiSimple = ({ pageTitle, apiUrl }) => {
+const CReportAiSimple = () => {
 
   const location = useLocation();
   const { clientId, counselingId } = useParams();
@@ -18,6 +18,20 @@ const CReportAiSimple = ({ pageTitle, apiUrl }) => {
   const [videoUrl, setVideoUrl] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const loadReport = useCallback(async (counselingId) => {
+    try {
+      const { data } = await api.get(`/counselor/ai-report/${counselingId}`);
+      if (data.success && data.data) {
+        const result = data.data.ai_m_comment;
+        setSummary(typeof result === 'string' ? result : result?.summary || '');
+        setPrompt(data.data.prompt || '');
+      }
+      setVideoUrl(`http://localhost:8000/counselor/ai_report/voice/file/${counselingId}`);
+    } catch (error) {
+      console.error('음성 리포트 조회 실패:', error);
+    }
+  }, []);
 
   /* ==============================
      날짜 목록 가져오기
@@ -35,60 +49,20 @@ const CReportAiSimple = ({ pageTitle, apiUrl }) => {
         if (res.success) {
 
           setDates(res.data);
-
-          if (res.data.length > 0) {
-            for (let d of res.data) {
-              if (counselingId == d.counseling_id) {
-                loadReport(d.counseling_id);
-                setSelectedDate(d.counseling_id);
-              }
-            }
-            
-          }
+          loadReport(counselingId);
+          setSelectedDate(counselingId);
 
         }
 
       })
       .catch((err) => console.error(err));
 
-  }, [counselingId]);
+  }, [counselingId, clientId, loadReport]);
 
 
   /* ==============================
      리포트 조회
   ============================== */
-
-  const loadReport = async (counselingId) => {
-
-    await api
-      .get(`/counselor/ai-report/${counselingId}`)
-      .then((res) => res.data)
-      .then((res) => {
-
-        if (res.success) {
-          if (res.data != undefined) {
-            setSummary(res.data.ai_m_comment || "");
-            setPrompt(res.data.prompt || "");
-          }
-
-        }
-
-      })
-      .catch((err) => console.error(err));
-
-    // await api.get(`/counselor/ai_report/voice/file/${counselingId}`).then(
-    //   (res) => res.data
-    // ).then(
-    //   (res) => {
-    //     if (res.success) {
-          
-    //     }
-    //   }
-    // ).catch((err) => console.error(err))
-
-    setVideoUrl(`http://localhost:8000/counselor/ai_report/voice/file/${counselingId}`)
-
-  };
 
 
   /* ==============================
@@ -161,6 +135,9 @@ const CReportAiSimple = ({ pageTitle, apiUrl }) => {
           value={selectedDate}
           onChange={handleDateChange}
         >
+          {!dates.some((d) => String(d.counseling_id) === String(counselingId)) && (
+            <option value={counselingId}>현재 상담</option>
+          )}
           {dates.map((d) => (
             <option key={d.counseling_id} value={d.counseling_id}>
               {d.regdate}

@@ -439,3 +439,9 @@
   transform: translateY(-2px);
   background: var(--primary-hover);
 }
+
+.counselor-category-page > .guide-btn {
+  position: static;
+  display: block;
+  margin: 24px 0 0 auto;
+}

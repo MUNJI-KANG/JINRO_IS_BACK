@@ -16,4 +16,4 @@ def analyze_survey(answer: dict) -> float:
 
     avg = sum(scores) / len(scores)
 
-    return round((avg / 5.0) * 100.0, 2)
+    return round((avg / 4.0) * 100.0, 2)

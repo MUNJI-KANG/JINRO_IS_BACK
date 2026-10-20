@@ -1,4 +1,4 @@
-import { useState,useEffect } from "react";
+import { useState,useEffect,useMemo,useCallback } from "react";
 import "../../../css/counselor_css/onboarding/onboarding.css";
 
 function SchedulerOnboarding({ onClose }) {
@@ -6,11 +6,13 @@ function SchedulerOnboarding({ onClose }) {
   const [step,setStep]=useState(1);
   const [rect,setRect]=useState(null);
 
-  const config={
+  const config=useMemo(() => ({
     1:{target:".calendar-section",title:"상담 캘린더",text:"날짜를 클릭하면 해당 날짜 일정이 표시됩니다."},
     2:{target:".add-btn",title:"일정 추가",text:"학생을 선택하여 상담 일정을 등록합니다."},
     3:{target:".empty-box",title:"일정 상태",text:"상담 리스트 클릭시 최종 리포트로 이동합니다."}
-  };
+  }), []);
+
+  const next=useCallback(()=> step===3 ? onClose() : setStep(s=>s+1), [step,onClose]);
 
   useEffect(()=>{
     const scrollY=window.scrollY;
@@ -31,7 +33,7 @@ function SchedulerOnboarding({ onClose }) {
     };
     window.addEventListener("keydown",key);
     return ()=>window.removeEventListener("keydown",key);
-  },[step]);
+  },[next]);
 
   useEffect(()=>{
     const update=()=>{
@@ -47,9 +49,7 @@ function SchedulerOnboarding({ onClose }) {
       window.removeEventListener("resize",update);
       window.removeEventListener("scroll",update,true);
     };
-  },[step]);
-
-  const next=()=> step===3 ? onClose() : setStep(s=>s+1);
+  },[step,config,onClose]);
 
   if(!rect) return null;
 

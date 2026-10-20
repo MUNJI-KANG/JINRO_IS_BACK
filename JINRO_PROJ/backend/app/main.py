@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 # 4. 모듈 및 DB 로드
 from app.db.database import engine, Base
-from app.api import client, counselor
+from app.api import client, counselor, preparation
 
 try:
     Base.metadata.create_all(bind=engine)
@@ -88,3 +88,4 @@ def read_root():
 
 app.include_router(client.router)
 app.include_router(counselor.router)
+app.include_router(preparation.router)

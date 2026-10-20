@@ -68,6 +68,8 @@ class AnalysisResultItem(BaseModel):
     survey_score: float
     interest: float
     focused: float
+    status: str = "success"
+    error: str = ""
 
 class AnalysisCallback(BaseModel):
     status: str

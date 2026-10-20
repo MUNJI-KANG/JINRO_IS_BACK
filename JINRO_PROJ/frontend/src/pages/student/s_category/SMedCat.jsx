@@ -153,7 +153,7 @@ function SMedCat() {
     if(!safeBigId){
       navigate("/student/category/big");
     }
-  },[safeBigId]);
+  },[safeBigId,navigate]);
 
   const midCategories = useMemo(()=>{
     if(!safeBigId) return [];

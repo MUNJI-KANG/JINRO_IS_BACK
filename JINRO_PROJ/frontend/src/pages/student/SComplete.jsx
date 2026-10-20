@@ -1,11 +1,10 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/app.js';
 import styles from '../../css/student_css/SComplete.module.css';
 
 function SComplete() {
     const navigate = useNavigate();
-    const [counselingVal, setCounselingVal] = useState(null);
     
     // ⭐ 1. 중복 호출 방지용 깃발 (컴포넌트가 두 번 렌더링되어도 값 유지)
     const isAnalysisTriggered = useRef(false);
@@ -35,7 +34,6 @@ function SComplete() {
                 const counselingId = localStorage.getItem("counselingId");
                 const clientId = localStorage.getItem("client_id");
 
-                setCounselingVal(counselingId);
 
                 if (!counselingId || !clientId) {
                     console.error("상담 ID 또는 학생 ID를 찾을 수 없습니다.");
@@ -74,7 +72,7 @@ function SComplete() {
         stopCamera();
     }, []);
 
-    const handleGoHome = (e) => {
+    const handleGoHome = () => {
         // 온보딩 중일 때 홈 버튼 클릭 막기 (필요시 주석 해제)
         /*
         if (checkIsOnboarding()) {

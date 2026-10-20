@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../css/counselor_css/CStudentList.css";
 import api from "../../services/app";
+import "../../css/counselor_css/CPreparation.css";
 
 import StudentListOnboarding from "./c_onboarding/StudentListOnboarding.jsx";
 
@@ -253,6 +254,11 @@ export default function CStudentList() {
                   <div className="consult-card-left">
                     <div className="consult-card-title-row">
                       <div className="consult-card-title">{c.title}</div>
+                      <button type="button" className="prep-command" onClick={(event) => {
+                        event.stopPropagation();
+                        closeModal();
+                        navigate(`/counselor/preparation/${modal.studentId}/${c.id}`);
+                      }}>상담 준비</button>
 
                     {c.unread > 0 && (
                       <div className="consult-badge">

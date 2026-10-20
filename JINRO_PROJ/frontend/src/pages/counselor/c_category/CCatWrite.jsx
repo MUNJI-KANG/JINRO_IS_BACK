@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../../css/counselor_css/CCatWrite.css";
 import api from '../../../services/app'
@@ -12,9 +12,9 @@ export default function CCatWrite() {
   const currentKindId =
     editData?.kindId ?? editData?.kind ?? null;
 
-  const [categoryName, setCategoryName] = useState("");
-  const [url, setUrl] = useState("");
-  const [questions, setQuestions] = useState([
+  const [categoryName, setCategoryName] = useState(editData?.title || "");
+  const [url, setUrl] = useState(editData?.url || "");
+  const [questions, setQuestions] = useState(editData?.survey?.length ? editData.survey : [
     {
       questionText: "",
       options: [
@@ -26,17 +26,6 @@ export default function CCatWrite() {
       ],
     },
   ]);
-
-  useEffect(() => {
-    if (editData) {
-      setCategoryName(editData.title || "");
-      setUrl(editData.url || "");
-
-      if (editData.survey && editData.survey.length > 0) {
-        setQuestions(editData.survey);
-      }
-    }
-  }, [editData]);
 
   const handleQuestionChange = (index, value) => {
     const updated = [...questions];
@@ -88,12 +77,12 @@ export default function CCatWrite() {
 
       if (editData?.c_id) {
         response = await api.put(
-          `http://127.0.0.1:8000/counselor/category/${editData.c_id}`,
+          `/counselor/category/${editData.c_id}`,
           payload
         );
       } else {
         response = await api.post(
-          "http://127.0.0.1:8000/counselor/category",
+          "/counselor/category",
           payload
         );
       }
